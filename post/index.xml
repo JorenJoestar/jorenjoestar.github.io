@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Joren&#39;s</title>
+    <link>/post/</link>
+    <description>Recent content in Posts on Joren&#39;s</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 23 Jul 2019 02:04:50 -0400</lastBuildDate>
+    
+	    <atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Releasing NES Emulator Source</title>
+      <link>/post/releasing_nes_emulator_source/</link>
+      <pubDate>Tue, 23 Jul 2019 02:04:50 -0400</pubDate>
+      
+      <guid>/post/releasing_nes_emulator_source/</guid>
+      <description>
+
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;ZeldaNESEmulated.png&#34; &gt;
+
+&lt;img src=&#34;ZeldaNESEmulated.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Legend of Zelda emulated plus debugging windows.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+
+&lt;p&gt;Hello everyone!&lt;/p&gt;
+
+&lt;p&gt;Today I release the source code of my bare-bone NES emulator, written in C++.&lt;/p&gt;
+
+&lt;p&gt;I had the idea to write an emulator of one of my favorite console (after the SNES) years ago, and started in 2015 to write the first code (actually in 2008, but it was too daunting even to start).
+Then I concentrated on my other big project (still ongoing) and left all the NES code on a side.
+Years passed and finally last winter I decided to give it a go to arrive at a ‘usable’ emulator level and release the source code.&lt;/p&gt;
+
+&lt;p&gt;Here it is!
+(&lt;a href=&#34;https://github.com/JorenJoestar/HydraNes&#34; target=&#34;_blank&#34;&gt;https://github.com/JorenJoestar/HydraNes&lt;/a&gt;)&lt;/p&gt;
+
+&lt;h2 id=&#34;motivation&#34;&gt;Motivation&lt;/h2&gt;
+
+&lt;p&gt;Main motivation both to write and to share this code is &lt;em&gt;knowledge&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;I shamelessly wrote bad code just with the purpose of seeing something on screen as fast as I could.
+And I am very honest about that: not happy for the form, but happy for the knowledge I gained!
+Also, I think that this code is compact enough to be followed and to understand the basics of NES emulation coding.&lt;/p&gt;
+
+&lt;h2 id=&#34;the-code&#34;&gt;The code&lt;/h2&gt;
+
+&lt;p&gt;The &lt;strong&gt;NES code&lt;/strong&gt; lives in the Nes.h/.cpp pair of files.
+The &lt;strong&gt;APU&lt;/strong&gt; is implemented using &lt;strong&gt;Blargg’s implementation&lt;/strong&gt;: when I’ll have other time I will attemp to finish my own implementation, but for now it is ok like that.&lt;/p&gt;
+
+&lt;p&gt;The flow is the following:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;NES is initialized&lt;/li&gt;
+&lt;li&gt;After loading a rom (from the Cartridge window) the mapper will be selected and memory copied to local buffers.&lt;/li&gt;
+&lt;li&gt;CPU starts its continuous emulation.&lt;/li&gt;
+&lt;li&gt;CPU will execute until a frame is produced. This is checked by the PPU frame changing.&lt;/li&gt;
+&lt;li&gt;PPU execution is bound to memory accesses, both read and write.&lt;/li&gt;
+&lt;li&gt;Each CPU memory access corresponds to 3 PPU cycles (in NTSC, the only region emulated).&lt;/li&gt;
+&lt;li&gt;After the frame is ended the APU emulation is advanced.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;interesting-spots&#34;&gt;Interesting spots&lt;/h2&gt;
+
+&lt;p&gt;There are different areas of the code that are interesting, but I would like to highlight some.&lt;/p&gt;
+
+&lt;h3 id=&#34;cpu-step&#34;&gt;Cpu::Step()&lt;/h3&gt;
+
+&lt;p&gt;This is where all the &lt;strong&gt;CPU&lt;/strong&gt; instructions are executed. I opted for a macro based approach instead of tables of function pointers.&lt;/p&gt;
+
+&lt;p&gt;For each cpu cycle:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Fetch the instruction opcode&lt;/li&gt;
+&lt;li&gt;Calculate the operand address (called ‘effectiveAddress’)&lt;/li&gt;
+&lt;li&gt;Execute the operation&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;All the operations and addressing modes are in the Nes.h file.
+&lt;em&gt;Addressing modes&lt;/em&gt; are the way the NES gets its operand for each operation.
+Operations are the instruction themselves — using those operands.&lt;/p&gt;
+
+&lt;h3 id=&#34;ppu-step&#34;&gt;Ppu::Step()&lt;/h3&gt;
+
+&lt;p&gt;PPU by itself is the most difficult part to emulate (APU is easier on the channels, but harder on the mix and signal generation!).&lt;/p&gt;
+
+&lt;p&gt;I will make a post about that soon, but in the meantime here the code is and implements the behaviours described here:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://wiki.nesdev.com/w/index.php/File:Ntsc_timing.png&#34; target=&#34;_blank&#34;&gt;https://wiki.nesdev.com/w/index.php/File:Ntsc_timing.png&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;The &lt;strong&gt;PPU&lt;/strong&gt; draws in tiles of &lt;strong&gt;8x8 pixels&lt;/strong&gt;, so for each pixels created on the screen there will be a gathering of all the data necessary to calculate the final color.&lt;/p&gt;
+
+&lt;p&gt;The rendering is divided in &lt;strong&gt;background&lt;/strong&gt; and &lt;strong&gt;sprites&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Background is just &lt;strong&gt;8x8 pixel per tile&lt;/strong&gt; choosen from the &lt;strong&gt;nametable&lt;/strong&gt; (a screen table of which tiles are visible) and &lt;strong&gt;sprites&lt;/strong&gt; are either 8x8 or 8x16 rectangles coming from a different memory area (uploaded using &lt;strong&gt;DMA&lt;/strong&gt;).&lt;/p&gt;
+
+&lt;p&gt;There are many quirks and uniqueness about the &lt;strong&gt;PPU&lt;/strong&gt;, like the &lt;strong&gt;pattern table&lt;/strong&gt; (a 16x16 grid storing the higher 2 bits of all the underlying background pixels), or the vertical blank period, or the open bus.&lt;/p&gt;
+
+&lt;h3 id=&#34;ppu-drawpixel&#34;&gt;Ppu::DrawPixel()&lt;/h3&gt;
+
+&lt;p&gt;The color of a pixel comes from one of the 16 entries of the &lt;strong&gt;palette VRAM&lt;/strong&gt;, and to do so 4 bits must be calculated for background and for sprites.&lt;/p&gt;
+
+&lt;p&gt;For background tiles, 2 pixels comes from the ‘texture’ (&lt;strong&gt;CHR-ROM&lt;/strong&gt;) and 2 from the attribute table.
+&lt;/br&gt;Sprites contains all those informations together.&lt;/p&gt;
+
+&lt;p&gt;The output is a silly &lt;em&gt;SSBO&lt;/em&gt; that contains RGBA colors to be used in a compute shader that outputs to the screen.&lt;/p&gt;
+
+&lt;h3 id=&#34;cpuread-write-ppuread-write&#34;&gt;CpuRead/Write, PpuRead/Write&lt;/h3&gt;
+
+&lt;p&gt;All those methods are essential because the NES uses memory mapping i/o to access the different hardware.&lt;/p&gt;
+
+&lt;p&gt;For example the &lt;strong&gt;PPU&lt;/strong&gt; access the cartridge through the mapper in the memory controller to read drawing informations, the &lt;strong&gt;CPU&lt;/strong&gt; writes to the &lt;strong&gt;PPU&lt;/strong&gt; using address $2007, etc.&lt;/p&gt;
+
+&lt;h2 id=&#34;ending-notes&#34;&gt;Ending notes&lt;/h2&gt;
+
+&lt;p&gt;I will prepare more detailed posts about the &lt;strong&gt;NES architecture and emulation&lt;/strong&gt;, even though there are still some concepts that are not clear to me and require a deeper investigation.&lt;/p&gt;
+
+&lt;p&gt;So far this is the most &lt;em&gt;satisfactory&lt;/em&gt; personal project I’ve done, and one of the few that arrived at a usable level.&lt;/p&gt;
+
+&lt;p&gt;In the future I want to improve this emulator and use the knowledge to explore the writing of a SNES emulator!&lt;/p&gt;
+
+&lt;p&gt;Any question or comment please let me know!&lt;/p&gt;
+
+&lt;p&gt;Gabriel&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
