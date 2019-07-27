@@ -6,10 +6,425 @@
     <description>Recent content in Posts on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 26 Jul 2019 07:37:26 -0400</lastBuildDate>
+    <lastBuildDate>Sat, 27 Jul 2019 18:45:35 -0400</lastBuildDate>
     
 	    <atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Emulation: where to start? A use case.</title>
+      <link>/post/emulation_where_to_start/</link>
+      <pubDate>Sat, 27 Jul 2019 18:45:35 -0400</pubDate>
+      
+      <guid>/post/emulation_where_to_start/</guid>
+      <description>
+
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;front.png&#34; &gt;
+
+&lt;img src=&#34;front.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Some of the UI for the Hydra NES emulator, using ImGUI.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+
+&lt;p&gt;Writing an emulator is an incredibly fun learning experience.&lt;/p&gt;
+
+&lt;p&gt;It is an exquisite exercise in reverse-engineering from both documentation and code.&lt;/p&gt;
+
+&lt;p&gt;In this post I want to share some tips on how and where to start based on my experience on the NES emulator I am writing.&lt;/p&gt;
+
+&lt;h1 id=&#34;information&#34;&gt;Information&lt;/h1&gt;
+
+&lt;p&gt;The gathering of information is the most important (and hard!) process that will live through all the writing process.&lt;/p&gt;
+
+&lt;p&gt;Luckily for use there are many websites that are coming to rescue us:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://wiki.nesdev.com/w/index.php/NES_reference_guide&#34; target=&#34;_blank&#34;&gt;https://wiki.nesdev.com/w/index.php/NES_reference_guide&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://forums.nesdev.com/&#34; target=&#34;_blank&#34;&gt;http://forums.nesdev.com/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://obelisk.me.uk/6502/reference.html&#34; target=&#34;_blank&#34;&gt;http://obelisk.me.uk/6502/reference.html&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://www.oxyron.de/html/opcodes02.html&#34; target=&#34;_blank&#34;&gt;http://www.oxyron.de/html/opcodes02.html&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;It is paramount to create a list of websites and resources (maybe through some notes, like in Evernote or such) about different topics regarding the hardware to be emulated.&lt;/p&gt;
+
+&lt;p&gt;Having a central hub is powerful and counteract the sparseness of the different informations (some in txt files, different websites, forum blogposts, …).&lt;/p&gt;
+
+&lt;p&gt;I can’t stress enough how important it is.&lt;br&gt;
+Luckily for us the amazing NesDev Wiki is the hub you need!&lt;br&gt;
+Almost every possible information you need is there.&lt;/p&gt;
+
+&lt;h1 id=&#34;architecture&#34;&gt;Architecture&lt;/h1&gt;
+
+&lt;p&gt;Next step is to understand the architecture.&lt;br&gt;
+Write diagrams, take notes, search for the relationships of the component.&lt;br&gt;
+What does every hardware component do ?&lt;br&gt;
+What can that specific hardware piece access to ?&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;As you will see, writing the emulator is an iterative process of improving each component until you have something that works very well, and then refine for an infinite amount of time.&lt;br&gt;
+On a very basic level, there should be a CPU, some form of GPU (PPU, Picture Processing Unit), some audio chip, some input peripheral and cartridge/disc/rom.&lt;/p&gt;
+
+&lt;h1 id=&#34;nes-architecture&#34;&gt;NES architecture&lt;/h1&gt;
+
+&lt;p&gt;The NES is a beautiful machine equipped with the following:&lt;/p&gt;
+
+&lt;h4 id=&#34;cpu-ricoh-rp2a03-ntsc-rp2a07-pal&#34;&gt;CPU : Ricoh RP2A03 (NTSC) / RP2A07 (PAL)&lt;/h4&gt;
+
+&lt;p&gt;8 bit processor that contains both CPU and APU (audio) hardware. The addresses are 16 bit, but the data is 8.
+It contains only specific registers: 2 indices, accumulator, stack pointer, program counter and status.&lt;/p&gt;
+
+&lt;h4 id=&#34;ppu-ricoh-rp2c02-ntsc-rp2c07-pal&#34;&gt;PPU : Ricoh RP2C02 (NTSC) / RP2C07 (PAL)&lt;/h4&gt;
+
+&lt;p&gt;This is what today would be called GPU.
+It outputs to a 256x240 pixels buffer, it has 2kib or RAM, 32 bytes for palette RAM and 288 bytes for sprite RAM.
+The PPU is tile based and it takes 8 PPU cycles to load a line of a background tile.
+Sprites are sent through DMA and background is filled during Vertical Blank state normally.
+A frame lasts more scanline that the one visible, so that the game can upload data to the PPU when not rendering.&lt;/p&gt;
+
+&lt;h4 id=&#34;apu-ricoh-rp2a03-ntsc-rp2a07-pal-contained-in-the-cpu-itself&#34;&gt;APU : Ricoh RP2A03 (NTSC) / RP2A07 (PAL) (Contained in the CPU itself.)&lt;/h4&gt;
+
+&lt;p&gt;The sound is analogic and it comes from 5 different channels: 2 pulse, 1 triangle, 1 noise and 1 DMC. All the channels aside from the DMC create signals that are combined to output the sounds and music.
+The DMC loads samples using the DMA.&lt;/p&gt;
+
+&lt;h4 id=&#34;cartridge-mappers&#34;&gt;Cartridge/Mappers :&lt;/h4&gt;
+
+&lt;p&gt;This is a very unique topic strict to the NES as far as I know.
+Cartridges had unique hardware and they were used to swap banks of memory in realtime to access different parts of the cartridge.
+There are hundred of mappers that have unique behaviours!
+The biggest gist of the mappers is how they switch banks: by WRITING to the address where the execution code is it triggers the bank-switching logic.
+There can be internal batteries and working RAMs too, but they are very rare.&lt;/p&gt;
+
+&lt;h4 id=&#34;memory-mapped-i-o&#34;&gt;Memory mapped I/O&lt;/h4&gt;
+
+&lt;p&gt;The different hardware access using ‘memory mapped I/O’, that is a way of saying that when you read or write to a specific address it could be memory or it could be an hardware-component.&lt;/p&gt;
+
+&lt;p&gt;Examples: reading from address &lt;strong&gt;0x4016&lt;/strong&gt; gives you the &lt;strong&gt;gamepad&lt;/strong&gt; status, while reading from &lt;strong&gt;0x1000&lt;/strong&gt; reads from the &lt;strong&gt;CPU ram&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Having clear these accesses will help in understanding even better the machine.&lt;/p&gt;
+
+&lt;p&gt;Both CPU and PPU have different memory maps. Let&amp;rsquo;s see them, it will help in understanding the internal of the NES better.&lt;/p&gt;
+
+&lt;h2 id=&#34;cpu-memory-map&#34;&gt;CPU Memory Map&lt;/h2&gt;
+
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;cpu_map.png&#34; &gt;
+
+&lt;img src=&#34;cpu_map.png&#34; &gt;
+&lt;/a&gt;
+
+&lt;/figure&gt;
+
+
+&lt;p&gt;The &lt;strong&gt;CPU&lt;/strong&gt; can access basically every hardware component in the NES.&lt;br&gt;
+&lt;strong&gt;PPU, APU, gamepads&lt;/strong&gt;, both read and write.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;It reads the &lt;strong&gt;ROM&lt;/strong&gt; part of a cartridge (called &lt;strong&gt;PRG&lt;/strong&gt;) and executes its instructions.&lt;br&gt;
+Through &lt;strong&gt;PPU&lt;/strong&gt; registers it can instruct the &lt;strong&gt;PPU&lt;/strong&gt; to read graphical informations from the &lt;strong&gt;CHR&lt;/strong&gt; part of the cartridge.&lt;br&gt;
+It can upload sprites on the &lt;strong&gt;PPU Sprite Memory&lt;/strong&gt; through &lt;strong&gt;DMA&lt;/strong&gt;, upload data to the &lt;strong&gt;APU&lt;/strong&gt;, or manage its internal RAM.&lt;/p&gt;
+
+&lt;p&gt;From the source code, this is a working example of CPU Reading method:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;uint8 Nes::MemoryController::CpuRead( uint16 address ) {
+
+    if ( address &amp;lt; 0x2000 ) {
+        return cpu-&amp;gt;ram[address &amp;amp; 0x7FF];
+    }
+    else if ( address &amp;lt; 0x4000 ) {
+        return ppu-&amp;gt;CpuRead( address );
+    }
+    else if ( address &amp;lt; 0x4014 ) {
+        return apu-&amp;gt;CpuRead( address );
+    }
+    else if ( address &amp;gt;= 0x4018 ) {
+        return mapper-&amp;gt;PrgRead( address );
+    }
+
+    switch ( address ) {
+        case 0x4015: {
+            return apu-&amp;gt;ReadStatus();
+            break;
+        }
+
+        case 0x4016: {
+            return controllers-&amp;gt;ReadState();
+            break;
+        }
+                     
+        case 0x4017: {
+            return 0x40;
+            break;
+        }
+    }
+
+    return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And CPU Write:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void Nes::MemoryController::CpuWrite( uint16 address, uint8 data ) {
+
+    if ( address &amp;lt; 0x2000 ) {
+        cpu-&amp;gt;ram[address &amp;amp; 0x7FF] = data;
+    }
+    else if ( address &amp;lt; 0x4000 ) {
+        ppu-&amp;gt;CpuWrite( address, data );
+        return;
+    }
+    else if ( address &amp;lt; 0x4014 ) {
+        return apu-&amp;gt;CpuWrite( address, data );
+    }
+    else if ( address &amp;gt;= 0x4018 ) {
+        mapper-&amp;gt;PrgWrite( address, data );
+        return;
+    }
+
+    switch ( address ) {
+        // Sprite DMA
+        case 0x4014: {
+            cpu-&amp;gt;ExecuteSpriteDMA( data );
+            return;
+            break;
+        }
+
+        case 0x4015:
+        case 0x4017: {
+            apu-&amp;gt;CpuWrite( address, data );
+            return;
+            break;
+        }
+
+        case 0x4016: {
+            controllers-&amp;gt;WriteState( data );
+            return;
+            break;
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The pattern is always the same: check the address of the instruction and choose which hardware component to interact with.&lt;/p&gt;
+
+&lt;p&gt;Hopefully its clear that based on the address different components can be accessed.
+Let&amp;rsquo;s have a look at the PPU too.&lt;/p&gt;
+
+&lt;h2 id=&#34;ppu-memory-map&#34;&gt;PPU Memory Map&lt;/h2&gt;
+
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;ppu_map.png&#34; &gt;
+
+&lt;img src=&#34;ppu_map.png&#34; &gt;
+&lt;/a&gt;
+
+&lt;/figure&gt;
+
+
+&lt;p&gt;Similar to the &lt;strong&gt;CPU&lt;/strong&gt;, reading and writing on the &lt;strong&gt;PPU&lt;/strong&gt; access different components, even though they are far less.&lt;br&gt;
+The &lt;strong&gt;PPU&lt;/strong&gt; either accesses its 2 rams (&lt;strong&gt;palette&lt;/strong&gt; and &lt;strong&gt;nametable&lt;/strong&gt;, normally from the &lt;strong&gt;CPU&lt;/strong&gt;) or reads the &lt;strong&gt;CHR&lt;/strong&gt; (that is the graphical data stored in the cartridge) memory.&lt;/p&gt;
+
+&lt;p&gt;Reading:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;uint8 Nes::MemoryController::PpuRead( uint16 address ) {
+    
+    address &amp;amp;= 0X3FFF;
+
+    if ( address &amp;lt;= 0x1FFF ) {
+        return mapper-&amp;gt;ChrRead( address );
+    }
+    else if ( address &amp;lt;= 0x3EFF ) {
+        return ppu-&amp;gt;nametableRam[NameTableMirroring( address, mapper-&amp;gt;mirroring )];
+    }
+    else if ( address &amp;lt;= 0x3FFF ) {
+        // Palette mirroring is handled in the write code.
+        return ppu-&amp;gt;paletteRam[address &amp;amp; 0x1F] &amp;amp; ((ppu-&amp;gt;mask &amp;amp; Nes::Ppu::MaskFlag_GreyScale ? 0x30 : 0xFF));
+    }
+    return 0;
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;On the writing side, there the code shows the intricancy of emulation.
+When writing to the paletter ram, there is a mirroring mechanism happening in the hardware that is emulated with a lookup table.
+Something to look out to: &lt;strong&gt;writing to CHR is 99% of the time useless, unless there is an additional RAM in the cartdige&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void Nes::MemoryController::PpuWrite( uint16 address, uint8 data ) {
+
+    address &amp;amp;= 0X3FFF;
+
+    if ( address &amp;lt;= 0x1FFF ) {
+        mapper-&amp;gt;ChrWrite( address, data );
+        return;
+    }
+    else if ( address &amp;lt;= 0x3EFF ) {
+        ppu-&amp;gt;nametableRam[NameTableMirroring( address, mapper-&amp;gt;mirroring )] = data;
+        return;
+    }
+    else if ( address &amp;lt;= 0x3FFF ) {
+
+        static uint8 const palette_write_mirror[0x20] = { 
+            0x10, 0x01, 0x02, 0x03, 0x14, 0x05, 0x06, 0x07,
+            0x18, 0x09, 0x0A, 0x0B, 0x1C, 0x0D, 0x0E, 0x0F,
+            0x00, 0x11, 0x12, 0x13, 0x04, 0x15, 0x16, 0x17,
+            0x08, 0x19, 0x1A, 0x1B, 0x0C, 0x1D, 0x1E, 0x1F };
+
+        ppu-&amp;gt;paletteRam[palette_write_mirror[address &amp;amp; 0x1F]] = data;
+        return;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;takeaways&#34;&gt;Takeaways&lt;/h2&gt;
+
+&lt;p&gt;I created the &lt;strong&gt;memory controller&lt;/strong&gt; as the main dispatcher of data between hardware components, to separate the duties better.
+We can see the following relationships based on that:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;CPU can access PPU, APU, controllers and cartridge (PRG)&lt;/li&gt;
+&lt;li&gt;PPU can access screen, its own rams and cartridge (CHR)&lt;/li&gt;
+&lt;li&gt;memory controller is the hub that connects everything&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;I am not sure this is the best emulator architecture, but that is what I figured out.&lt;/p&gt;
+
+&lt;h1 id=&#34;test-roms&#34;&gt;Test roms&lt;/h1&gt;
+
+&lt;p&gt;A fundamental approach to create a robust emulator is to have some tests to rely on.&lt;br&gt;
+Sadly it is not common for all hardware, but again the NES provide plenty of roms that tests almost every aspect of your emulator!&lt;br&gt;
+It quickly becomes a test-driven development.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://wiki.nesdev.com/w/index.php/Emulator_tests&#34; target=&#34;_blank&#34;&gt;NES test roms link&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Find roms, read the source code and try to understand what they are doing and why.&lt;/p&gt;
+
+&lt;h1 id=&#34;coding-start&#34;&gt;Coding start&lt;/h1&gt;
+
+&lt;p&gt;If you are writing your first emulator, I suggest to focus mostly on the emulation part.&lt;/p&gt;
+
+&lt;p&gt;What do I mean by that ?&lt;br&gt;
+Avoid trying too many things at once!&lt;br&gt;
+Focus your energies towards the emulation.&lt;br&gt;
+Use libraries that are reliable and simple and that you know.&lt;br&gt;
+GLFW, SDL2, etc are your friends here.&lt;br&gt;
+You want to eliminate most unknowns unknowns before hand.&lt;br&gt;
+Of course, if you are brave enough, you can also write an emulator in a new language.&lt;/p&gt;
+
+&lt;p&gt;But for me, I preferred to concentrate on the emulation side first, in C++, using my core library, especially knowing that I could dedicate some night-time here and there,
+No surprises (not really true, still some happened!).&lt;/p&gt;
+
+&lt;p&gt;I will possibly port the emulator to use SDL if needed, but right now the emulation code is the most important.&lt;/p&gt;
+
+&lt;p&gt;This is the mantra that helped me concentrate only on the emulation code. Again, writing-wise I am not happy about the code quality. But what I am learning from different perspectives is invaluable!&lt;/p&gt;
+
+&lt;h1 id=&#34;nes-coding-start&#34;&gt;NES coding start&lt;/h1&gt;
+
+&lt;p&gt;The quintessential basic steps to start a NES emulator coding are:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Write CPU basics (fetch/decode/execute loop, registers)&lt;/li&gt;
+&lt;li&gt;Basic memory bus (read/write to/from memory and registers)&lt;/li&gt;
+&lt;li&gt;Load a rom and start executing instruction step by step.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;It is already a lot, and it will require to read multiple times the different wiki pages and forum posts.&lt;/p&gt;
+
+&lt;p&gt;For a typical console, the main loop (simplified) can be something like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void CpuTick() {
+    uint8_t opcode = Read(program_counter++);
+    uint8_t operand = FetchOperand(opcode);
+    ExecuteOpcode(opcode, operand);
+}
+
+void ExecuteFrame() {
+    uint32_t cycles_per_frame = …
+ 
+    while (cycles_per_frame — ) {
+        CpuTick();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;To jumpstart your NES emulator you can use the majestic rom nestest.nes and its log file: it gives you a test of all instructions of the CPU and prints the status of the CPU after each one.&lt;/p&gt;
+
+&lt;p&gt;Also it does not require any PPU rendering: compare the status of your CPU with the text file line by line and its done!&lt;/p&gt;
+
+&lt;p&gt;You can see some ugly but useful code in &lt;a href=&#34;https://github.com/JorenJoestar/HydraNes/blob/68d705ef400c1ab930dce0fa51c5353aa8b32396/src/main.cpp#L607&#34; target=&#34;_blank&#34;&gt;MainState::ExecuteCpuTest&lt;/a&gt; in my emulator for an idea.&lt;/p&gt;
+
+&lt;p&gt;A line from the nestest.log file looks like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// C000 4C F5 C5 JMP $C5F5 A:00 X:00 Y:00 P:24 SP:FD PPU: 0, 0 CYC:7
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;it gives you the ProgramCounter (C000), byte code (1, 2 or 3 bytes depending on the instructions), human-readable-instruction (JMP) , the CPU register contents (A, X, Y, P, SP) and the theorethical PPU scanline, pixel and clock cycle.&lt;/p&gt;
+
+&lt;p&gt;There are two interesting points:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;The ProgramCounter before execution should be set to C000 for this rom only and only when logging.&lt;/li&gt;
+&lt;li&gt;The CPU cycles STARTS at 7. In a power-up/reset method there is some work done BEFORE executing any code. This is needed only if you want to have a precise cycle-to-cycle comparison.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;You can create a simple test method like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void TestEmulatorCPU() {
+    Reset();
+ 
+    while(true) {
+        CpuTick();
+        CompareCpuStatusWithLog();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and catch the problems in your CPU instructions implementation!&lt;/p&gt;
+
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+
+&lt;p&gt;This is a little help in understanding how to start with an emulator.&lt;/p&gt;
+
+&lt;p&gt;It is a beautiful journey, but it is full of trial and errors.&lt;/p&gt;
+
+&lt;p&gt;I am myself far from over with my emulator, and also far from being happy on HOW I write the emulator itself.&lt;/p&gt;
+
+&lt;p&gt;There are emulators of much more complex machines out there (almost every machine you can imagine!) and it blows my mind to know there are people that can emulate such complex hardware.&lt;/p&gt;
+
+&lt;p&gt;The ideal situation would be to being able of not being lost in visual emulation of the circuitry, but for now that is out of my league.&lt;/p&gt;
+
+&lt;p&gt;I am thinking of creating some a series of videos and code associated starting from scratch, if anyone is interested.
+Please leave a comment/feedback on the article, the source code, anything!&lt;/p&gt;
+
+&lt;p&gt;I hope it will help.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Flatbuffers, Reflection and Data-Driven Rendering</title>
