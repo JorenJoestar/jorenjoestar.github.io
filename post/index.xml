@@ -6,10 +6,356 @@
     <description>Recent content in Posts on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 23 Jul 2019 02:04:50 -0400</lastBuildDate>
+    <lastBuildDate>Fri, 26 Jul 2019 07:37:26 -0400</lastBuildDate>
     
 	    <atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Flatbuffers, Reflection and Data-Driven Rendering</title>
+      <link>/post/flatbuffers_reflection_data_driven_rendering/</link>
+      <pubDate>Fri, 26 Jul 2019 07:37:26 -0400</pubDate>
+      
+      <guid>/post/flatbuffers_reflection_data_driven_rendering/</guid>
+      <description>
+
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;front.png&#34; &gt;
+
+&lt;img src=&#34;front.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Auto generated UI from Flatbuffers files.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+
+&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+
+&lt;p&gt;Finding a good balance between code and data in Rendering.&lt;br&gt;
+What is the necessary code that should be written ?&lt;br&gt;
+Why ?&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;In rendering many areas can be described in a fast and robust way using data.&lt;br&gt;
+A &lt;em&gt;pipeline (in D3D12/Vulkan lingo)&lt;/em&gt; for example is a collection of different states: &lt;em&gt;depth stencil, alpha blend, rasterizer, shaders&lt;/em&gt;, etc.&lt;br&gt;
+All those state can be &lt;em&gt;hard-coded&lt;/em&gt; or defined in &lt;em&gt;data&lt;/em&gt;.&lt;br&gt;
+Moving them to data can help with the visibility of them, that instead of being buried somewhere into the code can be retrieved before even running the application.&lt;/p&gt;
+
+&lt;p&gt;As a bigger-scope example, a &lt;em&gt;frame-graph&lt;/em&gt; can be implicitly defined inside the code, if different areas, or in data.&lt;br&gt;
+Recent posts about it started raising attention to the problem, especially after the introduction of lower-level APIs like D3D12 and Vulkan and their resource barriers.&lt;br&gt;
+I’ve personally used something like &lt;em&gt;json&lt;/em&gt; (xml back in the day) since 2009, after asking myself the very silly question:&lt;br&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;what is the biggest dependency in rendering?&lt;br&gt;Render Targets!&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Since then I saw only in the Codemasters postprocess system (since Dirt 2) a similar approach, and have never being able to advocate towards it.&lt;br&gt;
+The only full use case I have is my personal indie game (a full deferred rendering pipeline with many different rendering needs) all defined in a json file (render_pipeline.json).&lt;br&gt;
+Anyway, a couple of examples of this data-driven mentality can be found here:&lt;/p&gt;
+
+&lt;p&gt;&lt;iframe src=&#34;//www.slideshare.net/slideshow/embed_code/key/CfeEFT3zVraiZO&#34; width=&#34;595&#34; height=&#34;485&#34; frameborder=&#34;0&#34; marginwidth=&#34;0&#34; marginheight=&#34;0&#34; scrolling=&#34;no&#34; style=&#34;border:1px solid #CCC; border-width:1px; margin-bottom:5px; max-width: 100%;&#34; allowfullscreen&gt; &lt;/iframe&gt; &lt;div style=&#34;margin-bottom:5px&#34;&gt; &lt;strong&gt; &lt;a href=&#34;//www.slideshare.net/DICEStudio/framegraph-extensible-rendering-architecture-in-frostbite&#34; title=&#34;FrameGraph: Extensible Rendering Architecture in Frostbite&#34; target=&#34;_blank&#34;&gt;FrameGraph: Extensible Rendering Architecture in Frostbite&lt;/a&gt; &lt;/strong&gt; from &lt;strong&gt;&lt;a href=&#34;https://www.slideshare.net/DICEStudio&#34; target=&#34;_blank&#34;&gt;Electronic Arts / DICE&lt;/a&gt;&lt;/strong&gt; &lt;/div&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://bitsquid.blogspot.com/2017/03/stingray-renderer-walkthrough-7-data.html&#34; target=&#34;_blank&#34;&gt;http://bitsquid.blogspot.com/2017/03/stingray-renderer-walkthrough-7-data.html&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;I chose to see what is a good way of &lt;em&gt;describing low-level rendering resources, the bricks towards data-driven rendering&lt;/em&gt;.&lt;br&gt;
+I’ve already tried defining them in a json file, but wanted something more direct — something I can copy easily with minimal parsing.&lt;/p&gt;
+
+&lt;p&gt;I found 4 possible approaches:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Custom data language&lt;/li&gt;
+&lt;li&gt;Already existing data language&lt;/li&gt;
+&lt;li&gt;Json (already used)&lt;/li&gt;
+&lt;li&gt;Hard-coding everything&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;In this experiment I’ve chosen &lt;strong&gt;Flatbuffers&lt;/strong&gt; for the easy of use, the good performances and the feature set that seems complete.&lt;br&gt;
+As an exercise, I wanted to create some UI based on the data coming from Flatbuffers without having to write too much code.&lt;/p&gt;
+
+&lt;h1 id=&#34;flatbuffers&#34;&gt;Flatbuffers&lt;/h1&gt;
+
+&lt;p&gt;Flatbuffers is a serialization library developer by Google used by many companies.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://google.github.io/flatbuffers/&#34; target=&#34;_blank&#34;&gt;https://google.github.io/flatbuffers/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Compared to &lt;strong&gt;Protocol Buffers&lt;/strong&gt; (still developed by Google) it tries to go towards a very simple parsing/unpacking (actually ABSENT in Flatbuffers, so much faster to read/write) and serialization speed.&lt;/p&gt;
+
+&lt;p&gt;Flatbuffers is mainly a compiler that accepts .fbs (FlatBuffers Schema) files and can generate code for serialization purposes.&lt;/p&gt;
+
+&lt;p&gt;The advantage is that it automatically generates the parsing files in the language you prefer (C++, Java, C#, Go, C, Lua, Javascript, Rust) without you needing to write the always tedious serialize/deserialize methods.&lt;/p&gt;
+
+&lt;p&gt;It is largely based on either simple c-structs or tables with offsets for more complex object.&lt;/p&gt;
+
+&lt;p&gt;The objective here will be to create a schema file, define a couple of resources (like textures) and use those to automatically generate UI.&lt;br&gt;
+I will be using the SDL + ImGUI sample from the amazing ImGUI as a base.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;The flow will be the following:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Write schema files&lt;/li&gt;
+&lt;li&gt;Generate reflection informations&lt;/li&gt;
+&lt;li&gt;Parse schemas&lt;/li&gt;
+&lt;li&gt;Generate UI&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h1 id=&#34;schema-files&#34;&gt;Schema Files&lt;/h1&gt;
+
+&lt;p&gt;Let’s write our first schema file.
+A bigger version (that I am using for my low-level renderer) is included in the &lt;a href=&#34;https://github.com/JorenJoestar/FlatbuffersReflection&#34; target=&#34;_blank&#34;&gt;github&lt;/a&gt; repository.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;namespace rendering;
+
+enum TextureFormat : ushort { UNKNOWN, R32G32B32A32_TYPELESS, R32G32B32A32_FLOAT, R32G32B32A32_UINT, R32G32B32A32_SINT, R32G32B32_TYPELESS, R32G32B32_FLOAT, R32G32B32_UINT, R32G32B32_SINT, R16G16B16A16_TYPELESS, R16G16B16A16_FLOAT, R16G16B16A16_UNORM, R16G16B16A16_UINT, R16G16B16A16_SNORM, R16G16B16A16_SINT, R32G32_TYPELESS, R32G32_FLOAT, R32G32_UINT, R32G32_SINT, R10G10B10A2_TYPELESS, R10G10B10A2_UNORM, R10G10B10A2_UINT, R11G11B10_FLOAT, R8G8B8A8_TYPELESS, R8G8B8A8_UNORM, R8G8B8A8_UNORM_SRGB, R8G8B8A8_UINT, R8G8B8A8_SNORM, R8G8B8A8_SINT, R16G16_TYPELESS, R16G16_FLOAT, R16G16_UNORM, R16G16_UINT, R16G16_SNORM, R16G16_SINT, R32_TYPELESS, R32_FLOAT, R32_UINT, R32_SINT, R8G8_TYPELESS, R8G8_UNORM, R8G8_UINT, R8G8_SNORM, R8G8_SINT, R16_TYPELESS, R16_FLOAT, R16_UNORM, R16_UINT, R16_SNORM, R16_SINT, R8_TYPELESS, R8_UNORM, R8_UINT, R8_SNORM, R8_SINT, R9G9B9E5_SHAREDEXP, D32_FLOAT_S8X24_UINT, D32_FLOAT, D24_UNORM_S8_UINT, D24_UNORM_X8_UINT, D16_UNORM, S8_UINT, BC1_TYPELESS, BC1_UNORM, BC1_UNORM_SRGB, BC2_TYPELESS, BC2_UNORM, BC2_UNORM_SRGB, BC3_TYPELESS, BC3_UNORM, BC3_UNORM_SRGB, BC4_TYPELESS, BC4_UNORM, BC4_SNORM, BC5_TYPELESS, BC5_UNORM, BC5_SNORM, B5G6R5_UNORM, B5G5R5A1_UNORM, B8G8R8A8_UNORM, B8G8R8X8_UNORM, R10G10B10_XR_BIAS_A2_UNORM, B8G8R8A8_TYPELESS, B8G8R8A8_UNORM_SRGB, B8G8R8X8_TYPELESS, B8G8R8X8_UNORM_SRGB, BC6H_TYPELESS, BC6H_UF16, BC6H_SF16, BC7_TYPELESS, BC7_UNORM, BC7_UNORM_SRGB, FORCE_UINT }
+
+attribute &amp;quot;ui&amp;quot;;
+
+struct RenderTarget {
+    width                   : ushort (ui: &amp;quot;min:1, max:16384&amp;quot;);
+    height                  : ushort;
+    scale_x                 : float;
+    scale_y                 : float;
+    format                  : TextureFormat;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;There are few things here to discuss.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Enums. Flatbuffers can generate enums with string version of each values and conversions between enum and string.&lt;/li&gt;
+&lt;li&gt;Struct. It is exactly like C/C++: a simple struct that can be memcopied. Different than a Table (that can point to other structs and Tables).&lt;/li&gt;
+&lt;li&gt;Attributes. This can be used to define custom parsable attributes linked to a member of a struct/table. They can be used, for example, to drive the UI generation.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h1 id=&#34;generating-reflection-informations&#34;&gt;Generating Reflection Informations&lt;/h1&gt;
+
+&lt;p&gt;After we generated the schema file, we can serialize it and load/save it from disk.
+But we need reflection data to be able to automatically generate the UI we need!
+There are two main reflection mechanisms in Flatbuffers: mini-reflection and full-reflection.
+We will use both to generate a UI using ImGUI and see the differences.&lt;/p&gt;
+
+&lt;h2 id=&#34;mini-reflection&#34;&gt;Mini-Reflection&lt;/h2&gt;
+
+&lt;p&gt;This is the simplest of the two and works by generating an additional header file for each .fbs file we use.
+The command line is the following:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;flatc --cpp RenderDefinitions.fbs --reflect-names
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This will generate the &lt;em&gt;RenderDefinitions_Generated.h&lt;/em&gt; file that must be included in your application and has the downside of needing you to recompile every time you change the data.&lt;/p&gt;
+
+&lt;p&gt;Also, and this is the biggest downside, I could not find any way to parse custom per-member attributes.&lt;/p&gt;
+
+&lt;p&gt;I hope I am wrong, but could not find any documentation on the topic: everything seems to point towards the full reflection mechanism.&lt;/p&gt;
+
+&lt;p&gt;So why bothering with the &lt;strong&gt;mini-reflection&lt;/strong&gt; ?&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Mini-reflection&lt;/strong&gt; generates code, and this became useful for one of the most tedious C/C++ code to write: &lt;strong&gt;enums&lt;/strong&gt;!&lt;/p&gt;
+
+&lt;p&gt;I can’t count how many times I wrote an enum, I wanted the string with the same value for it (for example to read from a json file and get the proper enum value) and every time an enum is changed is painful.&lt;/p&gt;
+
+&lt;p&gt;So a lesson from the mini-reflection is to have a code-generator for enums for C/C++, and I will show an example soon in another article.&lt;/p&gt;
+
+&lt;p&gt;Back to the enums, Flatbuffers generates:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Enum&lt;/li&gt;
+&lt;li&gt;Name array&lt;/li&gt;
+&lt;li&gt;Value array&lt;/li&gt;
+&lt;li&gt;Enum to name method&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;A nice property of the generated code for the enum is that it is easy to copy-paste in any c++ file — no Flatbuffers involved!&lt;/p&gt;
+
+&lt;p&gt;This is my first choice now when I want to write an enum in any c++ application.&lt;/p&gt;
+
+&lt;h2 id=&#34;full-reflection&#34;&gt;Full-reflection&lt;/h2&gt;
+
+&lt;p&gt;This is the most used (or at least documented) form of reflection in Flatbuffers.&lt;/p&gt;
+
+&lt;p&gt;It use a very elegant solution, totally data-driven: &lt;em&gt;it reads a reflection schema file that can parse…ANY other schema&lt;/em&gt;!&lt;/p&gt;
+
+&lt;p&gt;This very Inception-esque mechanism gives the full access to all the types, including Attributes.&lt;/p&gt;
+
+&lt;p&gt;By executing this command:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;flatc.exe -b --schema reflection.fbs RenderDefinitions.fbs
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;the RenderDefinitions.bfbs (binary fbs) file is generated.&lt;/p&gt;
+
+&lt;p&gt;This is the file that needs to be read to fully reflect the types inside the .fbs file.
+The order of operations is the following:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Generate a binary fbs with flatc (with the command line shown)&lt;/li&gt;
+&lt;li&gt;Load the bfbs file generated&lt;/li&gt;
+&lt;li&gt;Load the schema from the bfbs&lt;/li&gt;
+&lt;li&gt;Reflect&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The fbfs file contains all the informations from the schema: types, enums, attributes.&lt;/p&gt;
+
+&lt;h1 id=&#34;parsing-schemas-and-generating-ui&#34;&gt;Parsing schemas and Generating UI&lt;/h1&gt;
+
+&lt;p&gt;For both reflection mechanisms the objective is the same: given a type (RenderTarget) generate an editor that can edit properties and potentially load/save them.&lt;/p&gt;
+
+&lt;h2 id=&#34;mini-reflection-1&#34;&gt;Mini-Reflection&lt;/h2&gt;
+
+&lt;p&gt;The UI generation is pretty straightforward with mini-reflection.&lt;/p&gt;
+
+&lt;p&gt;Each type defined in the .fbs file contains a type_name-TypeTable() method that gives accent to a TypeTable.&lt;/p&gt;
+
+&lt;p&gt;This contains a list of per-member type, name and default values.&lt;/p&gt;
+
+&lt;p&gt;What is really missing here is the attributes, that could be used to generate custom UI in a more specific way (eg. adding a min/max/step to a slider).&lt;/p&gt;
+
+&lt;p&gt;The code doing this is in the github sample.&lt;/p&gt;
+
+&lt;p&gt;There are few interesting points here.&lt;/p&gt;
+
+&lt;h3 id=&#34;imgui-usability&#34;&gt;ImGui usability&lt;/h3&gt;
+
+&lt;p&gt;In order to use ImGui to modify a struct, I had to create the class FlatBuffersReflectionTable to instantiate a struct with a similar layout than the Flatbuffers struct.&lt;/p&gt;
+
+&lt;p&gt;This is annoying but I could not find a way around different than this.&lt;/p&gt;
+
+&lt;p&gt;With this in-place, a ImGUI slider can point to a memory area that can be used to save/load the data.
+Let’s begin by retrieving the TypeTable:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;const TypeTable* rt_table = rendering::RenderTargetTypeTable();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The TypeTable is what is included in the generated header and contains the reflection informations.
+Listing the members and their type is pretty straight-forward:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;for ( uint32_t i = 0; i &amp;lt; type_table.num_elems; ++i ) {
+    const flatbuffers::TypeCode&amp;amp; type_code = type_table.type_codes[i];
+    ImGui::Text( &amp;quot;%s: %s&amp;quot;, type_table.names[i], flatbuffers::ElementaryTypeNames()[type_code.base_type] );
+    sprintf_s( s_string_buffer, 128, &amp;quot;%s&amp;quot;, type_table.names[i] );
+    
+    if ( type_code.sequence_ref == 0 ) {
+        if ( type_table.type_refs[type_code.sequence_ref] ) {
+            const flatbuffers::TypeTable* enum_type = type_table.type_refs[type_code.sequence_ref]();
+             ImGui::Combo( s_string_buffer, (int32_t*)reflection_table.GetData( i ), enum_type-&amp;gt;names, enum_type-&amp;gt;num_elems );
+        }
+    }
+    else {
+        switch ( type_code.base_type ) {
+             case flatbuffers::ET_BOOL:
+            {
+                ImGui::Checkbox( s_string_buffer, (bool*)reflection_table.GetData( i ) );
+                break;
+            }
+         }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The interesting parts:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;flatbuffers::TypeCode&lt;/strong&gt;* contains the reflection information for a type.&lt;/p&gt;
+
+&lt;p&gt;Given a &lt;strong&gt;type_code&lt;/strong&gt;, &lt;strong&gt;sequence_ref&lt;/strong&gt; can be used to check if it is an enum, pointer, or primitive type. In this case is used for enum, showing a combo with all the selectable values.&lt;/p&gt;
+
+&lt;p&gt;Base_type contains instead the primitive type. In this example a bool can be mapped to a checkbox. This uses the custom reflection_table class to have a memory area for ImGUI.&lt;/p&gt;
+
+&lt;p&gt;For mini-reflection this is basically it.&lt;/p&gt;
+
+&lt;h2 id=&#34;full-reflection-1&#34;&gt;Full-reflection&lt;/h2&gt;
+
+&lt;p&gt;Code here is longer but it follows the 4 steps highlighted before.&lt;/p&gt;
+
+&lt;p&gt;All the code is inside the ReflectUIFull method.&lt;/p&gt;
+
+&lt;p&gt;Here the binary fbs file and its corresponding schema are loaded.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// 1. Obtain the schema from the binary fbs generated
+std::string bfbsfile;    
+flatbuffers::LoadFile(&amp;quot;..\\data\\RenderDefinitions.bfbs&amp;quot;, true, &amp;amp;bfbsfile );     
+const reflection::Schema&amp;amp; schema = *reflection::GetSchema( bfbsfile.c_str() );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The schema can be used to list the types:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// 2. List all the types present in the fbs.    
+auto types = schema.objects();    
+for ( size_t i = 0; i &amp;lt; types-&amp;gt;Length(); i++ ) {        
+   const reflection::Object* type = types-&amp;gt;Get( i );
+   ImGui::Text( &amp;quot;    %s&amp;quot;, type-&amp;gt;name()-&amp;gt;c_str() );    
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;(Using the auto here because I am lazy. The type is some multiple templates of offsets…)
+We can also list all the enums:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;auto enums = schema.enums();    
+for ( size_t i = 0; i &amp;lt; enums-&amp;gt;Length(); i++ ) {        
+    const reflection::Enum* enum_ = enums-&amp;gt;Get( i );
+    ImGui::Text( &amp;quot;    %s&amp;quot;, enum_-&amp;gt;name()-&amp;gt;c_str() );    
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;A problem I found (with a workaround in the code) is that enums do not have an easily to access array of string values.&lt;/p&gt;
+
+&lt;p&gt;So I generated one for the sake of example, but I am far from happy with the solution!&lt;/p&gt;
+
+&lt;p&gt;Going forward, we can get the type we want to reflect (notice the full namespace.type):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;auto render_target_type = types-&amp;gt;LookupByKey( &amp;quot;rendering.RenderTarget&amp;quot; );
+and begin the work on each field:
+auto fields = render_target_type-&amp;gt;fields();    
+if ( fields ) {
+    // 5.1. List all the fields        
+    for ( size_t i = 0; i &amp;lt; fields-&amp;gt;Length(); i++ ) {
+            auto field = fields-&amp;gt;Get( i );
+            ...
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and the UI can be generated.&lt;/p&gt;
+
+&lt;p&gt;For each field, the primitive type can be accessed with the following:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;reflection::BaseType field_base_type = field-&amp;gt;type()-&amp;gt;base_type();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and again, I found a workaround to know if a type is primitive or an enum.&lt;/p&gt;
+
+&lt;p&gt;Last piece of the puzzle: attributes!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;auto field_attributes = field-&amp;gt;attributes();
+if ( field_attributes ) {
+    auto ui = field_attributes-&amp;gt;LookupByKey( &amp;quot;ui&amp;quot; );
+    if ( ui ) {
+      ImGui::Text(&amp;quot;UI attribute: %s&amp;quot;, ui-&amp;gt;value()-&amp;gt;c_str());
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;These can be parsed as strings and can be used to drive UI code (like a slider with min, max and steps).&lt;/p&gt;
+
+&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+
+&lt;p&gt;In the end, I’ve managed to generate UI based on a type without too much code.&lt;/p&gt;
+
+&lt;p&gt;There was some reverse-engineering to do because I could not find proper documentation (I possibly miss some links to a in-depth example of reflection!) but nothing major.&lt;/p&gt;
+
+&lt;p&gt;The full source code:&lt;/p&gt;
+
+&lt;p&gt;(&lt;a href=&#34;https://github.com/JorenJoestar/FlatbuffersReflection&#34; target=&#34;_blank&#34;&gt;https://github.com/JorenJoestar/FlatbuffersReflection&lt;/a&gt;)&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Releasing NES Emulator Source</title>
