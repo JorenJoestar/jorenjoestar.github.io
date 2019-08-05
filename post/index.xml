@@ -6,10 +6,1374 @@
     <description>Recent content in Posts on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 27 Jul 2019 18:45:35 -0400</lastBuildDate>
+    <lastBuildDate>Sat, 27 Jul 2019 18:46:03 -0400</lastBuildDate>
     
 	    <atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Writing a simple Code Generator</title>
+      <link>/post/writing_a_simple_code_generator/</link>
+      <pubDate>Sat, 27 Jul 2019 18:46:03 -0400</pubDate>
+      
+      <guid>/post/writing_a_simple_code_generator/</guid>
+      <description>
+
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;front.png&#34; &gt;
+
+&lt;img src=&#34;front.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;UI using ImGUI, SDL and the code generated with this article.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+
+&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+
+&lt;p&gt;Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!&lt;br&gt;
+In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.&lt;br&gt;
+The code is here:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering&#34; target=&#34;_blank&#34;&gt;https://github.com/JorenJoestar/DataDrivenRendering&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written.&lt;br&gt;
+From a data perspective, normally the ‘baking’ pipeline is a series of DCC formats as source transformed into very project specific and optimized data.&lt;br&gt;
+Code-wise, depending on the engine/technology you are using, ‘baking’ of the code is more uncommon.&lt;br&gt;
+In a time in which iteration time has become almost more important than the tech itself, playing with this balance can be the key for any successful software. It could sound exaggerated, but I really believe in that.&lt;br&gt;
+As always, both ImGui and SDL will be our sword and shields for this adventure.&lt;br&gt;
+This will be the second step into data-driven rendering: code generation.&lt;br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;are-we-writing-a-compiler&#34;&gt;Are we writing a compiler ?&lt;/h2&gt;
+
+&lt;p&gt;Short answer: yes!&lt;/p&gt;
+
+&lt;p&gt;Long answer: we will be writing the simplest possible compiler that reads a source file and transform in a destination file, like Flatbuffers.&lt;/p&gt;
+
+&lt;p&gt;There are few links on both theory and practice that can help shed some light on the subject:
+The “Dragon Book” (called because of the dragon in the cover) is still THE to-go in compiler writing as far as I know.&lt;br&gt;
+It is an intense book and explores writing a full compiler with depth, starting from &lt;em&gt;Automata theory&lt;/em&gt; (just reminds me of how everything you study can be useful, I did 2 exams at University about that, wondering when I would use it! Hello prof &lt;a href=&#34;http://www.dia.uniroma3.it/~compunet/www/view/person.php?id=gdb&#34; target=&#34;_blank&#34;&gt;Di Battista!&lt;/a&gt;) to full code examples:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://www.amazon.com/Compilers-Principles-Techniques-Tools-2nd/dp/0321486811&#34; target=&#34;_blank&#34;&gt;https://www.amazon.com/Compilers-Principles-Techniques-Tools-2nd/dp/0321486811&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;This is for me the best website on the subject, very precise and readable and follows closely what is inside the Dragon Book:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://craftinginterpreters.com/&#34; target=&#34;_blank&#34;&gt;https://craftinginterpreters.com/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;And github page:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/munificent/craftinginterpreters&#34; target=&#34;_blank&#34;&gt;https://github.com/munificent/craftinginterpreters&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;My interest was rekindled in 2015, when I was following the amazing Casey Muratori and his &lt;a href=&#34;https://handmadehero.org/&#34; target=&#34;_blank&#34;&gt;Handmade Hero&lt;/a&gt;.&lt;br&gt;
+He generates code for introspection purposes, and really show a simple and effective way of generating code that works for you.&lt;/p&gt;
+
+&lt;p&gt;Wikipedia itself also contains a lot of good articles on the subject. The more you know about the it, the more you want to know.
+It is fascinating and very, very deep!&lt;/p&gt;
+
+&lt;h1 id=&#34;compiler-101&#34;&gt;Compiler 101&lt;/h1&gt;
+
+&lt;p&gt;A real compiler is a very complex and fascinating subject/software so I will try to get the simplest possible approach giving my (flawed and incomplete) perspective.&lt;/p&gt;
+
+&lt;p&gt;A compiler is a series of transformations applied to data (you can apply this definition to every software actually…).&lt;/p&gt;
+
+&lt;p&gt;The input data is a text, and normally the output is still text, but with very different meaning.&lt;/p&gt;
+
+&lt;p&gt;The raw depth of the subject is astonishing, consider that we are defining a grammar and thus a language, and how to express concepts into it.&lt;/p&gt;
+
+&lt;p&gt;The main steps are the following:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Lexer/scanner/tokenizer&lt;/li&gt;
+&lt;li&gt;Parser&lt;/li&gt;
+&lt;li&gt;Code generation&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;We will define the code generator from a custom language called HDF (&lt;strong&gt;Hydra Definition Format&lt;/strong&gt;) to C++.
+HDF will be a subset of &lt;strong&gt;Flatbuffers&lt;/strong&gt; in this exercise, but once the concepts are clear it can be expanded to more stuff.&lt;/p&gt;
+
+&lt;h1 id=&#34;lexer-scanner-tokenizer&#34;&gt;Lexer/Scanner/Tokenizer&lt;/h1&gt;
+
+&lt;p&gt;A &lt;strong&gt;lexer&lt;/strong&gt; or &lt;strong&gt;scanner&lt;/strong&gt; (or &lt;strong&gt;tokenizer&lt;/strong&gt;) is a software that translates an input string into a list of Tokens based on Lexemes.
+A &lt;strong&gt;Lexeme&lt;/strong&gt; is one or more characters that create a Token. Think of a keyword (like ‘if’, ‘class’, ‘static’ …).&lt;/p&gt;
+
+&lt;p&gt;A Token is identified by a unique Lexeme and abstracts the Lexeme itself.
+It normally contains a type and some attributes, for example it can save where that lexeme is into the input text, the line. The final structure of the token can vary a bit.&lt;/p&gt;
+
+&lt;p&gt;In trying to find a simple definition for this step:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;The act of Tokenizing is the act of abstracting the input text.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;For example, given the following input text:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;static void amazing_method() {};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It will generate the list of tokens ‘&lt;strong&gt;keyword, identifier, identifier, open parenthesis, close parenthesis, open brace, close brace, semicolon&lt;/strong&gt;’.&lt;/p&gt;
+
+&lt;p&gt;This IS abstracting the text!&lt;/p&gt;
+
+&lt;p&gt;Normally a lexer/scanner is used by the parser to go through the code and retrieve a token and use it in some way. Let’s start seeing what a lexer could be!&lt;/p&gt;
+
+&lt;h2 id=&#34;code&#34;&gt;Code&lt;/h2&gt;
+
+&lt;p&gt;Let&amp;rsquo;s see the code used by the lexer.&lt;/p&gt;
+
+&lt;p&gt;First thing will be to define the Token:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// Lexer/Tokenizer code. It is abstract enough so is not grammar specific.
+//
+struct Token {
+
+    enum Type {
+        Token_Unknown,
+
+        Token_OpenParen,
+        Token_CloseParen,
+        Token_Colon,
+        Token_Semicolon,
+        Token_Asterisk,
+        Token_OpenBracket,
+        Token_CloseBracket,
+        Token_OpenBrace,
+        Token_CloseBrace,
+        Token_OpenAngleBracket,
+        Token_CloseAngleBracket,
+
+        Token_String,
+        Token_Identifier,
+        Token_Number,
+
+        Token_EndOfStream,
+    }; // enum Type
+
+    Type                            type;
+    StringRef                       text;
+
+}; // struct Token
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It is basically a enum with a StringRef.&lt;br&gt;
+A StringRef is basically a substring - used to avoid allocations when parsing by simply saving where the Token is in the parsed text and how long it is.&lt;/p&gt;
+
+&lt;p&gt;Next is the Lexer itself:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// The role of the Lexer is to divide the input string into a list of Tokens.
+struct Lexer {
+    
+    char*                           position            = nullptr;    
+    uint32_t                        line                = 0;
+    uint32_t                        column              = 0;
+
+    bool                            error               = false;
+    uint32_t                        error_line          = 0;
+
+}; // struct Lexer
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The most important variable is &lt;strong&gt;position&lt;/strong&gt; - it saves where the Lexer is in the current text for parsing.&lt;/p&gt;
+
+&lt;p&gt;From now on there will be only methods.&lt;/p&gt;
+
+&lt;p&gt;First some character classification that will help the Lexer:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// All those methods are to classify a character.
+//
+inline bool IsEndOfLine( char c ) {
+    bool Result = ((c == &#39;\n&#39;) || (c == &#39;\r&#39;));
+    return(Result);
+}
+
+inline bool IsWhitespace( char c ) {
+    bool Result = ((c == &#39; &#39;) || (c == &#39;\t&#39;) || (c == &#39;\v&#39;) || (c == &#39;\f&#39;) || IsEndOfLine( c ));
+    return(Result);
+}
+
+inline bool IsAlpha( char c ) {
+    bool Result = (((c &amp;gt;= &#39;a&#39;) &amp;amp;&amp;amp; (c &amp;lt;= &#39;z&#39;)) || ((c &amp;gt;= &#39;A&#39;) &amp;amp;&amp;amp; (c &amp;lt;= &#39;Z&#39;)));
+    return(Result);
+}
+
+inline bool IsNumber( char c ) {
+    bool Result = ((c &amp;gt;= &#39;0&#39;) &amp;amp;&amp;amp; (c &amp;lt;= &#39;9&#39;));
+    return(Result);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;These should be quite straightforward.&lt;/p&gt;
+
+&lt;p&gt;Then we have &lt;strong&gt;the most important method for the lexer: nextToken&lt;/strong&gt;.&lt;br&gt;
+This method will contain all the logic to go to the next token, and we will see it step by step.&lt;/p&gt;
+
+&lt;p&gt;First is skipping all the whitespaces (empty characters, tabs, returns, etc) to arrive at the correct character in the text.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// This is the main method. Skip whitespaces and get next token. Save also the current position in the input string.
+//
+void nextToken( Lexer* lexer, Token&amp;amp; token ) {
+
+    // Skip all whitespace first so that the token is without them.
+    skipWhitespace( lexer );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The code for skipping the whitespace is pretty straight-forward.
+First it checks if it is a pure whitespace:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void skipWhitespace( Lexer* lexer ) {
+    // Scan text until whitespace is finished.
+    for ( ;; ) {
+        // Check if it is a pure whitespace first.
+        if ( IsWhitespace( lexer-&amp;gt;position[0] ) ) {
+            // Handle change of line
+            if ( IsEndOfLine( lexer-&amp;gt;position[0] ) )
+                ++lexer-&amp;gt;line;
+
+            // Advance to next character
+            ++lexer-&amp;gt;position;
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then it checks if it is a single line comment:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;        } // Check for single line comments (&amp;quot;//&amp;quot;)
+        else if ( (lexer-&amp;gt;position[0] == &#39;/&#39;) &amp;amp;&amp;amp; (lexer-&amp;gt;position[1] == &#39;/&#39;) ) {
+            lexer-&amp;gt;position += 2;
+            while ( lexer-&amp;gt;position[0] &amp;amp;&amp;amp; !IsEndOfLine( lexer-&amp;gt;position[0] ) ) {
+                ++lexer-&amp;gt;position;
+            }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And last it checks for c-style multiline comments:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;        } // Check for c-style multi-lines comments
+        else if ( (lexer-&amp;gt;position[0] == &#39;/&#39;) &amp;amp;&amp;amp; (lexer-&amp;gt;position[1] == &#39;*&#39;) ) {
+            lexer-&amp;gt;position += 2;
+
+            // Advance until the string is closed. Remember to check if line is changed.
+            while ( !((lexer-&amp;gt;position[0] == &#39;*&#39;) &amp;amp;&amp;amp; (lexer-&amp;gt;position[1] == &#39;/&#39;)) ) {
+                // Handle change of line
+                if ( IsEndOfLine( lexer-&amp;gt;position[0] ) )
+                    ++lexer-&amp;gt;line;
+
+                // Advance to next character
+                ++lexer-&amp;gt;position;
+            }
+
+            if ( lexer-&amp;gt;position[0] == &#39;*&#39; ) {
+                lexer-&amp;gt;position += 2;
+            }
+        }
+        else {
+            break;
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;After skipped all the whitespaces, we initialize the new token:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    // Initialize token
+    token.type = Token::Token_Unknown;
+    token.text.text = lexer-&amp;gt;position;
+    token.text.length = 1;
+    token.line = lexer-&amp;gt;line;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We get the current character and advance the position, so we can analize it.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    char c = lexer-&amp;gt;position[0];
+    ++lexer-&amp;gt;position;
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Here comes the character analisys using a simple &lt;strong&gt;switch&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+    switch ( c ) {
+        case &#39;\0&#39;:
+        {
+            token.type = Token::Token_EndOfStream;
+        } break;
+        case &#39;(&#39;:
+        {
+            token.type = Token::Token_OpenParen;
+        } break;
+        case &#39;)&#39;:
+        {
+            token.type = Token::Token_CloseParen;
+        } break;
+        case &#39;:&#39;:
+        {
+            token.type = Token::Token_Colon;
+        } break;
+        case &#39;;&#39;:
+        {
+            token.type = Token::Token_Semicolon;
+        } break;
+        case &#39;*&#39;:
+        {
+            token.type = Token::Token_Asterisk;
+        } break;
+        case &#39;[&#39;:
+        {
+            token.type = Token::Token_OpenBracket;
+        } break;
+        case &#39;]&#39;:
+        {
+            token.type = Token::Token_CloseBracket;
+        } break;
+        case &#39;{&#39;:
+        {
+            token.type = Token::Token_OpenBrace;
+        } break;
+        case &#39;}&#39;:
+        {
+            token.type = Token::Token_CloseBrace;
+        } break;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;There are some special cases left.&lt;br&gt;
+First parsing a string starting from a &amp;lsquo;&amp;ldquo;&amp;rsquo; character.&lt;br&gt;
+It requires to scan the text until it finds another &amp;lsquo;&amp;ldquo;&amp;rsquo; to indicate the end of the string.&lt;br&gt;
+It also supports multiple-line strings with the characters &amp;ldquo;\&amp;rdquo; (double back-slash)&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+        case &#39;&amp;quot;&#39;:
+        {
+            token.type = Token::Token_String;
+
+            token.text.text = lexer-&amp;gt;position;
+
+            while ( lexer-&amp;gt;position[0] &amp;amp;&amp;amp;
+                    lexer-&amp;gt;position[0] != &#39;&amp;quot;&#39; )
+            {
+                if ( (lexer-&amp;gt;position[0] == &#39;\\&#39;) &amp;amp;&amp;amp;
+                     lexer-&amp;gt;position[1] )
+                {
+                    ++lexer-&amp;gt;position;
+                }
+                ++lexer-&amp;gt;position;
+            }
+
+            // Saves total string length
+            token.text.length = lexer-&amp;gt;position - token.text.text;
+
+            if ( lexer-&amp;gt;position[0] == &#39;&amp;quot;&#39; ) {
+                ++lexer-&amp;gt;position;
+            }
+        } break;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then the final classification step: first is checking if the token is an identifier (a string literal that starts with a character and is followed by characters, underscores or numbers).&lt;br&gt;
+If not a identifier, check to see if it is a number. This should be expanded to correctly parse numbers, but for now is not used.&lt;br&gt;.
+If everything else fails, than we don&amp;rsquo;t recognize the token.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;        default:
+        {
+            // Identifier/keywords
+            if ( IsAlpha( c ) ) {
+                token.type = Token::Token_Identifier;
+
+                while ( IsAlpha( lexer-&amp;gt;position[0] ) || IsNumber( lexer-&amp;gt;position[0] ) || (lexer-&amp;gt;position[0] == &#39;_&#39;) ) {
+                    ++lexer-&amp;gt;position;
+                }
+
+                token.text.length = lexer-&amp;gt;position - token.text.text;
+            } // Numbers
+            else if ( IsNumber( c ) ) {
+                token.type = Token::Token_Number;
+            }
+            else {
+                token.type = Token::Token_Unknown;
+            }
+        } break;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;With this code we already have a working Lexer!&lt;br&gt;
+I like to use the lexer in an abstract way - not knowing anything about the underlying language - so that it can be reused for different custom languages (Dr.Wily eyebrows movement goes here).&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;If you want to dive deeper into this, the amazing Crafting Interpreters contains a great page on scanning:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://www.craftinginterpreters.com/scanning.html&#34; target=&#34;_blank&#34;&gt;https://www.craftinginterpreters.com/scanning.html&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Also, some c-style parsing can be found here from the amazing &lt;a href=&#34;https://twitter.com/niklasfrykholm&#34; target=&#34;_blank&#34;&gt;Niklas Frykohlm&lt;/a&gt;:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/niklasfrykholm/nflibs/blob/master/nf_json_parser.c&#34; target=&#34;_blank&#34;&gt;https://github.com/niklasfrykholm/nflibs/blob/master/nf_json_parser.c&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;And another amazing parser from STB:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/nothings/stb/blob/master/stb_c_lexer.h&#34; target=&#34;_blank&#34;&gt;https://github.com/nothings/stb/blob/master/stb_c_lexer.h&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&#34;parser&#34;&gt;Parser&lt;/h1&gt;
+
+&lt;p&gt;So far we have abstracted the input text into a list of &lt;strong&gt;Tokens&lt;/strong&gt;, and now we need to generate some more information before arriving at generating new code.&lt;/p&gt;
+
+&lt;p&gt;As far as &lt;em&gt;I understood it&lt;/em&gt;, a parser reads the tokens and generates an &lt;strong&gt;Abstract Syntax Tree&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Sometimes, and in simpler parsers, the act of parsing itself can generates a new code if the language we are targeting is simple.
+Again, I prefer to separate Lexer and Parser to reuse the Lexer for different languages and separate the responsabilities!&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Given a list of tokens and a grammar, a parser generates an Abstract Syntax Tree.&lt;/p&gt;
+
+&lt;p&gt;It gives meaning to the input text, and is responsible to check the syntax correctness.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;A simple definition for a grammar is the following:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;A grammar is a set of production rules that transforms a series of non-terminals into terminals.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Putting everything in the perspective of data and transformations we can define:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Terminals&lt;/strong&gt; are finalized data&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Non-terminals&lt;/strong&gt; are data that must be transformed&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Production rules&lt;/strong&gt; are transformations of &lt;strong&gt;non-terminals&lt;/strong&gt; to &lt;strong&gt;terminals&lt;/strong&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Another definition of a parser than it could be :&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;A parser is a software that transforms non-terminals in terminals following production rules.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&#34;grammar&#34;&gt;Grammar&lt;/h2&gt;
+
+&lt;p&gt;It is time to write the formal grammar (a context-free grammar) and see how it maps to code.&lt;br&gt;
+It will be very simple — much simpler than many examples you find around — but it is a starting point.&lt;br&gt;
+We will not deal with any expression, statements and such, not in the context of this code generator. I will point out some examples for more complex stuff, but I want to study more the subject for that to be more precise about the subject.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Each line will be a &lt;strong&gt;production rule&lt;/strong&gt; (a transformation), with the left-side being always a non-terminal.&lt;br&gt;
+We are using regular expressions syntax here:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;alphabet → [a-zA-z]&lt;/li&gt;
+&lt;li&gt;number →[0–9]&lt;/li&gt;
+&lt;li&gt;identifier → alphabet (alphabet | number | “_”)*&lt;/li&gt;
+&lt;li&gt;variable_declaration → identifier identifier “;”&lt;/li&gt;
+&lt;li&gt;struct_declaration → “struct” identifier “{“ (variable_declaration)+ “}” “;”&lt;/li&gt;
+&lt;li&gt;enum_declaration → “enum” identifier “{“ (identifier)+ “}”&lt;/li&gt;
+&lt;li&gt;module → (struct_declaration | enum_declaration)+*&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;First we define what an identifier is — a sequence of alpha-numerical characters that can contains also the underscore character.&lt;br&gt;Notice that with the identifier production rule, the identifier cannot start with an underscore.&lt;br&gt;
+A variable then is declared simply by two identifiers: the first for the type and the second for the name, following a semicolon.&lt;br&gt;
+A struct is simply a list of variable declarations. Notice the “+” in the rule — this means that at least one element must be present.&lt;br&gt;
+Enums are literally a name for the enum and a list of identifiers in curly braces.&lt;br&gt;
+Finally the module is the root of our grammar. It will contain all the declarations we describe. See it as the data file we are writing to generate the code — one file is one module.&lt;br&gt;
+Now that we defined a simple grammar, we can move to the theory behind the parser.&lt;br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;predictive-recursive-descent-parser&#34;&gt;Predictive Recursive Descent Parser&lt;/h2&gt;
+
+&lt;p&gt;The grammar we defined is a context-free-grammar.&lt;br&gt;
+Depending on the type of grammar we can write different parsers.&lt;br&gt;
+One of the most common type of parser (and easier to start with) is the &lt;a href=&#34;https://en.wikipedia.org/wiki/Recursive_descent_parser&#34; target=&#34;_blank&#34;&gt;Predictive Recursive Descent Parser&lt;/a&gt;, and that is what we will write given our grammar. You can dive into all the details of writing a context-free grammar, writing a &lt;a href=&#34;https://en.wikipedia.org/wiki/LL_parser&#34; target=&#34;_blank&#34;&gt;Left-to-right Leftmost-derivation grammar (LL(k))&lt;/a&gt; and such and be amazed by all the concepts behind.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Again, I am personally starting on this subject, so my knowledge is not deep.&lt;/p&gt;
+
+&lt;p&gt;Back to the parser, the main characteristics of this parser are:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Descent = top-down. Start from root and generate the Abstract Syntax Tree.&lt;/li&gt;
+&lt;li&gt;Recursive = the parser has mutually recursive methods, one for each non-terminal.&lt;/li&gt;
+&lt;li&gt;Predictive = no backtracking needed. For our simple grammar we do not need any backtracking.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;So the parser will start from the root (module non-terminal) and by sequentially reading all the tokens will generate a tree that represent our syntax.&lt;/p&gt;
+
+&lt;p&gt;Let’s see some code!&lt;/p&gt;
+
+&lt;h2 id=&#34;code-1&#34;&gt;Code&lt;/h2&gt;
+
+&lt;p&gt;The central piece of code is the Parser.&lt;br&gt;
+It uses the Lexer and saves the Types by parsing the input text.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// The Parser parses Tokens using the Lexer and generate an Abstract Syntax Tree.
+struct Parser {
+
+    Lexer*                          lexer               = nullptr;
+
+    ast::Type*                      types               = nullptr;
+    uint32_t                        types_count         = 0;
+    uint32_t                        types_max           = 0;
+
+}; // struct Parser
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let&amp;rsquo;s have a look at the class &lt;strong&gt;Type&lt;/strong&gt;.&lt;br&gt;
+This class will let us identify correctly primitive types, enums, struct and &lt;em&gt;commands&lt;/em&gt; - a special keyword I create to show a concept that can be used away from the canonical C/C++ languages.&lt;br&gt;
+By saving a list of names and types we can successfully parse all the types listed above.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// Define the language specific structures.
+namespace ast {
+
+    struct Type {
+
+        enum Types {
+            Types_Primitive, Types_Enum, Types_Struct, Types_Command, Types_None
+        };
+
+        enum PrimitiveTypes {
+            Primitive_Int32, Primitive_Uint32, Primitive_Int16, Primitive_Uint16, Primitive_Int8, Primitive_Uint8, Primitive_Int64, Primitive_Uint64, Primitive_Float, Primitive_Double, Primitive_Bool, Primitive_None
+        };
+
+        Types                       type;
+        PrimitiveTypes              primitive_type;
+        StringRef                   name;
+
+        std::vector&amp;lt;StringRef&amp;gt;      names;
+        std::vector&amp;lt;const Type*&amp;gt;    types;
+        bool                        exportable = true;
+
+    }; // struct Type
+
+} // namespace ast
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And now the actual code making the magic happens!&lt;br&gt;
+Entry point for the parsing is generateAST.&lt;br&gt;
+It simply goes through ALL the tokens until it reaches the end of the file.&lt;br&gt;
+At this level of parsing, we parse only identifiers (keywords like &amp;lsquo;struct&amp;rsquo;, &amp;lsquo;enum&amp;rsquo;, &amp;hellip;).&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void generateAST( Parser* parser ) {
+
+    // Read source text until the end.
+    // The main body can be a list of declarations.
+    bool parsing = true;
+
+    while ( parsing ) {
+
+        Token token;
+        nextToken( parser-&amp;gt;lexer, token );
+
+        switch ( token.type ) {
+
+            case Token::Token_Identifier:
+            {
+                identifier( parser, token );
+                break;
+            }
+
+            case Token::Type::Token_EndOfStream:
+            {
+                parsing = false;
+                break;
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The method &amp;lsquo;identifier&amp;rsquo; searches for the language keywords and acts accordingly.&lt;br&gt;
+The method &amp;lsquo;expectKeyword&amp;rsquo; simply checks that the keywords are the same.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;inline void identifier( Parser* parser, const Token&amp;amp; token ) {
+
+    // Scan the name to know which 
+    for ( uint32_t i = 0; i &amp;lt; token.text.length; ++i ) {
+        char c = *(token.text.text + i);
+
+        switch ( c ) {
+            case &#39;s&#39;:
+            {
+                if ( expectKeyword( token.text, 6, &amp;quot;struct&amp;quot; ) ) {
+                    declarationStruct( parser );
+                    return;
+                }
+                    
+                break;
+            }
+
+            case &#39;e&#39;:
+            {
+                if ( expectKeyword( token.text, 4, &amp;quot;enum&amp;quot; ) ) {
+                    declarationEnum( parser );
+                    return;
+                }
+                break;
+            }
+
+            case &#39;c&#39;:
+            {
+                if ( expectKeyword( token.text, 7, &amp;quot;command&amp;quot; ) ) {
+                    declarationCommand( parser );
+                    return;
+                }
+                break;
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The next methods are the real core of parsing a language.
+When declaring a struct, the token we have are:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Identifier &amp;lsquo;struct&amp;rsquo; (parsed already by generateAST method)&lt;/li&gt;
+&lt;li&gt;Name of the struct&lt;/li&gt;
+&lt;li&gt;Open braces&lt;/li&gt;
+&lt;li&gt;Zero or more variables&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The method expectToken checks the presence of the expected token and saves the line if an error occurs.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;inline void declarationStruct( Parser* parser ) {
+    // name
+    Token token;
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+    
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_OpenBrace ) ) {
+        return;
+    }
+
+    // Add new type
+    ast::Type&amp;amp; type = parser-&amp;gt;types[parser-&amp;gt;types_count++];
+    type.name = name;
+    type.type = ast::Type::Types_Struct;
+    type.exportable = true;
+
+    // Parse struct internals
+    while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        if ( token.type == Token::Token_Identifier ) {
+            declarationVariable( parser, token.text, type );
+        }
+    }
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The parsing of a variable is even simpler, just a type followed by the name.
+When reading the type, it searches through the list of all types saved until then.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;inline void declarationVariable( Parser* parser, const StringRef&amp;amp; type_name, ast::Type&amp;amp; type ) {
+    const ast::Type* variable_type = findType( parser, type_name );
+    Token token;
+    // Name
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Semicolon ) ) {
+        return;
+    }
+
+    type.types.emplace_back( variable_type );
+    type.names.emplace_back( name );
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The parsing of the enum is:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&amp;lsquo;enum&amp;rsquo; keyword&lt;/li&gt;
+&lt;li&gt;Enum name&lt;/li&gt;
+&lt;li&gt;(optional) Semicolon and type, taken from Flatbuffers syntax&lt;/li&gt;
+&lt;li&gt;Open brace&lt;/li&gt;
+&lt;li&gt;List of identifiers that corresponds to the enum values&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+inline void declarationEnum( Parser* parser ) {
+    Token token;
+    // Name
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    // Optional &#39;: type&#39; for the enum
+    nextToken( parser-&amp;gt;lexer, token );
+    if ( token.type == Token::Token_Colon ) {
+        // Skip to open brace
+        nextToken( parser-&amp;gt;lexer, token );
+        // Token now contains type_name
+        nextToken( parser-&amp;gt;lexer, token );
+        // Token now contains open brace.
+    }
+    
+    if ( token.type != Token::Token_OpenBrace ) {
+        return;
+    }
+
+    // Add new type
+    ast::Type&amp;amp; type = parser-&amp;gt;types[parser-&amp;gt;types_count++];
+    type.name = name;
+    type.type = ast::Type::Types_Enum;
+    type.exportable = true;
+
+    // Parse struct internals
+    while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        if ( token.type == Token::Token_Identifier ) {
+            type.names.emplace_back( token.text );
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;A command is a special construct that I use in my code, normally with a CommandBuffer, and with the current syntax from HDF:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;command WindowEvents {
+    Click {
+      int16 x;
+      int16 y;
+      int16 button;
+    }
+    Move {
+      int16 x;
+      int16 y;
+    }
+    Wheel {
+       int16 z;
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And this is the parsing of the command.&lt;br&gt;
+I think this can be the best example of mapping between the language and the parsing.&lt;br&gt;
+Parsing is:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Name&lt;/li&gt;
+&lt;li&gt;Open brace&lt;/li&gt;
+&lt;li&gt;Scan of identifiers until close brace&lt;/li&gt;
+&lt;li&gt;For each identifier, add a type and scan for internal variables.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;inline void declarationCommand( Parser* parser ) {
+    // name
+    Token token;
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_OpenBrace ) ) {
+        return;
+    }
+
+    // Add new type
+    ast::Type&amp;amp; command_type = parser-&amp;gt;types[parser-&amp;gt;types_count++];
+    command_type.name = name;
+    command_type.type = ast::Type::Types_Command;
+    command_type.exportable = true;
+
+    // Parse struct internals
+    while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        if ( token.type == Token::Token_Identifier ) {
+            // Create a new type for each command
+            // Add new type
+            ast::Type&amp;amp; type = parser-&amp;gt;types[parser-&amp;gt;types_count++];
+            type.name = token.text;
+            type.type = ast::Type::Types_Struct;
+            type.exportable = false;
+
+            while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+                if ( token.type == Token::Token_Identifier ) {
+                    declarationVariable( parser, token.text, type );
+                }
+            }
+
+            command_type.names.emplace_back( type.name );
+            command_type.types.emplace_back( &amp;amp;type );
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;abstract-syntax-tree&#34;&gt;Abstract Syntax Tree&lt;/h2&gt;
+
+&lt;p&gt;We choose to simply have data definitions, and I’ve decided that the nodes of the tree will be types.&lt;br&gt;
+A type can be a primitive type, a container of variables (like a Struct in C, but without methods) enums and commands.&lt;br&gt;
+Commands are just a way of showing the creation of a construct that I use and requires some boilerplate code, but I don’t want to write that code.&lt;br&gt;
+If we remember the definition of the class Type from the code before, it all boils down to a name,a list of names and optionally types.&lt;br&gt;
+With this simple definition I can express primitive types, structs and enums all in one!&lt;br&gt;
+For enums, I save the anme of the enum and in the name list all the different values. That is enough to later generate the code.&lt;br&gt;
+For structs, again the name is saved, and then the variables. A variable is a tuple of identifiers ‘type, name’. When parsing them, the type is searched in the registered ones.&lt;br&gt;
+A trick here is to initialize the parser with primitive types, and then add each type (both struct and enums) when parsing them.&lt;br&gt;&lt;/p&gt;
+
+&lt;h1 id=&#34;code-generation&#34;&gt;Code Generation&lt;/h1&gt;
+
+&lt;p&gt;The last stage will generate the files in the language that we want, using the informations from the &lt;strong&gt;AST&lt;/strong&gt;.&lt;br&gt;
+This part will literally write the code for us, the all purpose of this code.&lt;br&gt;
+The most fundamental question is: &lt;em&gt;“what code do I want to generate?”&lt;/em&gt;.&lt;br&gt;
+A simple but deep question.&lt;br&gt;
+We are trying to remove the writing of boilerplate code from or lives, so anything that you consider boilerplate and easy to automate goes here.
+Even if until here we wrote in C++, the final output can be any language.&lt;br&gt;
+This means that you can define data and translate it to multiple languages!&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;For our example, we will output C++ code and add UI using ImGui, similar to the Flatbuffers example I wrote before.&lt;br&gt;
+Let’s see the three different construct we can output with our language.&lt;br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;enum&#34;&gt;Enum&lt;/h2&gt;
+
+&lt;p&gt;We defined an enum as a name and a list of named values.
+For the simplicity of this example, we are not assigning manual values to the enum, but it is something easily changeable, and I will do it in the future.
+Given the enum in HDF:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;enum BlendOperation : byte { Add, Subtract, RevSubtract, Min, Max }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Which code do we want to generate ?&lt;/p&gt;
+
+&lt;p&gt;When I write enums, I almost always need the stringed version of the values. Also I want to add a last value, Count, so that I can use it if I need to allocate anything based on the enum.&lt;br&gt;
+As a bonus, I can create a second enum with the bit shifts — called mask — for some use cases.&lt;br&gt;
+All of this will be automatically done by the code generator, starting with a simple enum!&lt;br&gt;
+In this piece of code, I will use three different streams for the different parts of the enum (enum itself, value names and mask) and combine them into the final generated file.&lt;br&gt;
+Also to note that the strings here are ‘String Ref’ — basically a string that points to the input source code and stores the length of the string, so that there is no need to allocate it newly.&lt;br&gt;
+I will use a temporary buffer to null terminate it and write into the output file.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;This will be the generated code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;namespace BlendOperation {
+	enum Enum {
+		Add, Subtract, RevSubtract, Min, Max, Count
+	};
+
+	enum Mask {
+		Add_mask = 1 &amp;lt;&amp;lt; 0, Subtract_mask = 1 &amp;lt;&amp;lt; 1, RevSubtract_mask = 1 &amp;lt;&amp;lt; 2, Min_mask = 1 &amp;lt;&amp;lt; 3, Max_mask = 1 &amp;lt;&amp;lt; 4, Count_mask = 1 &amp;lt;&amp;lt; 5
+	};
+
+	static const char* s_value_names[] = {
+		&amp;quot;Add&amp;quot;, &amp;quot;Subtract&amp;quot;, &amp;quot;RevSubtract&amp;quot;, &amp;quot;Min&amp;quot;, &amp;quot;Max&amp;quot;, &amp;quot;Count&amp;quot;
+	};
+
+	static const char* ToString( Enum e ) {
+		return s_value_names[(int)e];
+	}
+} // namespace BlendOperation
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The enum itself (inside a namespace), a mask and the string version for debugging purposes.&lt;br&gt;
+All generated from that one line!&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s go into a step by step review of the code.&lt;br&gt;
+First there is the initialization of some auxiliary buffers to handle dynamic strings without allocating memory.&lt;br&gt;
+These are the usages:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Values will contain all the enum comma separated values&lt;/li&gt;
+&lt;li&gt;Value_names will contain the string version of the values&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Value_masks will contain an optional bitmask for the values.
+&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void outputCPPEnum( CodeGenerator* code_generator, FILE* output, const ast::Type&amp;amp; type ) {
+
+// Empty enum: skip output.
+if ( type.names.size() == 0 )
+    return;
+
+code_generator-&amp;gt;string_buffer_0.clear();
+code_generator-&amp;gt;string_buffer_1.clear();
+code_generator-&amp;gt;string_buffer_2.clear();
+
+StringBuffer&amp;amp; values = code_generator-&amp;gt;string_buffer_0;
+StringBuffer&amp;amp; value_names = code_generator-&amp;gt;string_buffer_1;
+StringBuffer&amp;amp; value_masks = code_generator-&amp;gt;string_buffer_2;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;We start by adding the character &amp;lsquo;&amp;ldquo;&amp;rsquo; in the names - they will be C strings!&lt;br&gt;
+Then we have a couple of options, just as demonstration: add mask (for the bitmask) and add max, that adds a last element to the generated enum.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    value_names.append( &amp;quot;\&amp;quot;&amp;quot; );
+
+    bool add_max = true;
+    bool add_mask = true;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Next step is the core: go through all the names saved in the enum &lt;strong&gt;ast::Type&lt;/strong&gt; during the &lt;strong&gt;parsing&lt;/strong&gt; phase, and add the literal as is in the enum, the literal in string version and optional mask.&lt;br&gt;
+We also need to take care of the enum with 1 values, they behave in a different way.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    char name_buffer[256];
+
+    // Enums with more than 1 values
+    if ( type.names.size() &amp;gt; 1 ) {
+        const uint32_t max_values = type.names.size() - 1;
+        for ( uint32_t v = 0; v &amp;lt; max_values; ++v ) {
+
+            if ( add_mask ) {
+                value_masks.append( type.names[v] );
+                value_masks.append( &amp;quot;_mask = 1 &amp;lt;&amp;lt; &amp;quot; );
+                value_masks.append( _itoa( v, name_buffer, 10 ) );
+                value_masks.append( &amp;quot;, &amp;quot; );
+            }
+
+            values.append( type.names[v] );
+            values.append( &amp;quot;, &amp;quot; );
+
+            value_names.append( type.names[v] );
+            value_names.append( &amp;quot;\&amp;quot;, \&amp;quot;&amp;quot; );
+        }
+
+        if ( add_mask ) {
+            value_masks.append( type.names[max_values] );
+            value_masks.append( &amp;quot;_mask = 1 &amp;lt;&amp;lt; &amp;quot; );
+            value_masks.append( _itoa( max_values, name_buffer, 10 ) );
+        }
+
+        values.append( type.names[max_values] );
+
+        value_names.append( type.names[max_values] );
+        value_names.append( &amp;quot;\&amp;quot;&amp;quot; );
+    }
+    else {
+        
+        if ( add_mask ) {
+            value_masks.append( type.names[0] );
+            value_masks.append( &amp;quot;_mask = 1 &amp;lt;&amp;lt; &amp;quot; );
+            value_masks.append( _itoa( 0, name_buffer, 10 ) );
+        }
+
+        values.append( type.names[0] );
+
+        value_names.append( type.names[0] );
+        value_names.append( &amp;quot;\&amp;quot;&amp;quot; );
+    }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;After writing all the values we can add the optional max value in the output:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    if ( add_max ) {
+        values.append( &amp;quot;, Count&amp;quot; );
+
+        value_names.append( &amp;quot;, \&amp;quot;Count\&amp;quot;&amp;quot; );
+
+        if ( add_mask ) {
+            value_masks.append( &amp;quot;, Count_mask = 1 &amp;lt;&amp;lt; &amp;quot; );
+            value_masks.append( _itoa( type.names.size(), name_buffer, 10 ) );
+        }
+    }
+    
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Until now we just saved all those values in the StringBuffers, but still not in the file.&lt;br&gt;
+The final piece of code output to file the enum with all the additional data:&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    copy( type.name, name_buffer, 256 );
+
+    fprintf( output, &amp;quot;namespace %s {\n&amp;quot;, name_buffer );
+
+    fprintf( output, &amp;quot;\tenum Enum {\n&amp;quot; );
+    fprintf( output, &amp;quot;\t\t%s\n&amp;quot;, values.data );
+    fprintf( output, &amp;quot;\t};\n&amp;quot; );
+
+    // Write the mask
+    if ( add_mask ) {
+        fprintf( output, &amp;quot;\n\tenum Mask {\n&amp;quot; );
+        fprintf( output, &amp;quot;\t\t%s\n&amp;quot;, value_masks.data );
+        fprintf( output, &amp;quot;\t};\n&amp;quot; );
+    }
+
+    // Write the string values
+    fprintf( output, &amp;quot;\n\tstatic const char* s_value_names[] = {\n&amp;quot; );
+    fprintf( output, &amp;quot;\t\t%s\n&amp;quot;, value_names.data );
+    fprintf( output, &amp;quot;\t};\n&amp;quot; );
+
+    fprintf( output, &amp;quot;\n\tstatic const char* ToString( Enum e ) {\n&amp;quot; );
+    fprintf( output, &amp;quot;\t\treturn s_value_names[(int)e];\n&amp;quot; );
+    fprintf( output, &amp;quot;\t}\n&amp;quot; );
+
+    fprintf( output, &amp;quot;} // namespace %s\n\n&amp;quot;, name_buffer );
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;struct&#34;&gt;Struct&lt;/h2&gt;
+
+&lt;p&gt;Structs are the bread-and-butter of data definition.
+In this simple example we do not handle pointers or references, so it is pretty straight-forward, but as a start in coding generation this could already be powerful for many cases.
+Let’s start with a definition for our dream Data-Driven-Rendering:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// file.hdf
+struct RenderTarget {
+    uint16 			width;
+    uint16 			height;
+    float 			scale_x;
+    float 			scale_y;
+    TextureFormat 	format;
+};
+
+struct RenderPass {
+    RenderTarget 	rt0;
+};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We want to generate both the ready to use header in C++ and UI using ImGui.&lt;br&gt;
+The output for this struct will be obtained by simply iterating through all its members and, based on the type of the member, write some code.&lt;br&gt;
+For primitive types there is a translation that must be done to the C++ language — thus we saved a list of c++ primitive types keyword into the code.&lt;br&gt;
+For the UI area we will define two methods: reflectMembers, that simply adds the ImGui commands needed, and reflectUI, that embeds the members into a Window. This is done so that when starting from a root type I can create a window that let me edit its value, and recursively it can add other member’s UI if they are coming from another struct.&lt;br&gt;
+This is shown with the RenderPass struct.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;This will be the generated code, that includes ImGui too:&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// CodeGenerated.h
+
+struct RenderTarget {
+
+	uint16_t width;
+	uint16_t height;
+	float scale_x;
+	float scale_y;
+	TextureFormat::Enum format;
+
+	void reflectMembers() {
+		ImGui::InputScalar( &amp;quot;width&amp;quot;, ImGuiDataType_U16, &amp;amp;width );
+		ImGui::InputScalar( &amp;quot;height&amp;quot;, ImGuiDataType_U16, &amp;amp;height );
+		ImGui::InputScalar( &amp;quot;scale_x&amp;quot;, ImGuiDataType_Float, &amp;amp;scale_x );
+		ImGui::InputScalar( &amp;quot;scale_y&amp;quot;, ImGuiDataType_Float, &amp;amp;scale_y );
+		ImGui::Combo( &amp;quot;format&amp;quot;, (int32_t*)&amp;amp;format, TextureFormat::s_value_names, TextureFormat::Count );
+	}
+
+	void reflectUI() {
+		ImGui::Begin(&amp;quot;RenderTarget&amp;quot;);
+		reflectMembers();
+		ImGui::End();
+	}
+
+
+}; // struct RenderTarget
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now let&amp;rsquo;s have a look at the code that will generate that.&lt;br&gt;
+First some init steps: clear and alias the StringBuffer, allocate some char buffers on the stack, copy the StringRef into the name buffer:&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+void outputCPPStruct( CodeGenerator* code_generator, FILE* output, const ast::Type&amp;amp; type ) {
+    const char* tabs = &amp;quot;&amp;quot;;
+
+    code_generator-&amp;gt;string_buffer_0.clear();
+
+    StringBuffer&amp;amp; ui_code = code_generator-&amp;gt;string_buffer_0;
+
+    char name_buffer[256], member_name_buffer[256], member_type_buffer[256];
+    copy( type.name, name_buffer, 256 );
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Next is already a powerful piece of code.&lt;br&gt;
+Outputting the UI code and iterating through each member.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    if ( code_generator-&amp;gt;generate_imgui ) {
+        ui_code.append( &amp;quot;\n\tvoid reflectMembers() {\n&amp;quot; );
+    }
+
+    fprintf( output, &amp;quot;%sstruct %s {\n\n&amp;quot;, tabs, name_buffer );
+
+    for ( int i = 0; i &amp;lt; type.types.size(); ++i ) {
+        const ast::Type&amp;amp; member_type = *type.types[i];
+        const StringRef&amp;amp; member_name = type.names[i];
+
+        copy( member_name, member_name_buffer, 256 );
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We are in the middle of the loop, and we want to check if the current member type is a primitive one, then it needs some work to do.&lt;br&gt;
+First, output the language specific primitive type keyword (using the s_primitive_type_cpp array).&lt;br&gt;
+Second, add some ImGui code to edit the field directly.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+        // Translate type name based on output language.
+        switch ( member_type.type ) {
+            case ast::Type::Types_Primitive:
+            {
+                strcpy_s( member_type_buffer, 256, s_primitive_type_cpp[member_type.primitive_type] );
+                fprintf( output, &amp;quot;%s\t%s %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+                
+                if ( code_generator-&amp;gt;generate_imgui ) {
+                    switch ( member_type.primitive_type ) {
+                        case ast::Type::Primitive_Int8:
+                        case ast::Type::Primitive_Uint8:
+                        case ast::Type::Primitive_Int16:
+                        case ast::Type::Primitive_Uint16:
+                        case ast::Type::Primitive_Int32:
+                        case ast::Type::Primitive_Uint32:
+                        case ast::Type::Primitive_Int64:
+                        case ast::Type::Primitive_Uint64:
+                        case ast::Type::Primitive_Float:
+                        case ast::Type::Primitive_Double:
+                        {
+                            ui_code.append( &amp;quot;\t\tImGui::InputScalar( \&amp;quot;%s\&amp;quot;, %s, &amp;amp;%s );\n&amp;quot;, member_name_buffer, s_primitive_type_imgui[member_type.primitive_type], member_name_buffer );
+                            
+                            break;
+                        }
+                        
+                        case ast::Type::Primitive_Bool:
+                        {
+                            ui_code.append( &amp;quot;\t\tImGui::Checkbox( \&amp;quot;%s\&amp;quot;, &amp;amp;%s );\n&amp;quot;, member_name_buffer, member_name_buffer );
+                            break;
+                        }
+                    }
+                }
+
+                break;
+            }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In case of a struct as a member, use the typename as is and call the &amp;lsquo;reflectMembers&amp;rsquo; method for the UI generation:&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;            case ast::Type::Types_Struct:
+            {
+                copy( member_type.name, member_type_buffer, 256 );
+                fprintf( output, &amp;quot;%s\t%s %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                if ( code_generator-&amp;gt;generate_imgui ) {
+                    ui_code.append( &amp;quot;\t\tImGui::Text(\&amp;quot;%s\&amp;quot;);\n&amp;quot;, member_name_buffer );
+                    ui_code.append( &amp;quot;\t\t%s.reflectMembers();\n&amp;quot;, member_name_buffer );
+                }
+
+                break;
+            }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;For enums use the format namespace::Enum that comes with the generated code (and can be anything else) and add a Combo for ImGui. The combo is using the string array generated previously! This is powerful!&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;            case ast::Type::Types_Enum:
+            {
+                copy( member_type.name, member_type_buffer, 256 );
+                fprintf( output, &amp;quot;%s\t%s::Enum %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                if ( code_generator-&amp;gt;generate_imgui ) {
+                    ui_code.append( &amp;quot;\t\tImGui::Combo( \&amp;quot;%s\&amp;quot;, (int32_t*)&amp;amp;%s, %s::s_value_names, %s::Count );\n&amp;quot;, member_name_buffer, member_name_buffer, member_type_buffer, member_type_buffer );
+                }
+
+                break;
+            }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;To finish up simlpy add the reflectUI method, that embed the members reflection in a window and finish.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;            default:
+            {
+                break;
+            }
+        }
+    }
+
+    ui_code.append( &amp;quot;\t}&amp;quot; );
+    ui_code.append( &amp;quot;\n\n\tvoid reflectUI() {\n\t\tImGui::Begin(\&amp;quot;%s\&amp;quot;);\n\t\treflectMembers();\n\t\tImGui::End();\n\t}\n&amp;quot;, name_buffer );
+
+    fprintf( output, &amp;quot;%s\n&amp;quot;, ui_code.data );
+
+    fprintf( output, &amp;quot;\n%s}; // struct %s\n\n&amp;quot;, tabs, name_buffer );
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;command&#34;&gt;Command&lt;/h2&gt;
+
+&lt;p&gt;I wanted to include an example of something that does not exist in any language, but it shows the power of removing boilerplate code.&lt;/p&gt;
+
+&lt;p&gt;I define commands as little structs with a type used anytime I need to do some command parsing, normally from a ring buffer.&lt;/p&gt;
+
+&lt;p&gt;The command should have an enum with all the types already, and each struct should have its type assigned.
+The type is normally used to cycle through the commands and do something accordingly.&lt;/p&gt;
+
+&lt;p&gt;It will output structs because of the need to allocate them in the ring buffer, thus must be simple.&lt;/p&gt;
+
+&lt;p&gt;First let&amp;rsquo;s see the HDF file. The example are window events commands:&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;command WindowEvents {
+
+	Click {
+		int16 x;
+        int16 y;
+        int16 button;
+	}
+
+	Move {
+		int16 x;
+		int16 y;
+	}
+
+    Wheel {
+        int16 z;
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The generated code will be:&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;namespace WindowEvents {
+	enum Type {
+		Type_Click, Type_Move, Type_Wheel
+	};
+
+	struct Click {
+
+		int16_t x;
+		int16_t y;
+		int16_t button;
+
+		static Type GetType() { return Type_Click; }
+
+	}; // struct Wheel
+
+	struct Move {
+
+		int16_t x;
+		int16_t y;
+
+		static Type GetType() { return Type_Move; }
+
+	}; // struct Wheel
+
+	struct Wheel {
+
+		int16_t z;
+
+		static Type GetType() { return Type_Wheel; }
+
+	}; // struct Wheel
+
+}; // namespace WindowEvents
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And finally the C++ code that generates the output.&lt;br&gt;
+The output starts with an enum with all the types, that I normally use to switch commands:&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void outputCPPCommand( CodeGenerator* code_generator, FILE* output, const ast::Type&amp;amp; type ) {
+
+    char name_buffer[256], member_name_buffer[256], member_type_buffer[256];
+    copy( type.name, name_buffer, 256 );
+
+    fprintf( output, &amp;quot;namespace %s {\n&amp;quot;, name_buffer );
+
+    // Add enum with all types
+    fprintf( output, &amp;quot;\tenum Type {\n&amp;quot; );
+    fprintf( output, &amp;quot;\t\t&amp;quot; );
+    for ( int i = 0; i &amp;lt; type.types.size() - 1; ++i ) {
+        const ast::Type&amp;amp; command_type = *type.types[i];
+        copy( command_type.name, name_buffer, 256 );
+        fprintf( output, &amp;quot;Type_%s, &amp;quot;, name_buffer );
+    }
+
+    const ast::Type* last_type = type.types[type.types.size() - 1];
+    copy( last_type-&amp;gt;name, name_buffer, 256 );
+    fprintf( output, &amp;quot;Type_%s&amp;quot;, name_buffer );
+    fprintf( output, &amp;quot;\n\t};\n\n&amp;quot; );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then we output all the command structs (like Click, Move, &amp;hellip;).&lt;br&gt;
+For each command type we output a struct with all its members. This is similar to the output of the structs:&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    const char* tabs = &amp;quot;\t&amp;quot;;
+
+    for ( int i = 0; i &amp;lt; type.types.size(); ++i ) {
+        const ast::Type&amp;amp; command_type = *type.types[i];
+
+        copy( command_type.name, member_type_buffer, 256 );
+        fprintf( output, &amp;quot;%sstruct %s {\n\n&amp;quot;, tabs, member_type_buffer );
+        
+        for ( int i = 0; i &amp;lt; command_type.types.size(); ++i ) {
+            const ast::Type&amp;amp; member_type = *command_type.types[i];
+            const StringRef&amp;amp; member_name = command_type.names[i];
+
+            copy( member_name, member_name_buffer, 256 );
+
+            // Translate type name based on output language.
+            switch ( member_type.type ) {
+                case ast::Type::Types_Primitive:
+                {
+                    strcpy_s( member_type_buffer, 256, s_primitive_type_cpp[member_type.primitive_type] );
+                    fprintf( output, &amp;quot;%s\t%s %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                    break;
+                }
+
+                case ast::Type::Types_Struct:
+                {
+                    copy( member_type.name, member_type_buffer, 256 );
+                    fprintf( output, &amp;quot;%s\t%s %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                    break;
+                }
+
+                case ast::Type::Types_Enum:
+                {
+                    copy( member_type.name, member_type_buffer, 256 );
+                    fprintf( output, &amp;quot;%s\t%s::Enum %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                    break;
+                }
+
+                default:
+                {
+                    break;
+                }
+            }
+        }
+
+        copy( command_type.name, member_type_buffer, 256 );
+
+        fprintf( output, &amp;quot;\n%s\tstatic Type GetType() { return Type_%s; }\n&amp;quot;, tabs, member_type_buffer );
+        fprintf( output, &amp;quot;\n%s}; // struct %s\n\n&amp;quot;, tabs, name_buffer );
+    }
+
+    copy( type.name, name_buffer, 256 );
+    fprintf( output, &amp;quot;}; // namespace %s\n\n&amp;quot;, name_buffer );
+
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+
+&lt;p&gt;We learnt how to write a complete Code Generator, an incredible tool that can speed up the development if used correctly and remove most boilerplate code possible.&lt;/p&gt;
+
+&lt;p&gt;The usage of the &lt;em&gt;command&lt;/em&gt; keyword was an example of something I use and I don’t want to write code, something that is custom enough and hopefully will give you more ideas on how you can break free from languages constriction when you write…your own language!&lt;/p&gt;
+
+&lt;p&gt;In the quest for data-driven rendering, the next step will be to use the knowledge from code generation to create a &lt;em&gt;shader effect language&lt;/em&gt;, that can generate both CPU and GPU code for you.&lt;/p&gt;
+
+&lt;p&gt;This article is the longest and more code-heavy I have ever written. There are many concepts that I am beginning to be familiar with, but still not so used to.&lt;/p&gt;
+
+&lt;p&gt;So please comment, give feedback, share!
+Thank you for reading!&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Emulation: where to start? A use case.</title>
