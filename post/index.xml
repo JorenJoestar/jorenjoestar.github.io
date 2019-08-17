@@ -6,10 +6,954 @@
     <description>Recent content in Posts on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 27 Jul 2019 18:46:03 -0400</lastBuildDate>
+    <lastBuildDate>Tue, 06 Aug 2019 13:04:15 -0400</lastBuildDate>
     
 	    <atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Writing a Shader Effect Language Part 1</title>
+      <link>/post/writing_shader_effect_language_1/</link>
+      <pubDate>Tue, 06 Aug 2019 13:04:15 -0400</pubDate>
+      
+      <guid>/post/writing_shader_effect_language_1/</guid>
+      <description>
+
+&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+
+&lt;p&gt;In this article we will create a simple language that can encapsulate shader code (called &lt;strong&gt;code fragments&lt;/strong&gt;) and output different files for each fragment.&lt;br&gt;
+This is the initial step to switch from an engine that loads single files for each &lt;strong&gt;shader stage&lt;/strong&gt; (vertex, fragment, compute, &amp;hellip;) to one that uses an effect file that contains more than one shader.&lt;/p&gt;
+
+&lt;p&gt;We will start by motivation, then will define the language itself (very simple), then we will look at the Parser and last the Code Generator.&lt;/p&gt;
+
+&lt;p&gt;Have a good read!&lt;/p&gt;
+
+&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+
+&lt;p&gt;In the incredible quest of &lt;em&gt;data-driven rendering&lt;/em&gt;, after we defeated the dragon of &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_a_simple_code_generator/&#34; target=&#34;_blank&#34;&gt;code generation&lt;/a&gt; another multiple headed dragon arises: an hydra!
+We have different options here: be the brave warrior in shiny armor that tries to cut all the heads of the hydra, built some machines that can fight for us and send them, or both built the machines AND fight.&lt;/p&gt;
+
+&lt;p&gt;Our code is invaluable, like our energies fighting the hydra.
+We need to carefully balance them and see how can we use for the BEST.&lt;/p&gt;
+
+&lt;p&gt;Writing manual code is good, it is generally what is done, but it is slow and error prone.
+Going data-driven can be fast, but can give you a sense of losing control (not personally, but I heard few people saying that).
+Only generating code can quickly become a recipe for disaster: so many particular use cases need attention, that the code could be come a different kind of mess.&lt;/p&gt;
+
+&lt;p&gt;We will try to go down the route of code generation mixed with data-driven.
+As I wrote in my previous articles, it is a fine line and can be good to know when to go in which direction!&lt;/p&gt;
+
+&lt;p&gt;I will divide the article in 2 parts.
+The first part (this one) will contain the new Shader Code Generator to generate shader permutations and add include support to GLSL.
+The second will require a low-level rendering library and will show Code Generation of more CPU areas of Rendering, the real goal of all these articles!&lt;/p&gt;
+
+&lt;p&gt;The code is available here:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering&#34; target=&#34;_blank&#34;&gt;https://github.com/JorenJoestar/DataDrivenRendering&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&#34;effect-file-structure&#34;&gt;Effect file structure&lt;/h1&gt;
+
+&lt;p&gt;Looking at effects, the first thing to do is to define a file that will represent our shaders. My choice is to create a simple language to embed shaders code and generate the CPU code necessary to render it.&lt;/p&gt;
+
+&lt;h2 id=&#34;why-not-using-json&#34;&gt;Why not using Json ?&lt;/h2&gt;
+
+&lt;p&gt;While it is an amazing data-format, I still want a bigger degree of control of what to parse and what to generate.
+The decision is based on the fact that by writing a parser for the language, I can automate some code-generation that would be more intricate with Json.
+Also, this series itself is a personal exploration on the topic, so using Json was not an option for this level of complexity.&lt;/p&gt;
+
+&lt;h2 id=&#34;the-hfx-format&#34;&gt;The HFX Format&lt;/h2&gt;
+
+&lt;p&gt;HFX (Hydra Effects) is a new language we will define to write out shaders.
+The first iteration will be barebone - it will simply be a shader permutation generator - but it will be the foundation to extensions that will allow us to write CPU rendering code that we want to automate.&lt;/p&gt;
+
+&lt;p&gt;In defining the format, there will be few keywords that will be defined, but the general architecture will make straightforward to copy-paste shader code fragments from any language into the HFX language.
+We will use the following keywords (and concepts).&lt;/p&gt;
+
+&lt;h3 id=&#34;shader&#34;&gt;Shader&lt;/h3&gt;
+
+&lt;p&gt;The root of a shader effect. It will contain everything we are writing.&lt;/p&gt;
+
+&lt;h3 id=&#34;glsl-hlsl&#34;&gt;Glsl/Hlsl&lt;/h3&gt;
+
+&lt;p&gt;These will define the actual shader code, enclosed fragments. Fragments can be composed and reused.
+For Glsl in particular, code fragments needs to be embedded in defines for each stage. More on that later.&lt;/p&gt;
+
+&lt;h3 id=&#34;pass-technique-variant&#34;&gt;Pass, Technique, Variant&lt;/h3&gt;
+
+&lt;p&gt;This is the central part for the effects to work. I&amp;rsquo;ve researched a bit, between &lt;a href=&#34;https://docs.microsoft.com/en-us/windows/win32/direct3d9/using-an-effect&#34; target=&#34;_blank&#34;&gt;Microsoft effects&lt;/a&gt;, &lt;a href=&#34;https://docs.unity3d.com/Manual/SL-Shader.html&#34; target=&#34;_blank&#34;&gt;Unity effects&lt;/a&gt;, &lt;a href=&#34;https://github.com/BastiaanOlij/shader_tutorial/blob/master/shaders/water_3d/depth_buffer/depth_buffer_textured.shader&#34; target=&#34;_blank&#34;&gt;Godot&lt;/a&gt; and &lt;a href=&#34;http://advances.realtimerendering.com/destiny/gdc_2017/&#34; target=&#34;_blank&#34;&gt;Bungie&lt;/a&gt; and the concepts are very similar, but they seem to differ a little and also each implementation becomes very engine-specific of course.&lt;br&gt;
+The presentation by Bungie is amazing and their system is by far the more extensive and complex, we will work on a much simpler shader effect system.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s define a pass as a combination of shader code for at least one stage of the shader pipeline. For example a single compute shader or a couple vertex-fragment shader.&lt;/p&gt;
+
+&lt;p&gt;Variants and techniques are loose concept to help separating shader paths.
+For example a &lt;em&gt;variant&lt;/em&gt; could be a different post-process shader, like different implementations of SSAO.&lt;/p&gt;
+
+&lt;p&gt;A technique could be a whole set of passes that target a specific platform.&lt;/p&gt;
+
+&lt;p&gt;Not having my mind set on those still, I will omit them for now, as they are concepts that are less central than the code generation, and can be very subjective opinion-wise.
+Possibly I&amp;rsquo;ll get them in part 2.&lt;/p&gt;
+
+&lt;h3 id=&#34;properties&#34;&gt;Properties&lt;/h3&gt;
+
+&lt;p&gt;Final piece of the puzzle. This will define the resources used by the shader effect on a per-effect level.
+Keeping an eye on the newer rendering APIs (DX12 and Vulkan) this defines also the layout of the resources and how they are used.
+Possibly the most intense part from an automation possibility (and thus code-generation).
+We will define this in part 2 of this article.&lt;/p&gt;
+
+&lt;h1 id=&#34;high-level-workflow&#34;&gt;High level workflow&lt;/h1&gt;
+
+&lt;p&gt;From a high level perspective what will happen in all this code is enclosed in this code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;text = ReadEntireFileIntoMemory( &amp;quot;..\\data\\SimpleFullscreen.hfx&amp;quot;, nullptr );
+initLexer( &amp;amp;lexer, (char*)text );
+
+hfx::Parser effect_parser;
+hfx::initParser( &amp;amp;effect_parser, &amp;amp;lexer );
+hfx::generateAST( &amp;amp;effect_parser );
+
+hfx::CodeGenerator hfx_code_generator;
+hfx::initCodeGenerator( &amp;amp;hfx_code_generator, &amp;amp;effect_parser, 4096 );
+hfx::generateShaderPermutations( &amp;amp;hfx_code_generator, &amp;quot;..\\data\\&amp;quot; );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We separated the &lt;em&gt;Lexer&lt;/em&gt; from the &lt;em&gt;Parser&lt;/em&gt; so we can reuse the lexer functionalities, thus we can reuse it from the previous example (parsing the HydraDataFormat files).&lt;br&gt;
+Then we initialize the &lt;em&gt;Parser&lt;/em&gt; and &lt;em&gt;generate the AST&lt;/em&gt;. This will save all the passes and code fragments we defined in the HFX file.&lt;br&gt;
+Finally we will get the parsing informations and give them to the &lt;em&gt;code generator&lt;/em&gt;, that will write out the files for each pass and stage.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s dig into the example!&lt;/p&gt;
+
+&lt;h1 id=&#34;parser-welcome-hfx&#34;&gt;Parser: welcome HFX!&lt;/h1&gt;
+
+&lt;p&gt;In most rendering-API (OpenGL, Vulkan, Direct3D12, &amp;hellip;) shaders are compiled by compiling the individual stages (vertex, fragment, compute, geometry, &amp;hellip;) and in some APIs (especially the newer ones) are compiled into a &lt;strong&gt;Shader State&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;As first step of this shader language, single shader files will be created by the &lt;em&gt;shader generation&lt;/em&gt; method in our code.&lt;/p&gt;
+
+&lt;p&gt;We will define a simple fullscreen HFX with &lt;em&gt;code fragments&lt;/em&gt; and &lt;em&gt;passes&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;First, we define the root shader (SimpleFullscreen.hfx, under folder &amp;lsquo;data&amp;rsquo;):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;shader SimpleFullscreen {
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is simply the container for all the code and passes that will define the shader effect.&lt;/p&gt;
+
+&lt;p&gt;Now we need some actual code, so we can define a shader fragment.&lt;br&gt;
+The keyword used in our language is &lt;strong&gt;glsl&lt;/strong&gt; followed by a name and an open brace:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;glsl ToScreen {
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This will define a &lt;strong&gt;code fragment&lt;/strong&gt; named &lt;em&gt;ToScreen&lt;/em&gt;, that can be referenced from the passes.&lt;br&gt;
+Next we use a glsl trick to &lt;em&gt;signal our parser to use includes&lt;/em&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#pragma include &amp;quot;Platform.h&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This #pragma is actually ignored by the compiler, but will be used by the parser to actually add the include!&lt;br&gt;
+BEWARE: this code will be included in BOTH &lt;em&gt;vertex&lt;/em&gt; and &lt;em&gt;fragment&lt;/em&gt; program!&lt;br&gt;
+Anything outside of the VERTEX/FRAGMENT/COMPUTE macros will be, and this is done on purpose, like defining an interpolator struct only once or for common includes.&lt;/p&gt;
+
+&lt;p&gt;Next we define the vertex program.&lt;br&gt;
+BEWARE: vertex only code must be enclosed in &lt;strong&gt;VERTEX&lt;/strong&gt; define!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#if defined VERTEX
+
+out vec4 vTexCoord;
+
+void main() {
+
+   vTexCoord.xy = vec2((gl_VertexID &amp;lt;&amp;lt; 1) &amp;amp; 2, gl_VertexID &amp;amp; 2);
+   vTexCoord.zw = vTexCoord.xy;
+   gl_Position = vec4(vTexCoord.xy * 2.0f + -1.0f, 0.0f, 1.0f);
+}
+
+#endif // VERTEX
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This code is a simple fullscreen triangle that does not require any vertex buffer, but uses the vertex id to draw. Nothing fancy.&lt;/p&gt;
+
+&lt;p&gt;Next is the fragment program, and again enclosed in &lt;strong&gt;FRAGMENT&lt;/strong&gt; define:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#if defined FRAGMENT
+
+in vec4 vTexCoord;
+
+out vec4 outColor;
+
+layout(binding=0) uniform sampler2D input_texture;
+
+void main() {
+
+    vec3 color = texture2D(input_texture, vTexCoord.xy).xyz;
+    outColor = vec4(color, 1);
+}
+
+#endif // FRAGMENT
+
+} // glsl ToScreen
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This code simply reads a texture and outputs it to the screen.&lt;/p&gt;
+
+&lt;p&gt;We defined the code fragment ToScreen, containing both a vertex and a fragment program, and now we can actually generate the permutation that we need.&lt;br&gt;
+The code for this in our effect file is:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;pass ToScreen {
+   vertex = ToScreen
+   fragment = ToScreen
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We are simply defining a pass with the vertex and fragment program defined in the ToScreen code fragment (yes I don&amp;rsquo;t like this term too).&lt;/p&gt;
+
+&lt;p&gt;Running the &lt;strong&gt;code generator&lt;/strong&gt; on this simple effect file will generate the two files ToScreen.vert and ToScreen.frag.&lt;/p&gt;
+
+&lt;p&gt;These can be read directly into your favourite OpenGL renderer and used as is!&lt;/p&gt;
+
+&lt;h2 id=&#34;the-parser&#34;&gt;The Parser&lt;/h2&gt;
+
+&lt;p&gt;Now that we have defined the effect and we know what is the outcome of generating code from the effect file, let&amp;rsquo;s look into the different component of the parser and code generator needed.&lt;/p&gt;
+
+&lt;p&gt;By design, we chose the Lexer to know nothing about the language, so that we can use it between different languages.
+The entry point to parse the effect is the method generateAST:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void generateAST( Parser* parser ) {
+
+    // Read source text until the end.
+    // The main body can be a list of declarations.
+    bool parsing = true;
+
+    while ( parsing ) {
+
+        Token token;
+        nextToken( parser-&amp;gt;lexer, token );
+
+        switch ( token.type ) {
+
+            case Token::Token_Identifier:
+            {
+                identifier( parser, token );
+                break;
+            }
+
+            case Token::Type::Token_EndOfStream:
+            {
+                parsing = false;
+                break;
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This code simply process the file -  using the lexer -  until the end of it, and reads only identifiers.&lt;br&gt;
+It is the same as the previous article and the previous parser. What changes drastically is the &lt;strong&gt;identifier&lt;/strong&gt; method!&lt;br&gt;
+We will have 3 different set of identifiers, usable in different parts of the HFX file:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Main identifiers, &amp;lsquo;shader&amp;rsquo;, &amp;lsquo;glsl&amp;rsquo;, &amp;lsquo;pass&amp;rsquo;&lt;/li&gt;
+&lt;li&gt;Pass identifiers, &amp;lsquo;compute&amp;rsquo;, &amp;lsquo;vertex&amp;rsquo;, &amp;lsquo;fragment&amp;rsquo;&lt;/li&gt;
+&lt;li&gt;Directive identifiers, &amp;lsquo;if defined&amp;rsquo;, &amp;lsquo;pragma include&amp;rsquo;, &amp;lsquo;endif&amp;rsquo;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Let&amp;rsquo;s have a look at the code for parsing the main identifiers:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;inline void identifier( Parser* parser, const Token&amp;amp; token ) {
+
+    // Scan the name to know which 
+    for ( uint32_t i = 0; i &amp;lt; token.text.length; ++i ) {
+        char c = *(token.text.text + i);
+
+        switch ( c ) {
+            case &#39;s&#39;:
+            {
+                if ( expectKeyword( token.text, 6, &amp;quot;shader&amp;quot; ) ) {
+                    declarationShader( parser );
+                    return;
+                }
+
+                break;
+            }
+
+            case &#39;g&#39;:
+            {
+                if ( expectKeyword( token.text, 4, &amp;quot;glsl&amp;quot; ) ) {
+                    declarationGlsl( parser );
+                    return;
+                }
+                break;
+            }
+
+            case &#39;p&#39;:
+            {
+                if ( expectKeyword( token.text, 4, &amp;quot;pass&amp;quot; ) ) {
+                    declarationPass( parser );
+                    return;
+                }
+                break;
+            }
+
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This code simply defers the parsing of a particular identifier using the &lt;strong&gt;declaration&lt;/strong&gt; method corresponding to the identifier.
+We will look into detail on each method.&lt;/p&gt;
+
+&lt;h3 id=&#34;parsing-shader&#34;&gt;Parsing &amp;lsquo;shader&amp;rsquo;&lt;/h3&gt;
+
+&lt;p&gt;We are parsing now the following part from the HFX file:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// HFX
+
+shader SimpleFullscreen {
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is the entry point of the effect itself.&lt;br&gt;
+What should the parser do here ?&lt;br&gt;
+Simply iterate through the main identifiers, &amp;lsquo;glsl&amp;rsquo; and &amp;lsquo;pass&amp;rsquo;.&lt;br&gt;
+Technically I could have separated the methods to have one with parsing shader only and the others parsing &amp;lsquo;glsl&amp;rsquo; and &amp;lsquo;pass&amp;rsquo;, but did not want to complicate the code further.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s look at how we parse the identifier &amp;lsquo;shader&amp;rsquo;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// C++
+
+inline void declarationShader( Parser* parser ) {
+    // Parse name
+    Token token;
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_OpenBrace ) ) {
+        return;
+    }
+
+    while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        identifier( parser, token );
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As the previous article&amp;rsquo;s code, this will get the tokens from the lexer and generate data if the syntax is correct.&lt;br&gt;
+When we enter the method the Lexer will be just at the beginning of the name (SimpleFullscreen), so the code will parse the name, the open brace, and parse everything else until it encounter the close brace.&lt;/p&gt;
+
+&lt;p&gt;The method identifier will parse also identifiers &amp;lsquo;glsl&amp;rsquo; and &amp;lsquo;pass&amp;rsquo;.&lt;/p&gt;
+
+&lt;h3 id=&#34;parsing-glsl&#34;&gt;Parsing &amp;lsquo;glsl&amp;rsquo;&lt;/h3&gt;
+
+&lt;p&gt;This is the most complex parsing in the code.&lt;br&gt;
+I will put both the HFX part and C++ code so hopefully it will be clearer what the parser is doing and why.&lt;/p&gt;
+
+&lt;p&gt;As a refresh and reference, this is the &lt;strong&gt;code fragment&lt;/strong&gt; ToScreen defined in SimpleFullscreen.hfx:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// HFX
+
+glsl ToScreen {
+
+    #pragma include &amp;quot;Platform.h&amp;quot;
+
+    #if defined VERTEX
+    out vec4 vTexCoord;
+
+    void main() {
+
+        vTexCoord.xy = vec2((gl_VertexID &amp;lt;&amp;lt; 1) &amp;amp; 2, gl_VertexID &amp;amp; 2);
+        vTexCoord.zw = vTexCoord.xy;
+
+        gl_Position = vec4(vTexCoord.xy * 2.0f + -1.0f, 0.0f, 1.0f);
+    }
+    #endif // VERTEX
+
+    #if defined FRAGMENT
+
+    in vec4 vTexCoord;
+
+    out vec4 outColor;
+
+    layout(binding=0) uniform sampler2D input_texture;
+
+    void main() {
+        vec3 color = texture2D(input_texture, vTexCoord.xy).xyz;
+        outColor = vec4(1, 1, 0, 1);
+        outColor = vec4(color, 1);
+    }
+    #endif // FRAGMENT
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let&amp;rsquo;s start from the beginning.&lt;br&gt;
+When the parser finds the &amp;lsquo;glsl&amp;rsquo; keyword in the identifier method:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// C++
+
+case &#39;g&#39;:
+{
+    if ( expectKeyword( token.text, 4, &amp;quot;glsl&amp;quot; ) ) {
+        declarationGlsl( parser );
+        return;
+    }
+    break;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It calls the method &lt;strong&gt;void declarationGlsl( Parser* parser )&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;The lexer reading the HFX is after the glsl keyword when entering the method, just before the ToScreen identifier:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// HFX
+
+glsl (Here!)ToScreen {
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let&amp;rsquo;s see the C++ code step by step.&lt;br&gt;
+First parsing the name &amp;lsquo;ToScreen&amp;rsquo;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// C++
+
+inline void declarationGlsl( Parser* parser ) {
+
+    // Parse name
+    Token token;
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;as seen in other methods as well.&lt;br&gt;
+We are defining a new &lt;strong&gt;code fragment&lt;/strong&gt;, thus we need to initialize it. There is tracking of the #ifdef depths to manage when some code must be included in a code fragment and when not:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    CodeFragment code_fragment = {};
+    // Cache name string
+    code_fragment.name = token.text;
+
+    for ( size_t i = 0; i &amp;lt; CodeFragment::Count; i++ ) {
+        code_fragment.stage_ifdef_depth[i] = 0xffffffff;
+    }
+
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_OpenBrace ) ) {
+        return;
+    }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Next is simply arriving at the first token that contains all the glsl code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    // Advance token and cache the starting point of the code.
+    nextToken( parser-&amp;gt;lexer, token );
+    code_fragment.code = token.text;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And now some more parsing craftmanship.&lt;br&gt;
+We cannot use anymore the simple check to end parsing when encountering a closed brace, because there can be different structs defined that will break that mechanism.&lt;br&gt;
+Instead we track the number of open braces and when we close the last one, we consider finished the parsing of the &lt;strong&gt;code fragment&lt;/strong&gt;!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    uint32_t open_braces = 1;
+
+    // Scan until close brace token
+    while ( open_braces ) {
+
+        if ( token.type == Token::Token_OpenBrace )
+            ++open_braces;
+        else if ( token.type == Token::Token_CloseBrace )
+            --open_braces;
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The only token that we care inside the code fragment is the &lt;strong&gt;hash&lt;/strong&gt;, signalling either an include or a define, used for separating &lt;em&gt;per-stage code&lt;/em&gt;.&lt;br&gt;
+The parsing of the &lt;em&gt;hash&lt;/em&gt; token will be done inside the &lt;strong&gt;directiveIdentifier&lt;/strong&gt; method:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;        // Parse hash for includes and defines
+        if ( token.type == Token::Token_Hash ) {
+            // Get next token and check which directive is
+            nextToken( parser-&amp;gt;lexer, token );
+
+            directiveIdentifier( parser, token, code_fragment );
+        }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Before diving deep into the &lt;strong&gt;directive identifiers&lt;/strong&gt;, let&amp;rsquo;s finish the main parsing routine.&lt;br&gt;
+We advance to the next token until we close all the braces, and then save the text length of all the code fragment:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;        nextToken( parser-&amp;gt;lexer, token );
+    }
+    
+    // Calculate code string length
+    code_fragment.code.length = token.text.text - code_fragment.code.text;
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Final step is to save the newly parsed code fragment into the parser data:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    parser-&amp;gt;code_fragments.emplace_back( code_fragment );
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can now dive deep into the parsing of directives, namely #if defined, #pragma include and #endif.&lt;/p&gt;
+
+&lt;h4 id=&#34;parsing-if-defined&#34;&gt;Parsing &amp;lsquo;#if defined&amp;rsquo;&lt;/h4&gt;
+
+&lt;p&gt;When we encounter the &lt;strong&gt;Hash&lt;/strong&gt; token within the &lt;strong&gt;glsl&lt;/strong&gt; part, we need to parse further to understand the other keywords.&lt;br&gt;
+&lt;strong&gt;#if defined&lt;/strong&gt; is the most important directive for us, because it will tell the parser which &lt;strong&gt;shader stage&lt;/strong&gt; we are parsing currently and thus where to direct the text!&lt;br&gt;
+It starts from a common/shared stage, for shared code, and when encounters a #if defined it can signal a stage specific code.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Namely when parsing the following line in HFX:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// HFX
+
+#(Here!)if defined VERTEX
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The parser needs to check 2 other identifiers. Remember that the parser is currently AFTER the &lt;strong&gt;Hash&lt;/strong&gt; token, as beautifully written in the previous snippet!&lt;br&gt;
+Let&amp;rsquo;s look at the code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// C++
+
+inline void directiveIdentifier( Parser* parser, const Token&amp;amp; token, CodeFragment&amp;amp; code_fragment ) {
+    
+    Token new_token;
+    for ( uint32_t i = 0; i &amp;lt; token.text.length; ++i ) {
+        char c = *(token.text.text + i);
+
+        switch ( c ) {
+            case &#39;i&#39;:
+            {
+                // Search for the pattern &#39;if defined&#39;
+                if ( expectKeyword( token.text, 2, &amp;quot;if&amp;quot; ) ) {
+                    nextToken( parser-&amp;gt;lexer, new_token );
+
+                    if ( expectKeyword( new_token.text, 7, &amp;quot;defined&amp;quot; ) ) {
+                        nextToken( parser-&amp;gt;lexer, new_token );
+
+                        // Use 0 as not set value for the ifdef depth.
+                        ++code_fragment.ifdef_depth;
+
+                        if ( expectKeyword( new_token.text, 6, &amp;quot;VERTEX&amp;quot; ) ) {
+
+                            code_fragment.stage_ifdef_depth[CodeFragment::Vertex] = code_fragment.ifdef_depth;
+                            code_fragment.current_stage = CodeFragment::Vertex;
+                        }
+                        else if ( expectKeyword( new_token.text, 8, &amp;quot;FRAGMENT&amp;quot; ) ) {
+
+                            code_fragment.stage_ifdef_depth[CodeFragment::Fragment] = code_fragment.ifdef_depth;
+                            code_fragment.current_stage = CodeFragment::Fragment;
+                        }
+                        else if ( expectKeyword( new_token.text, 7, &amp;quot;COMPUTE&amp;quot; ) ) {
+
+                            code_fragment.stage_ifdef_depth[CodeFragment::Compute] = code_fragment.ifdef_depth;
+                            code_fragment.current_stage = CodeFragment::Compute;
+                        }
+                    }
+
+                    return;
+                }
+                break;
+            }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let&amp;rsquo;s dissect this code!&lt;/p&gt;
+
+&lt;p&gt;Starting from the current token, just after the &lt;strong&gt;#(Hash)&lt;/strong&gt;, we need to check the correct composition of the keywords.&lt;br&gt;
+We expect &amp;lsquo;if&amp;rsquo;, and then if found we go to the next token:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;if ( expectKeyword( token.text, 2, &amp;quot;if&amp;quot; ) ) {
+    nextToken( parser-&amp;gt;lexer, new_token );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We search for the &amp;lsquo;defined&amp;rsquo; identifier and if found we go to the next identifier:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;if ( expectKeyword( new_token.text, 7, &amp;quot;defined&amp;quot; ) ) {
+    nextToken( parser-&amp;gt;lexer, new_token );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The parser is currently here:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#if defined (Here!)VERTEX
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And thus the last step is to check which &lt;strong&gt;shader stage&lt;/strong&gt; is currently starting.
+This is done here:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;if ( expectKeyword( new_token.text, 6, &amp;quot;VERTEX&amp;quot; ) ) {
+
+    code_fragment.stage_ifdef_depth[CodeFragment::Vertex] = code_fragment.ifdef_depth;
+    code_fragment.current_stage = CodeFragment::Vertex;
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In this central piece of code, we set the current stage to Vertex (because we found the keyword &amp;lsquo;VERTEX&amp;rsquo;) and we save the current ifdef depth.&lt;br&gt;
+Why that ? &lt;br&gt;
+Because when we will parse #endif, we will do the same for the open/close braces depth in the main glsl parser: we want to be sure that the defines are paired correctly and we are saving the per-stage code in the correct way!&lt;br&gt;
+This will be more clear when we see the #endif parsing.&lt;/p&gt;
+
+&lt;p&gt;Moving on, we will do the same for all the other keywords (&amp;lsquo;FRAGMENT&amp;rsquo; and &amp;lsquo;COMPUTE&amp;rsquo; for now):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;else if ( expectKeyword( new_token.text, 8, &amp;quot;FRAGMENT&amp;quot; ) ) {
+
+    code_fragment.stage_ifdef_depth[CodeFragment::Fragment] = code_fragment.ifdef_depth;
+    code_fragment.current_stage = CodeFragment::Fragment;
+}
+else if ( expectKeyword( new_token.text, 7, &amp;quot;COMPUTE&amp;quot; ) ) {
+
+    code_fragment.stage_ifdef_depth[CodeFragment::Compute] = code_fragment.ifdef_depth;
+    code_fragment.current_stage = CodeFragment::Compute;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And the parsing of &lt;strong&gt;#if defined&lt;/strong&gt; is over!&lt;br&gt;&lt;/p&gt;
+
+&lt;h4 id=&#34;parsing-pragma-include&#34;&gt;Parsing &amp;lsquo;#pragma include&amp;rsquo;&lt;/h4&gt;
+
+&lt;p&gt;In HFX we are parsing the following:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// HFX
+
+#pragma include &amp;quot;Platform.h&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;With the following code (inside &lt;em&gt;directiveIdentifier&lt;/em&gt; method):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// C++
+
+case &#39;p&#39;:
+{
+    if ( expectKeyword( token.text, 6, &amp;quot;pragma&amp;quot; ) ) {
+        nextToken( parser-&amp;gt;lexer, new_token );
+
+        if ( expectKeyword( new_token.text, 7, &amp;quot;include&amp;quot; ) ) {
+            nextToken( parser-&amp;gt;lexer, new_token );
+
+            code_fragment.includes.emplace_back( new_token.text );
+            code_fragment.includes_stage.emplace_back( code_fragment.current_stage );
+        }
+
+        return;
+    }
+    break;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is simply saving the filename after the include, that being surrounded by &amp;ldquo;&amp;rdquo; is classified as string, and is using the current stage to know which stage should include that file!&lt;br&gt;&lt;/p&gt;
+
+&lt;h4 id=&#34;parsing-endif&#34;&gt;Parsing &amp;lsquo;#endif&amp;rsquo;&lt;/h4&gt;
+
+&lt;p&gt;Final part is the &lt;strong&gt;#endif&lt;/strong&gt; identifier:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;case &#39;e&#39;:
+{
+    if ( expectKeyword( token.text, 5, &amp;quot;endif&amp;quot; ) ) {
+
+        if ( code_fragment.stage_ifdef_depth[CodeFragment::Vertex] == code_fragment.ifdef_depth ) {
+            
+            code_fragment.stage_ifdef_depth[CodeFragment::Vertex] = 0xffffffff;
+            code_fragment.current_stage = CodeFragment::Common;
+        }
+        else if ( code_fragment.stage_ifdef_depth[CodeFragment::Fragment] == code_fragment.ifdef_depth ) {
+
+            code_fragment.stage_ifdef_depth[CodeFragment::Fragment] = 0xffffffff;
+            code_fragment.current_stage = CodeFragment::Common;
+        }
+        else if ( code_fragment.stage_ifdef_depth[CodeFragment::Compute] == code_fragment.ifdef_depth ) {
+
+            code_fragment.stage_ifdef_depth[CodeFragment::Compute] = 0xffffffff;
+            code_fragment.current_stage = CodeFragment::Common;
+        }
+
+        --code_fragment.ifdef_depth;
+
+        return;
+    }
+    break;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is mirroring the &lt;strong&gt;#if defined&lt;/strong&gt; and simply goes back to set the current stage to common/shared and reset the per-stage ifdef depth.&lt;/p&gt;
+
+&lt;p&gt;We can now proceed to the final part of the parsing, the &lt;strong&gt;passes&lt;/strong&gt;!&lt;br&gt;
+This is the glue to generate the different files from the code fragments.&lt;/p&gt;
+
+&lt;h3 id=&#34;parsing-pass&#34;&gt;Parsing &amp;lsquo;pass&amp;rsquo;&lt;/h3&gt;
+
+&lt;p&gt;Reading the HFX file, we are now in the final part of the file:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// HFX
+
+pass ToScreen {
+   vertex = ToScreen
+   fragment = ToScreen
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;A pass is simply a collection of &lt;strong&gt;code fragments&lt;/strong&gt; associated with each shader stage (vertex, fragment, compute).&lt;br&gt;
+When we parsed the fragments, we saved them in the parser to be retrieved.&lt;/p&gt;
+
+&lt;p&gt;To refresh our memory, this is the actual &lt;strong&gt;Pass struct&lt;/strong&gt; in C++:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// C++
+
+struct Pass {
+
+    StringRef                   name;
+
+    const CodeFragment*         vs                  = nullptr;
+    const CodeFragment*         fs                  = nullptr;
+    const CodeFragment*         cs                  = nullptr;
+
+}; // struct Pass
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Going back to the main directive method, we call the &lt;strong&gt;declarationPass&lt;/strong&gt; method when we encounter the &amp;lsquo;pass&amp;rsquo; identifier.&lt;br&gt;
+We will parse the following line:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// HFX
+
+pass ToScreen {
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;With the following code (similar to everything else, it should be easier to read now):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// C++
+
+inline void declarationPass( Parser* parser ) {
+
+    Token token;
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    Pass pass = {};
+    // Cache name string
+    pass.name = token.text;
+
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_OpenBrace ) ) {
+        return;
+    }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;After we saved the pass name we can start reading the individual stages using the &lt;strong&gt;passIdentifier&lt;/strong&gt; method:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+        passIdentifier( parser, token, pass );
+    }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And then save the newly parsed pass.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    parser-&amp;gt;passes.emplace_back( pass );
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;For each identifier now, we will check which stage we are parsing.&lt;br&gt;
+Currently we are here, after the open brace and all the whitespace:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// HFX
+
+pass ToScreen {
+   (Here!)vertex = ToScreen
+   fragment = ToScreen
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;What is next is thus checking the identifier and filling the corresponding &lt;strong&gt;shader stage&lt;/strong&gt; of the &lt;strong&gt;pass&lt;/strong&gt;.&lt;br&gt;
+I will post all the code of the method, because is similar to most code we seen and should be straightforward:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// C++
+
+inline void passIdentifier( Parser* parser, const Token&amp;amp; token, Pass&amp;amp; pass ) {
+    // Scan the name to know which stage we are parsing    
+    for ( uint32_t i = 0; i &amp;lt; token.text.length; ++i ) {
+        char c = *(token.text.text + i);
+
+        switch ( c ) {
+            
+            case &#39;c&#39;:
+            {
+                if ( expectKeyword( token.text, 7, &amp;quot;compute&amp;quot;) ) {
+                    declarationShaderStage( parser, &amp;amp;pass.cs );
+                    return;
+                }
+                break;
+            }
+
+            case &#39;v&#39;:
+            {
+                if ( expectKeyword( token.text, 6, &amp;quot;vertex&amp;quot; ) ) {
+                    declarationShaderStage( parser, &amp;amp;pass.vs );
+                    return;
+                }
+                break;
+            }
+
+            case &#39;f&#39;:
+            {
+                if ( expectKeyword( token.text, 8, &amp;quot;fragment&amp;quot; ) ) {
+                    declarationShaderStage( parser, &amp;amp;pass.fs );
+                    return;
+                }
+                break;
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The real &amp;lsquo;magic&amp;rsquo; here is the &amp;lsquo;declarationShaderStage&amp;rsquo; method.&lt;br&gt;
+This method parses the couple &amp;lsquo;identifier&amp;rsquo; &amp;lsquo;=&amp;rsquo; &amp;lsquo;identifier&amp;rsquo;, and searches the &lt;strong&gt;code fragment&lt;/strong&gt; with the same name:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;inline void declarationShaderStage( Parser* parser, const CodeFragment** out_fragment ) {
+
+    Token token;
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Equals ) ) {
+        return;
+    }
+
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    *out_fragment = findCodeFragment( parser, token.text );
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;After all the stages of the current pass are parsed, we save the pass and finish parsing the file!&lt;br&gt;&lt;/p&gt;
+
+&lt;h1 id=&#34;shader-permutation-generation&#34;&gt;Shader Permutation Generation&lt;/h1&gt;
+
+&lt;p&gt;The final step of this amazing journey is the simplest, and it is actually to generate the single files we need.&lt;br&gt;
+In our case another specific class, &lt;strong&gt;CodeGenerator&lt;/strong&gt;, will generate the different files from the parsed HFX file.&lt;/p&gt;
+
+&lt;p&gt;After we&amp;rsquo;ve done with the parsing, we can call the &lt;strong&gt;generateShaderPermutations&lt;/strong&gt; method that will generate files for each shader stage in each pass:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void generateShaderPermutations( CodeGenerator* code_generator, const char* path ) {
+
+    code_generator-&amp;gt;string_buffer_0.clear();
+    code_generator-&amp;gt;string_buffer_1.clear();
+    code_generator-&amp;gt;string_buffer_2.clear();
+
+    // For each pass and for each pass generate permutation file.
+    const uint32_t pass_count = (uint32_t)code_generator-&amp;gt;parser-&amp;gt;passes.size();
+    for ( uint32_t i = 0; i &amp;lt; pass_count; i++ ) {
+
+        // Create one file for each code fragment
+        const Pass&amp;amp; pass = code_generator-&amp;gt;parser-&amp;gt;passes[i];
+        
+        if ( pass.cs ) {
+            outputCodeFragment( code_generator, path, CodeFragment::Compute, pass.cs );
+        }
+
+        if ( pass.fs ) {
+            outputCodeFragment( code_generator, path, CodeFragment::Fragment, pass.fs );
+        }
+
+        if ( pass.vs ) {
+            outputCodeFragment( code_generator, path, CodeFragment::Vertex, pass.vs );
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The code should be straightforward, and the real action happens into the &lt;strong&gt;outputCodeFragment&lt;/strong&gt; method.&lt;br&gt;
+Let&amp;rsquo;s have a look at the code.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;First we define some data, like the file extensions for each shader stage or the defines to compile the code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// Additional data to be added to output shaders.
+static const char*              s_shader_file_extension[CodeFragment::Count] = { &amp;quot;.vert&amp;quot;, &amp;quot;.frag&amp;quot;, &amp;quot;.compute&amp;quot;, &amp;quot;.h&amp;quot; };
+static const char*              s_shader_stage_defines[CodeFragment::Count] = { &amp;quot;#define VERTEX\r\n&amp;quot;, &amp;quot;#define FRAGMENT\r\n&amp;quot;, &amp;quot;#define COMPUTE\r\n&amp;quot;, &amp;quot;&amp;quot; };
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then we start to write the file.&lt;br&gt;
+We will use the &lt;em&gt;string_buffer_0&lt;/em&gt; to dynamically generate the path of the file without allocating memory:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void outputCodeFragment( CodeGenerator* code_generator, const char* path, CodeFragment::Stage stage, const CodeFragment* code_fragment ) {
+    // Create file
+    FILE* output_file;
+
+    code_generator-&amp;gt;string_buffer_0.clear();
+    code_generator-&amp;gt;string_buffer_0.append( path );
+    code_generator-&amp;gt;string_buffer_0.append( code_fragment-&amp;gt;name );
+    code_generator-&amp;gt;string_buffer_0.append( s_shader_file_extension[stage] );
+    fopen_s( &amp;amp;output_file, code_generator-&amp;gt;string_buffer_0.data, &amp;quot;wb&amp;quot; );
+
+    if ( !output_file ) {
+        printf( &amp;quot;Error opening file. Aborting. \n&amp;quot; );
+        return;
+    }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And then use &lt;em&gt;string_buffer_1&lt;/em&gt; to instead generate the actual code into the file.&lt;br&gt;
+First, and most important, we will add all the includes for this particular stage by opening the file, reading it into memory and adding it into the final code buffer.&lt;/p&gt;
+
+&lt;p&gt;We will still use &lt;em&gt;string_buffer_0&lt;/em&gt; to generate the path of the file:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    code_generator-&amp;gt;string_buffer_1.clear();
+
+    // Append includes for the current stage.
+    for ( size_t i = 0; i &amp;lt; code_fragment-&amp;gt;includes.size(); i++ ) {
+        if ( code_fragment-&amp;gt;includes_stage[i] != stage &amp;amp;&amp;amp; code_fragment-&amp;gt;includes_stage[i] != CodeFragment::Common ) {
+            continue;
+        }
+
+        // Open and read file
+        code_generator-&amp;gt;string_buffer_0.clear();
+        code_generator-&amp;gt;string_buffer_0.append( path );
+        code_generator-&amp;gt;string_buffer_0.append( code_fragment-&amp;gt;includes[i] );
+        char* include_code = ReadEntireFileIntoMemory( code_generator-&amp;gt;string_buffer_0.data, nullptr );
+
+        code_generator-&amp;gt;string_buffer_1.append( include_code );
+        code_generator-&amp;gt;string_buffer_1.append( &amp;quot;\r\n&amp;quot; );
+    }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;After that is done we can copy the define needed for the current shader stage:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    code_generator-&amp;gt;string_buffer_1.append( &amp;quot;\t\t&amp;quot; );
+    code_generator-&amp;gt;string_buffer_1.append( s_shader_stage_defines[stage] );
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And finally the actual code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    code_generator-&amp;gt;string_buffer_1.append( &amp;quot;\r\n\t\t&amp;quot; );
+    code_generator-&amp;gt;string_buffer_1.append( code_fragment-&amp;gt;code );
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Write to file and close it and we are done!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    fprintf( output_file, &amp;quot;%s&amp;quot;, code_generator-&amp;gt;string_buffer_1.data );
+
+    fclose( output_file );
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And this will generate the shader permutations for each pass with a single file, using the standard GLSL convention for files extensions.&lt;/p&gt;
+
+&lt;h1 id=&#34;conclusions-and-next-part&#34;&gt;Conclusions and next part&lt;/h1&gt;
+
+&lt;p&gt;We parsed our simple &lt;em&gt;shader language&lt;/em&gt; to enhance and embed &lt;em&gt;glsl&lt;/em&gt; code fragments into our codebase by generating single files that can be used into any OpenGL based renderer.&lt;br&gt;
+We also laid out the foundation for a more powerful tool - namely code generation - even though there are some intermediate steps to be taken to arrive there.&lt;br&gt;
+First of all, we will need a target rendering library (something like the amazing &lt;a href=&#34;https://github.com/floooh/sokol&#34; target=&#34;_blank&#34;&gt;Sokol&lt;/a&gt;), so we can specialize our CPU rendering code. I already wrote something like Sokol but with a more Vulkan/D3D12 interface in mind, and I will use that. Still unsure if I will write a specific post on that.&lt;/p&gt;
+
+&lt;p&gt;In the next article we will add support for the new graphics library and develop the language more to generate code that will manage Constant buffers, automatically creating a CPU-side class, adding UI to edit it in realtime and possibly load/save the values.&lt;/p&gt;
+
+&lt;p&gt;Of course, any feedback/improvements/suggestions on anything related here (article, code, etc) please let me know.&lt;/p&gt;
+
+&lt;p&gt;Stay tuned!
+   Gabriel&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Writing a simple Code Generator</title>

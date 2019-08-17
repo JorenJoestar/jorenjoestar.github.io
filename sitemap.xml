@@ -4,18 +4,23 @@
   
   <url>
     <loc>/</loc>
-    <lastmod>2019-07-27T18:46:03-04:00</lastmod>
+    <lastmod>2019-08-06T18:46:03-04:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>/post/</loc>
-    <lastmod>2019-07-27T18:46:03-04:00</lastmod>
+    <lastmod>2019-08-06T18:46:03-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/post/writing_shader_effect_language_1/</loc>
+    <lastmod>2019-08-06T13:04:15-04:00</lastmod>
   </url>
   
   <url>
     <loc>/post/writing_a_simple_code_generator/</loc>
-    <lastmod>2019-07-27T18:46:03-04:00</lastmod>
+    <lastmod>2019-08-06T18:46:03-04:00</lastmod>
   </url>
   
   <url>
