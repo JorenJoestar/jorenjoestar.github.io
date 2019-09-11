@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="generator" content="Source Themes Academic 4.4.0">
+
+  
+
+  
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="Gabriel Sassone">
+
+  
+  
+  
+    
+  
+  <meta name="description" content="Overview In Part 1 of this series we created a simple language to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features.
+The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.
+(Personal though: part of me would like to help in contributing to the creation of a standard through these articles and code.">
+
+  
+  <link rel="alternate" hreflang="en-us" href="/post/writing_shader_effect_language_2/">
+
+  
+
+
+  
+
+  
+  
+  
+  <meta name="theme-color" content="hsl(339, 90%, 68%)">
+  
+
+  
+  
+  
+  
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.6/css/academicons.min.css" integrity="sha256-uFVgMKfistnJAfoCUQigIl+JfUaP47GrRKjf6CTPVmw=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.0/css/all.css" integrity="sha384-aOkxzJ5uQz7WBObEZcHvV5JvRW3TUc2rNPA7pe3AwnsUohiw1Vj2Rgx2KSOkF5+h" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" integrity="sha256-ygkqlh3CYSUri3LhQxzdcm0n1EQvH2Y+U5S2idbLtxs=" crossorigin="anonymous">
+
+    
+    
+    
+      
+    
+    
+      
+      
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/ocean.min.css" crossorigin="anonymous" title="hl-light">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/ocean.min.css" crossorigin="anonymous" title="hl-dark" disabled>
+      
+    
+
+    
+
+    
+
+  
+
+  
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inconsolata&display=swap">
+  
+
+  
+  
+  
+  <link rel="stylesheet" href="/css/academic.min.b41b9fe0454a4bd580d2b410d3ba6be2.css">
+
+  
+
+  
+  
+  
+
+  
+
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="icon" type="image/png" href="/img/icon.png">
+  <link rel="apple-touch-icon" type="image/png" href="/img/icon-192.png">
+
+  <link rel="canonical" href="/post/writing_shader_effect_language_2/">
+
+  
+  
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary">
+  
+  <meta property="twitter:site" content="@GabrielSassone">
+  <meta property="twitter:creator" content="@GabrielSassone">
+  
+  <meta property="og:site_name" content="Joren&#39;s">
+  <meta property="og:url" content="/post/writing_shader_effect_language_2/">
+  <meta property="og:title" content="Writing a Shader Effect Language Part 2 | Joren&#39;s">
+  <meta property="og:description" content="Overview In Part 1 of this series we created a simple language to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features.
+The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.
+(Personal though: part of me would like to help in contributing to the creation of a standard through these articles and code."><meta property="og:image" content="/img/icon-192.png">
+  <meta property="twitter:image" content="/img/icon-192.png"><meta property="og:locale" content="en-us">
+  
+  <meta property="article:published_time" content="2019-08-18T23:47:13-04:00">
+  
+  <meta property="article:modified_time" content="2019-08-18T23:47:13-04:00">
+  
+
+  
+
+
+  
+
+
+
+
+
+  <title>Writing a Shader Effect Language Part 2 | Joren&#39;s</title>
+
+</head>
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="dark">
+
+  <aside class="search-results" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>Search</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="Search..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search">
+        
+      </div>
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+  
+<nav class="navbar navbar-light fixed-top navbar-expand-lg py-0 compensate-for-scrollbar" id="navbar-main">
+  <div class="container">
+
+    
+      <a class="navbar-brand" href="/">Joren&#39;s</a>
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+    
+    <div class="collapse navbar-collapse" id="navbar">
+
+      
+      
+      <ul class="navbar-nav mr-auto">
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#about"><span>Home</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#posts"><span>Posts</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#contact"><span>Contact</span></a>
+        </li>
+
+        
+        
+
+      
+      </ul>
+      <ul class="navbar-nav ml-auto">
+      
+
+        
+
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+
+        
+        <li class="nav-item">
+          <a class="nav-link js-dark-toggle" href="#"><i class="fas fa-moon" aria-hidden="true"></i></a>
+        </li>
+        
+
+      </ul>
+
+    </div>
+  </div>
+</nav>
+
+
+  <article class="article" itemscope itemtype="http://schema.org/Article">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1 itemprop="name">Writing a Shader Effect Language Part 2</h1>
+
+  
+
+  
+    
+
+
+
+<meta content="2019-08-18 23:47:13 -0400 EDT" itemprop="datePublished">
+<meta content="2019-08-18 23:47:13 -0400 EDT" itemprop="dateModified">
+
+<div class="article-metadata">
+
+  
+  
+
+  
+  <span class="article-date">
+    
+    
+      
+    
+    <time>2019-08-18</time>
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+    33 min read
+  </span>
+  
+
+  
+  
+  
+
+  
+  
+
+  
+    
+<div class="share-box" aria-hidden="true">
+  <ul class="share">
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://twitter.com/intent/tweet?url=/post/writing_shader_effect_language_2/&amp;text=Writing%20a%20Shader%20Effect%20Language%20Part%202" target="_blank" rel="noopener" class="share-btn-twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.facebook.com/sharer.php?u=/post/writing_shader_effect_language_2/&amp;t=Writing%20a%20Shader%20Effect%20Language%20Part%202" target="_blank" rel="noopener" class="share-btn-facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="mailto:?subject=Writing%20a%20Shader%20Effect%20Language%20Part%202&amp;body=/post/writing_shader_effect_language_2/" target="_blank" rel="noopener" class="share-btn-email">
+          <i class="fas fa-envelope"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.linkedin.com/shareArticle?url=/post/writing_shader_effect_language_2/&amp;title=Writing%20a%20Shader%20Effect%20Language%20Part%202" target="_blank" rel="noopener" class="share-btn-linkedin">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://reddit.com/submit?url=/post/writing_shader_effect_language_2/&amp;title=Writing%20a%20Shader%20Effect%20Language%20Part%202" target="_blank" rel="noopener" class="share-btn-reddit">
+          <i class="fab fa-reddit-alien"></i>
+        </a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+
+</div>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+</div>
+
+
+
+  <div class="article-container">
+
+    <div class="article-style" itemprop="articleBody">
+      
+
+<h1 id="overview">Overview</h1>
+
+<p>In <a href="https://jorenjoestar.github.io/post/writing_shader_effect_language_1/" target="_blank">Part 1 of this series</a> we created a simple <em>language</em> to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features.<br>
+The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.</p>
+
+<p><em>(Personal though: part of me would like to help in contributing to the creation of a standard through these articles and code.)</em></p>
+
+<p>What is the <strong>goal</strong> of this article ?</p>
+
+<p>The <strong>goal</strong> is to enrich the <strong>HFX language</strong> to generate more code possible and/or bake data for us, namely:</p>
+
+<ol>
+<li>Shader constants generation</li>
+<li>Shader resource bindings</li>
+<li>Render states (depth stencil, blend, rasterization)</li>
+<li>Render pass hints for a future framegraph</li>
+</ol>
+
+<p><strong>We will see Render States and Render Pass hints in a following article, because this is an already lengthy article!</strong></p>
+
+<p>I hope that by now the way of adding an identifier, parsing it and generating code is clearer.<br>
+In this article we will focus more on the features than anything else, even though I will put a lot of code still.<br>
+But before that, we need to have a big addition to our example: a rendering API!<br>
+We will use this as target of our code generation, and it will be an amazing example to see something working.</p>
+
+<p><em>Maybe this will spark a new FX Composer ?</em></p>
+
+<p>This article will be divided in 2 parts.<br>
+Part 1 of this article will talk about the rendering API.<br>
+Part 2 will be about the extended HFX language.<br>
+If you are not interested in that, jump to part 2 of this article.</p>
+
+<h1 id="part-1-adding-a-low-level-rendering-api">Part 1: adding a low-level rendering API</h1>
+
+<p>Writing articles on rendering without some sort of API to use is tricky.<br>
+Creating a language to speed up data driven rendering, either for generating code and/or for baking data <em>needs</em> a target API.<br>
+The main idea is to have an abstract API to map more easily rendering concepts instead of losing ourselves in specific API needs.</p>
+
+<h2 id="the-search-for-an-abstract-api">The search for an abstract API</h2>
+
+<p>The first thing to do is to search for an existing abstract API.<br>
+I have few criteria in mind:</p>
+
+<ul>
+<li>Simple and clear interface</li>
+<li>Compact and clear code</li>
+<li>Vulkan and D3D12 interface</li>
+</ul>
+
+<p>With those in mind, I found 2 alternatives: <a href="https://github.com/bkaradzic/bgfx" target="_blank">BGFX</a> and <a href="https://github.com/floooh/sokol" target="_blank">Sokol</a>.</p>
+
+<p>I am an honest fan of both, they are brilliant, robust and well written.<br>
+But for the purpose of these articles, sadly they miss my search criteria.<br>
+There is also a <strong>huge disclaimer</strong> here: I used them too little, so it is possible I overlooked the usage of them.<br>
+I will be more than glad to use either instead of my toy API!<br>
+I respect the developers and the library a lot, they are doing an amazing job!<br>
+But we are handcrafting something, and to properly do that I personally need to know deeply the code. And I am not.</p>
+
+<p>BGFX is very complete, but the interface is a little confusing for me, possibly because I never used it but just read the code few times.<br>
+The main reason I chose not to use it is because the interface is missing the resource interface like Vulkan and D3D12 (DescriptorSets, &hellip;), otherwise it would have been an amazing choice.</p>
+
+<p>Sokol is also very good, I love the code and the simple interface.<br>
+Two main problems here: again no Vulkan/D3D12 resource interface, and in this case a different target: it does not support compute shaders.</p>
+
+<p>Again, I want to make it clear: I am not saying these are not good libraries. They are amazing. They just don&rsquo;t fit my search criteria, plus I LOVE to work on rendering architecture. Well actually, it is my favourite job!</p>
+
+<p>So kudos to them (I also wrote to Andre Weissflog to ask for compute shader support, but it is not in his plans for now) but we are making a different choice.<br></p>
+
+<p>If you ever find anything that I write useful guys, please let me know!</p>
+
+<h2 id="hydra-graphics-design-principles">Hydra Graphics: design principles</h2>
+
+<p>Small trivia: the name comes from my first ever graphics engine written in 2006 (I think), after devouring 3D Game Engine Design by Dave Eberly. I already knew I would write many engines and I would learn and grow stronger from every of them, so I chose the name Hydra from the Greek mythology monster.<br>
+The other name would have been Phoenx engine, but I remember finding already some tech with that name.</p>
+
+<p>Anyway, design principles!<br>
+I really loved the interface of Sokol, and often I used something similar by myself.<br>
+I opted for a pair of header/implementation files as the only needed files.</p>
+
+<p><strong>The backend is OpenGL for now, just because I have a working implementation in my indie project that works with pretty complex rendering, and I can use that as reference.</strong></p>
+
+<h3 id="interface">Interface</h3>
+
+<p>Rendering in general is a matter of creating, modifying and combining <em>resources</em>.<br>
+There are mainly 2 classes that do all the rendering work:</p>
+
+<ol>
+<li>Device</li>
+<li>Command Buffer</li>
+</ol>
+
+<p><em>The Device is responsible for creation, destruction, modification and query of the resources.<br>
+The Command Buffer is responsible for the usage of resources for rendering.</em></p>
+
+<p>The obvious fundamental concept is <strong>resource</strong>.<br>
+A <strong>resource</strong> is handled externally through handles, can be created using <strong>creation</strong> structs and has both a common and an API-specific representation.</p>
+
+<p><strong>Buffers</strong> are specialized in vertex/index/constant/&hellip; depending on their creation parameters.</p>
+
+<p>This is a small example on creation/usage/destruction of a resource.<br>
+First, we can create a texture:</p>
+
+<pre><code>graphics::TextureCreation first_rt = {};
+first_rt.width = 512;
+first_rt.height = 512;
+first_rt.render_target = 1;
+first_rt.format = graphics::TextureFormat::R8G8B8A8_UNORM;
+
+TextureHandle render_target = gfx_device.create_texture( first_rt );
+</code></pre>
+
+<p>Next we can create a command buffer:</p>
+
+<pre><code>CommandBuffer* commands = gfx_device.get_command_buffer( graphics::QueueType::Graphics, 1024 );
+</code></pre>
+
+<p>Skipping other creations, we bind resources and add the commands:</p>
+
+<pre><code>commands-&gt;bind_pipeline( first_graphics_pipeline );
+commands-&gt;bind_resource_set( gfx_resources );
+commands-&gt;bind_vertex_buffer( gfx_device.get_fullscreen_vertex_buffer() );
+commands-&gt;draw( graphics::TopologyType::Triangle, 0, 3 );
+</code></pre>
+
+<p>At this point we can execute the command buffer to draw.</p>
+
+<pre><code>gfx_device.execute_command_buffer( commands );
+</code></pre>
+
+<p>Updating a resource can be done like that:</p>
+
+<pre><code>hydra::graphics::MapBufferParameters map_parameters = { buffer.handle, 0, 0 };
+LocalConstants* buffer_data = (LocalConstants*)device.map_buffer( map_parameters );
+</code></pre>
+
+<p>Everything uses structs to perform creation/updates.<br>
+Nothing new, but I always loved this design.</p>
+
+<h3 id="resource-layout-and-resource-lists">Resource layout and resource lists</h3>
+
+<p>I wanted to bring the Vulkan/D3D12 resource interface as first class citizens, and remove completely old concepts (like single constants, render states as single objects, single bind of a resource) and add new ones: resource layout, resource lists and command buffers. Well command buffers are not new, but <em>finally</em> you can draw only with those!</p>
+
+<p>In Vulkan/D3D12 you can bind resources through the usage of <em>sets</em>: basically tables that contains the resources used.<br>
+This is a welcomed difference from previous APIs, and I think it is a concept not too hard to grasp but very useful to have it explicit.</p>
+
+<p>The first thing to define is the <strong>resource layout</strong> describes the layout of a set of resources.<br>
+For example, if we have a material that uses Albedo and Normals textures and a constant buffer, the layout will contain all the informations about that (like the type, the GPU registers and so on).<br>
+This though still does not contain the resources themselves!<br>
+Enter <strong>resource list</strong>.<br>
+A <strong>resource list</strong> is a list of actual resources <em>relative to a layout</em>.<br>
+It sets resources using a layout.</p>
+
+<p>From now on, when we draw we can bind <em>one or more resource lists</em>.</p>
+
+<p>In Vulkan lingo, the <strong>resource layout</strong> is called <strong>descriptor set layout</strong>, and a <strong>resource list</strong> is a <strong>descriptor set</strong>.<br>
+Here are a couple of articles for the Vulkan side:</p>
+
+<p><a href="https://vulkan.lunarg.com/doc/view/1.0.33.0/linux/vkspec.chunked/ch13s02.html" target="_blank">Official Vulkan Documentation on Descriptor Layouts and Sets</a></p>
+
+<p><a href="https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-6" target="_blank">Intel API Without Secrets Part 6</a></p>
+
+<p>Similarly in D3D12 there are Root Tables and Descriptor Tables. The concepts do no map 1 to 1 but they are pretty similar:</p>
+
+<p><a href="https://docs.microsoft.com/en-us/windows/win32/direct3d12/using-descriptor-tables" target="_blank">D3D12 Descriptor Tables</a></p>
+
+<p>I tried to map these concepts using different words that would make more sense to me, so from <em>Descriptor Set</em> or <em>Root Table</em> it became <em>Resource List</em> and <em>Resource Layout</em>.</p>
+
+<h3 id="pipelines">Pipelines</h3>
+
+<p>Finally a pipeline is the complete description of what is needed by the GPU to draw something on the screen (or to use a Compute Shader for any other purpose).<br>
+Basically a pipeline must fill all the informations for all the GPU stages like this (thanks to <a href="https://renderdoc.org" target="_blank">RenderDoc</a>):</p>
+
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="RenderDoc_Pipeline.png" >
+
+<img src="RenderDoc_Pipeline.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" >
+  <h4>RenderDoc Pipeline</h4>
+  
+</figcaption>
+
+</figure>
+
+
+<p>What once was setup individually now is all in one place (reflecting what happened behind the scene, into the driver).<br>
+DepthStencil, AlphaBlend, Rasterization, Shaders, all must be defined here.</p>
+
+<p><strong>In the currrent implementation of the graphics-API a lot of states are still missing!</strong>.</p>
+
+<p>Now that we say the basic principles of the target rendering API, we can finally concentrate on the new freatures of HFX.</p>
+
+<h1 id="part-2-forging-the-hfx-language-features">Part 2: forging the HFX language features</h1>
+
+<p>Our HFX language needs some properties to be added but first there is a change: HFX will generate a binary version to embed all the informations needed to create a shader.</p>
+
+<h2 id="hfx-evolution-what-files-are-generated">HFX evolution: what files are generated ?</h2>
+
+<p>In the previous article, we used a single HFX file to generate multiple glsl files, ready to be used by any OpenGL renderer:</p>
+
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="HFX_Shader_Gen.png" >
+
+<img src="HFX_Shader_Gen.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" >
+  <h4>Shader Generation</h4>
+  
+</figcaption>
+
+</figure>
+
+
+<p>Remembering the article on <a href="https://jorenjoestar.github.io/post/writing_a_simple_code_generator/" target="_blank">Hydra Data Format</a>, we instead were generating an header file.<br>
+For our needs, we will generate an embedded HFX (binary HFX) AND a C++ header:</p>
+
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="HFX_Gen.png" >
+
+<img src="HFX_Gen.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" >
+  <h4>Binary and Header Generation</h4>
+  
+</figcaption>
+
+</figure>
+
+
+<p>What is the next step for HFX ?<br>
+For shader generation, we want ideally to load a HFX file without having to manually stick together the single shader files, and that is why the first step is to create <strong>embedded HFX files</strong>.<br>
+This will contain all the information to create a shader, and this includes also the resource layouts.</p>
+
+<p>For constant handling, we want to have UI generated and easy update on the gpu. We want to automate these things.<br>
+This can be done in a more code-generated way or by generating data.</p>
+
+<p>If we abstract the problem, all these articles are about understanding how you want to generate code or data to maximise iteration time, performances and control.<br>
+By moving the HFX to being binary, we are effectively generating <em>data</em> used by the renderer.<br>
+For the shader UI, we can do both: generate code or create data. We will see the generated code part here.</p>
+
+<p>Let&rsquo;s see briefly the internals of the <strong>Embedded HFX</strong> file format:</p>
+
+<h3 id="embedded-hfx">Embedded HFX</h3>
+
+<p>As a Recap, when <em>parsing</em> HFX we store some informations.</p>
+
+<p>First is the CodeFragment, including also (spoiler!) the addition of resources for the sake of this article:</p>
+
+<pre><code>// C++
+//
+struct CodeFragment {
+
+    struct Resource {
+        
+        hydra::graphics::ResourceType::Enum type;
+        StringRef               name;
+
+    }; // struct Resource
+
+    std::vector&lt;StringRef&gt;      includes;
+    std::vector&lt;Stage&gt;          includes_stage;     // Used to separate which include is in which shader stage.
+    std::vector&lt;Resource&gt;       resources;          // Used to generate the layout table.
+
+    StringRef                   name;
+    StringRef                   code;
+    Stage                       current_stage       = Stage::Count;
+    uint32_t                    ifdef_depth         = 0;
+    uint32_t                    stage_ifdef_depth[Stage::Count];
+
+}; // struct CodeFragment
+</code></pre>
+
+<p>The rest is unchanged from the previous article.<br>
+We have basically code and includes to bake the final shader.<br>
+Remember, we are handling GLSL in these examples!</p>
+
+<p>Next is the Pass:</p>
+
+<pre><code>// C++
+//
+struct Pass {
+
+    StringRef                   name;
+    struct ShaderStage {
+
+        const CodeFragment*     code                = nullptr;
+        Stage                   stage               = Stage::Count;
+
+    }; // struct ShaderStage
+
+    StringRef                   name;
+    std::vector&lt;ShaderStage&gt;    shader_stages;
+
+}; // struct Pass
+</code></pre>
+
+<p>Nothing changed here.<br>
+A pass is a container of one of more shaders.<br>
+In general we will use the term <em>shader state</em> to describe the shaders that needs to be bound to the pipeline.<br>
+Most common are the couple Vertex and Fragment shaders, or the Compute by itself.</p>
+
+<p>Last is the Shader itself:</p>
+
+<pre><code>// C++
+//
+struct Shader {
+
+    StringRef                   name;
+
+    std::vector&lt;Pass*&gt;          passes;
+    std::vector&lt;Property*&gt;      properties;
+
+}; // struct Shader
+</code></pre>
+
+<p>Being just a collection of passes.<br>
+Again we are seeing the properties here, that I will talk later on in the article.</p>
+
+<p>These will be used to &lsquo;bake&rsquo; data into a &lsquo;bhfx&rsquo; (binary HFX) file.</p>
+
+<h3 id="bhfx-layout">BHFX layout</h3>
+
+<p>In order to maximise efficiency, we are packing the data in the way we will use it.<br>
+The file is divided in two main sections: common and passes.<br>
+The overall layout is as follows:</p>
+
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="BHFX_Format.png" >
+
+<img src="BHFX_Format.png" >
+</a>
+
+</figure>
+
+
+<p>The trick is to have the offset for each section easy to access.</p>
+
+<p>The <em>pass section</em> contains several informations as following:</p>
+
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="BHFX_Pass.png" >
+
+<img src="BHFX_Pass.png" >
+</a>
+
+</figure>
+
+
+<p>As we will see later we include shaders, resources layout and other data based on our target API (Hydra Graphics).</p>
+
+<h3 id="writing-the-bhfx-file">Writing the BHFX file</h3>
+
+<p>To write our file, we need to parse the HFX file.<br>
+A quick code could be something like this:</p>
+
+<pre><code>// C++
+//
+
+...
+
+char* text = ReadEntireFileIntoMemory( &quot;..\\data\\SimpleFullscreen.hfx&quot;, nullptr );
+initLexer( &amp;lexer, (char*)text, data_buffer );
+
+hfx::initParser( &amp;effect_parser, &amp;lexer );
+hfx::generateAST( &amp;effect_parser );
+
+    
+hfx::initCodeGenerator( &amp;hfx_code_generator, &amp;effect_parser, 4096, 5 );
+
+hfx::compileShaderEffectFile( &amp;hfx_code_generator, &quot;..\\data\\&quot;, &quot;SimpleFullscreen.bhfx&quot; );
+</code></pre>
+
+<p>Here we are parsing the file (generateAST) and then using that to <em>compile</em> our shader effect file. This is where the magic happens.</p>
+
+<pre><code>// C++
+//
+void compileShaderEffectFile( CodeGenerator* code_generator, const char* path, const char* filename ) {
+    // Create the output file
+    FILE* output_file;
+
+    // Alias the StringBuffer for better readability.
+    StringBuffer&amp; filename_buffer = code_generator-&gt;string_buffers[0];
+
+    // Concatenate name
+    filename_buffer.clear();
+    filename_buffer.append( path );
+    filename_buffer.append( filename );
+    fopen_s( &amp;output_file, filename_buffer.data, &quot;wb&quot; );
+
+    if ( !output_file ) {
+        printf( &quot;Error opening file. Aborting. \n&quot; );
+        return;
+    }
+</code></pre>
+
+<p>Typical file creation preamble.<br>
+Concatenate the file using the StringBuffer, and try to create it.</p>
+
+<p>Remember that overall the file structure is:</p>
+
+<ol>
+<li>File header</li>
+<li>Pass offset list</li>
+<li>Pass sections</li>
+</ol>
+
+<p>Let&rsquo;s start with the file header:</p>
+
+<pre><code>    const uint32_t pass_count = (uint32_t)code_generator-&gt;parser-&gt;passes.size();
+    
+    ShaderEffectFile shader_effect_file;
+    shader_effect_file.num_passes = pass_count;    
+
+    fwrite( &amp;shader_effect_file, sizeof(ShaderEffectFile), 1, output_file );
+</code></pre>
+
+<p>In this case we are writing straight to the file, because it is an in-order operation with the file layout.<br>
+For the rest of the file writing we will need to use String Buffers to accumulate data out-of-order and then write the file in the correct order.<br>
+Think of the <em>Pass Offset List</em>: to calculate the offsets we need to know the size of the passes. To know the size we need to finalize the pass data. To finalize the pass data we need to finalize shaders, and that means adding the includes.</p>
+
+<p>Again for code clarity I use aliases like this:</p>
+
+<pre><code>    StringBuffer&amp; code_buffer = code_generator-&gt;string_buffers[1];
+    StringBuffer&amp; pass_offset_buffer = code_generator-&gt;string_buffers[2];
+    StringBuffer&amp; shader_offset_buffer = code_generator-&gt;string_buffers[3];
+    StringBuffer&amp; pass_buffer = code_generator-&gt;string_buffers[4];
+</code></pre>
+
+<p>Let&rsquo;s continue.<br>
+We start tracking the pass section memory offset knowing that it will be after the <em>header</em> and the pass offset list:</p>
+
+<pre><code>    pass_offset_buffer.clear();
+    pass_buffer.clear();
+
+    // Pass memory offset starts after header and list of passes offsets.
+    uint32_t pass_offset = sizeof( ShaderEffectFile ) + sizeof(uint32_t) * pass_count;
+</code></pre>
+
+<p>Now into the most interesting part. We will avoid talking about the resource layout part, that will be added later.<br></p>
+
+<pre><code>    // Pass Section:
+    // ----------------------------------------------------------------------------------------
+    // Shaders count | Name | Shader Offset+Count List | Shader Code 0, Shader Code 1
+    // ----------------------------------------------------------------------------------------
+
+    ShaderEffectFile::PassHeader pass_header;
+
+    for ( uint32_t i = 0; i &lt; pass_count; i++ ) {
+
+        pass_offset_buffer.append( &amp;pass_offset, sizeof( uint32_t ) );
+
+        const Pass&amp; pass = code_generator-&gt;parser-&gt;passes[i];
+
+        const uint32_t pass_shader_stages = (uint32_t)pass.shader_stages.size();
+        const uint32_t pass_header_size = pass_shader_stages * sizeof( ShaderEffectFile::Chunk ) + sizeof( ShaderEffectFile::PassHeader );
+        uint32_t current_shader_offset = pass_header_size;
+</code></pre>
+
+<p>We start iterating the passes and calculate the shader offset.<br>
+Shader Chunks (the actual shader code) are written after the Pass Header and the dynamic list of shader chunk offset and size.<br>
+Next we will calculate the offsets of the single shaders AFTER we finalize the code - that means after the includes are added!</p>
+
+<pre><code>        shader_offset_buffer.clear();
+        code_buffer.clear();
+
+        for ( size_t s = 0; s &lt; pass.shader_stages.size(); ++s ) {
+            const Pass::ShaderStage shader_stage = pass.shader_stages[s];
+
+            appendFinalizedCode( path, shader_stage.stage, shader_stage.code, filename_buffer, code_buffer, true, constants_buffer );
+            updateOffsetTable( &amp;current_shader_offset, pass_header_size, shader_offset_buffer, code_buffer );
+        }
+
+        // Update pass offset
+        pass_offset += code_buffer.current_size + shader_offset;
+</code></pre>
+
+<p>At this point we have code_buffer containing all the shaders of the pass one after another (null terminated) and we can update the pass offset for the next pass.<br>
+We also calculated the single shader offsets with the <em>updateOffsetTable</em> method in shader_offset_buffer.<br>
+We need to finalize the Pass Header and then we can merge the pass memory in one block and proceed to the next pass:</p>
+
+<pre><code>        // Fill Pass Header
+        copy( pass.name, pass_header.name, 32 );
+        pass_header.num_shader_chunks = pass.num_shaders;
+</code></pre>
+
+<p>This is a very IMPORTANT part.<br>
+Merge in the pass_buffer all the pass section currently calculated: pass header, the single shader code offsets and the shader code itself.</p>
+
+<pre><code>        pass_buffer.append( (void*)&amp;pass_header, sizeof( ShaderEffectFile::PassHeader ) );
+        pass_buffer.append( shader_offset_buffer );
+        pass_buffer.append( code_buffer );
+    }
+</code></pre>
+
+<p>After we finished with all the passes, we have 2 buffers: one containing the pass offset list, the other the pass sections.<br>
+We can write them off in the correct order finally and close the file:</p>
+
+<pre><code>    fwrite( pass_offset_buffer.data, pass_offset_buffer.current_size, 1, output_file );
+    fwrite( pass_buffer.data, pass_buffer.current_size, 1, output_file );
+    
+    fclose( output_file );
+}
+</code></pre>
+
+<p>We can see <em>why</em> we chose this format when looking at the code to actually create a <em>shader state</em>.<br>
+First of all this is the struct to create a shader state:</p>
+
+<pre><code>// hydra_graphics.h
+//
+struct ShaderCreation {
+
+    struct Stage {
+
+        ShaderStage::Enum           type                = ShaderStage::Compute;
+        const char*                 code                = nullptr;
+
+    }; // struct Stage
+
+    const Stage*                    stages              = nullptr;
+    const char*                     name                = nullptr;
+
+    uint32_t                        stages_count        = 0;
+
+}; // struct ShaderCreation
+</code></pre>
+
+<p>It is very simple, each stage has a code and type.<br>
+A shader state can have one or more stages.<br>
+This was already the case in OpenGL - compiling shaders and linking them - so the interface is similar - but it maps well to Vulkan/D3D12 as well, in which the <em>Pipeline State</em>, that describe almost everything the GPU needs to draw, needs an unique set of vertex/fragment/compute shaders.<br>
+Anyway, we embed this data already in the <em>binary HFX file</em>, and thus we can easily create a shader state like this:</p>
+
+<pre><code>static void compile_shader_effect_pass( hydra::graphics::Device&amp; device, char* hfx_memory, 
+                                        uint16_t pass_index, hydra::graphics::ShaderHandle&amp; out_shader ) {
+    using namespace hydra;
+
+    // Get pass section memory
+    char* pass = hfx::getPassMemory( hfx_memory, pass_index );
+    hfx::ShaderEffectFile::PassHeader* pass_header = (hfx::ShaderEffectFile::PassHeader*)pass;
+
+    const uint32_t shader_count = pass_header-&gt;num_shader_chunks;    
+    graphics::ShaderCreation::Stage* stages = new graphics::ShaderCreation::Stage[shader_count];
+
+    // Get individual shader code and type
+    for ( uint16_t i = 0; i &lt; shader_count; i++ ) {
+        hfx::getShaderCreation( shader_count, pass, i, &amp;stages[i] );
+    }
+
+    graphics::ShaderCreation first_shader = {};
+    first_shader.stages = stages;
+    first_shader.stages_count = shader_count;
+    first_shader.name = pass_header-&gt;name;
+
+    out_shader = device.create_shader( first_shader );
+
+    delete stages;
+}
+</code></pre>
+
+<p>Nothing really interesting here, but we read the file in memory and use the offsets we store to access the different sections of the file.<br></p>
+
+<p>To access the <em>Pass Section</em> we first need to read its memory offset and then read from there.<br>
+Remember from before that the offset is in the list AFTER the ShaderEffectFile header, and it is a single uint32:</p>
+
+<pre><code>char* getPassMemory( char* hfx_memory, uint32_t index ) {
+    
+    // Read offset form list after the ShaderEffectFile header.
+    const uint32_t pass_offset = *(uint32_t*)(hfx_memory + sizeof( ShaderEffectFile ) + (index * sizeof( uint32_t )));
+
+    return hfx_memory + pass_offset;
+}
+</code></pre>
+
+<p>From the <em>pass offset</em>, the list of shader chunks (that are defined as code offset and size) is right after the <em>pass header</em></p>
+
+<pre><code>void getShaderCreation( uint32_t shader_count, char* pass_memory, uint32_t index,
+                        hydra::graphics::ShaderCreation::Stage* shader_creation ) {
+
+    char* shader_offset_list_start = pass_memory + sizeof( ShaderEffectFile::PassHeader );
+</code></pre>
+
+<p>Read the single shader offset and access the memory there:</p>
+
+<pre><code>    const uint32_t shader_offset = *(uint32_t*)(shader_offset_list_start + (index * sizeof( ShaderEffectFile::Chunk )));
+    char* shader_chunk_start = pass_memory + shader_offset;
+</code></pre>
+
+<p>The baked informations are first the type (as a single char, but called hfx::ShaderEffectFile::ChunkHeader in case we change it) and the actual shader code is right after!</p>
+
+<pre><code>    shader_creation-&gt;type = (hydra::graphics::ShaderStage::Enum)(*shader_chunk_start);
+    shader_creation-&gt;code = (const char*)(shader_chunk_start + sizeof( hfx::ShaderEffectFile::ChunkHeader ));
+}
+</code></pre>
+
+<p>In this case I chose to bake the file instead of generating a header file - just cause I can reuse this code for every shader effect. I could have generated an header instead of the binary BHFX file, but then including it would mean that you need to recompile at every change.<br>
+We will see some areas in which we can have both approaches!</p>
+
+<p>Finally done with the new embedded format, let&rsquo;s see the new features!</p>
+
+<h2 id="brainstorming-what-features-are-needed">Brainstorming: what features are needed ?</h2>
+
+<p>We already talked about the features at the beginning of the articles, but let&rsquo;s write them again to refresh our memory:</p>
+
+<ol>
+<li>Shader constants generation</li>
+<li>Shader resource bindings</li>
+<li>Render states (depth stencil, blend, rasterization) <strong>(in the next article)</strong></li>
+<li>Render pass hints for a future framegraph <strong>(in the next article)</strong></li>
+</ol>
+
+<p>There are few articles around this subject, but the most complete is from the amazing guys at <a href="https://ourmachinery.com/" target="_blank">OurMachinery</a>, and in particular <a href="https://ourmachinery.com/post/the-machinery-shader-system-part-2/" target="_blank">this article</a>.<br>
+These guys does (as always honestly) an amazing job in describing the problem we are facing and the solutions, and how enriching a shader language can make a huge difference in making better rendering (faster iteration time, less error prone, more artist friendly..) so I would suggest to read those articles (and in general any article/presentation/blog post they write!).</p>
+
+<p>We will go through each feature in depth so get ready!</p>
+
+<h2 id="constants-artists-programmers-both">Constants: artists, programmers, both ?</h2>
+
+<p>Constants&hellip;uniforms&hellip;whatever name you choose, they represent the same concept: <em>numerical properties</em>.</p>
+
+<p>Even if they are a simple concept, still it is hard to make both rendering citizens happy: artists and programmers!</p>
+
+<p>Artists want tweakable UI, simple variables and fast iteration.<br>
+Programmers want optimal layout, more CPU calculated variables possible, and ultimate control.<br>
+How to make them both happy ?</p>
+
+<p>I brainstormed and designed for few days (well evenings) to solve this problem.<br>
+One thought that came to me is that artists want to create a <em>material interface</em>, something they can tweak and change easily, and when you want to quickly prototype something, create and such, you don&rsquo;t want to deal with low-level resource management and such.<br>
+Let&rsquo;s solve this first: <strong>give artists a simple way of creating a material interface</strong>!</p>
+
+<p>After searching for a bit, I chose to use a syntax very similar to Unity ShaderLab. Let&rsquo;s see the HFX (finally!):</p>
+
+<pre><code>// .HFX
+//
+// For the artist: create a material interface.
+properties {
+
+    // Using Unity ShaderLab syntax:
+    // AORemapMin0(&quot;AORemapMin0&quot;, Range(0.0, 1.0)) = 0.0
+    scale(&quot;Scale&quot;, Float) = 32.00
+    modulo(&quot;Modulo&quot;, Float) = 2.0
+}
+</code></pre>
+
+<p>We added a new section in the language, named &ldquo;<em>properties</em>&rdquo;.<br>
+Why this name ?<br>
+Because properties contains both <em>numerical properties and textures</em>!<br>
+The name makes sense in this way. Naming &lsquo;constants&rsquo; and having also textures, not.</p>
+
+<p>There are 2 possible <em>outputs</em> from this, one that is pure code-generation and the other that is more data-driven.
+I will dwelve into the code-generation one and talk about the data-driven one in another post.</p>
+
+<p>There are 3 parts for the generated code of the properties:</p>
+
+<ol>
+<li>Properties UI</li>
+<li>GPU-ready constant buffer</li>
+<li>API-dependant buffer</li>
+</ol>
+
+<p>For the Properties UI, we want to generate something like this:</p>
+
+<pre><code>// C++
+struct LocalConstantsUI {
+
+    float                    scale                = 32.000000f;
+    float                    modulo                = 2.000000f;
+
+    void reflectMembers() {
+        ImGui::InputScalar( &quot;Scale&quot;, ImGuiDataType_Float, &amp;scale);
+        ImGui::InputScalar( &quot;Modulo&quot;, ImGuiDataType_Float, &amp;modulo);
+    }
+
+    void reflectUI() {
+        ImGui::Begin( &quot;LocalConstants&quot; );
+        reflectMembers();
+        ImGui::End();
+    }
+
+}; // struct LocalConstantsUI
+</code></pre>
+
+<p>For the GPU-ready constants, we want to have a both a GPU and a CPU representation like this:</p>
+
+<pre><code>// C++
+//
+struct LocalConstants {
+
+    float                    scale                = 32.000000f;
+    float                    modulo                = 2.000000f;
+    float                    pad_tail[2];
+
+}; // struct LocalConstants
+
+// GLSL
+//
+layout (std140, binding=7) uniform LocalConstants {
+
+    float                    scale;
+    float                    modulo;
+
+    float                    pad[2];
+
+} local_constants;
+</code></pre>
+
+<p>And for the API-dependant buffer, we want to create code that takes care of everything for us. This is the real deal here - and something we will revisit in next articles to show some advanced features.</p>
+
+<pre><code>void create( hydra::graphics::Device&amp; device ) {
+
+    using namespace hydra;
+
+    graphics::BufferCreation constants_creation = {};
+    constants_creation.type = graphics::BufferType::Constant;
+    constants_creation.name = &quot;LocalConstants&quot;;
+    constants_creation.usage = graphics::ResourceUsageType::Dynamic;
+
+    // NOTE: using LocalConstants struct - is the GPU ready one with padding and such!
+    constants_creation.size = sizeof( LocalConstants );
+    // Struct is initialized with default values already, so it is safe to copy it to the GPU.
+    constants_creation.initial_data = &amp;constants;
+
+    buffer = device.create_buffer( constants_creation );
+}
+
+void destroy( hydra::graphics::Device&amp; device ) {
+
+    device.destroy_buffer( buffer );
+}
+
+void updateUI( hydra::graphics::Device&amp; device ) {
+    // Draw UI
+    constantsUI.reflectUI();
+
+    // TODO:
+    // Ideally there should be a way to tell if a variable has changed and update only in that case.
+    
+    // Map buffer to GPU and upload parameters from the UI
+    hydra::graphics::MapBufferParameters map_parameters = { buffer.handle, 0, 0 };
+
+    LocalConstants* buffer_data = (LocalConstants*)device.map_buffer( map_parameters );
+
+    if ( buffer_data ) {
+        buffer_data-&gt;scale = constantsUI.scale;
+        buffer_data-&gt;modulo = constantsUI.modulo;
+        device.unmap_buffer( map_parameters );
+    }
+}
+</code></pre>
+
+<p>For the sake of the example this could be a possible implementation - but really depends on the rendering API.
+Let&rsquo;s quickly check parsing and code-generation.</p>
+
+<h3 id="constants-parsing">Constants Parsing</h3>
+
+<p>To parse the new <strong>property</strong> section, there is the new method <code>void declarationProperties( Parser* parser )</code> that iterates through all properties, and inside that the <code>void declarationProperty( Parser* parser, const StringRef&amp; name )</code> one.</p>
+
+<p>We are parsing the following HFX syntax:</p>
+
+<pre><code>// Syntax
+//
+identifier(string, identifier[(arguments)]) [= default_value]
+</code></pre>
+
+<p>With this is an example:</p>
+
+<pre><code>// HFX
+//
+properties {
+    scale(&quot;Scale&quot;, Float) = 32.0
+}
+</code></pre>
+
+<p>We will add a simple backtracking to the parsing because of the optional parameters.<br>
+Let&rsquo;s check the code!</p>
+
+<pre><code>inline void declarationProperty( Parser* parser, const StringRef&amp; name ) {
+    Property* property = new Property();
+
+    // Cache name
+    property-&gt;name = name;
+
+    Token token;
+
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_OpenParen ) ) {
+        return;
+    }
+</code></pre>
+
+<p>We just parsed the property name and the &lsquo;(&rsquo;. Next is the string containing the UI name:</p>
+
+<pre><code>    // Advance to the string representing the ui_name
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_String ) ) {
+        return;
+    }
+
+    property-&gt;ui_name = token.text;
+</code></pre>
+
+<p>Saved the ui name and then we have the type.<br>
+Types can be <em>Float, Int, Range, Texture, Vector, Color</em> and we will simply parse their text and convert it to an enum that we will use in the code generation phase.</p>
+
+<pre><code>    if ( !expectToken( parser-&gt;lexer, token, Token::Token_Comma ) ) {
+        return;
+    }
+
+    // Next is the identifier representing the type name
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Parse property type and convert it to an enum
+    property-&gt;type = propertyTypeIdentifier( token );
+</code></pre>
+
+<p>Now will come the most complicated part.<br>
+We have optional &lsquo;(&rsquo; open parenthesis for the parameters if the type needs it.<br>
+For the length of code and article, I skip this part and will add it in next article!</p>
+
+<pre><code>    // If an open parenthesis is present, then parse the ui arguments.
+    nextToken( parser-&gt;lexer, token );
+    if ( token.type == Token::Token_OpenParen ) {
+        property-&gt;ui_arguments = token.text;
+
+        while ( !equalToken( parser-&gt;lexer, token, Token::Token_CloseParen ) ) {
+            // TODO:
+            // Parse parameters!
+        }
+
+        // Advance to the last close parenthesis
+        nextToken( parser-&gt;lexer, token );
+
+        property-&gt;ui_arguments.length = token.text.text - property-&gt;ui_arguments.text;
+    }
+
+    if ( !checkToken( parser-&gt;lexer, token, Token::Token_CloseParen ) ) {
+        return;
+    }
+</code></pre>
+
+<p>At this point we can either be at the end of the property or we could have a &lsquo;=&rsquo; token to add a default value.
+Being that the Lexer class is small, we can backtrack by saving the current Lexer status:</p>
+
+<pre><code>    // Cache lexer status and advance to next token.
+    // If the token is '=' then we parse the default value.
+    // Otherwise backtrack by one token.
+    Lexer cached_lexer = *parser-&gt;lexer;
+</code></pre>
+
+<p>Now we can advance to the next token and:</p>
+
+<ol>
+<li>If the token is &lsquo;=&rsquo;, parse the default value.</li>
+
+<li><p>If not, backtrack the position of the Lexer and finish the parsing.</p>
+
+<pre><code>nextToken( parser-&gt;lexer, token );
+
+// At this point only the optional default value is missing, otherwise the parsing is over.
+if ( token.type == Token::Token_Equals ) {
+    nextToken( parser-&gt;lexer, token );
+        
+    if ( token.type = Token::Token_Number ) {
+        // Cache the data buffer entry index into the property for later retrieval.
+        property-&gt;data_index = parser-&gt;lexer-&gt;data_buffer-&gt;current_entries - 1;
+    }
+    else {
+        // TODO:
+        // Handle vectors, colors and non single number default values
+    }
+}
+else {
+    *parser-&gt;lexer = cached_lexer;
+}
+
+parser-&gt;shader.properties.push_back( property );
+}
+</code></pre></li>
+</ol>
+
+<p>An interesting point is that the <em>numbers</em> are parsed in a <strong>DataBuffer</strong>, and during the parsing of the token we will add the number to it.<br>
+To retrieve it, we have the <code>data_index</code> field of the <code>Property</code> struct.<br>
+Also here, for the sake of &lsquo;brevity&rsquo;, I am handling only floats and ints. Vectors, colors and texture property should be easy to add.</p>
+
+<p>For vectors and colors we should parse a list of them and save them into the data buffer.</p>
+
+<p>For textures we should just save the default value as text and use it in the code-generation part.</p>
+
+<h3 id="code-generation">Code Generation</h3>
+
+<p>This should be pretty straight forward.<br>
+We can iterate the properties and generate both a C++ struct and a HLSL/GLSL buffer.<br>
+The only thing to be concerned is the padding: on the GPU normally the alignment is 16 bytes, so we can track that and insert padding when generating the code.<br></p>
+
+<p>In the method <code>void generateShaderResourceHeader( CodeGenerator* code_generator, const char* path )</code> we can see how we generate the different code for C++:</p>
+
+<pre><code>// C++
+//
+// Beginning
+
+fprintf( output_file, &quot;\n#pragma once\n#include &lt;stdint.h&gt;\n#include \&quot;hydra_graphics.h\&quot;\n\n// This file is autogenerated!\nnamespace &quot; );
+
+fwrite( shader.name.text, shader.name.length, 1, output_file );
+fprintf( output_file, &quot; {\n\n&quot; );
+
+// Preliminary sections
+constants_ui.append( &quot;struct LocalConstantsUI {\n\n&quot; );
+
+cpu_constants.append( &quot;struct LocalConstants {\n\n&quot; );
+
+constants_ui_method.append(&quot;\tvoid reflectMembers() {\n&quot;);
+
+buffer_class.append( &quot;struct LocalConstantsBuffer {\n\n\thydra::graphics::BufferHandle\tbuffer;\n&quot; );
+buffer_class.append( &quot;\tLocalConstants\t\t\t\t\tconstants;\n\tLocalConstantsUI\t\t\t\tconstantsUI;\n\n&quot; );
+buffer_class.append( &quot;\tvoid create( hydra::graphics::Device&amp; device ) {\n\t\tusing namespace hydra;\n\n&quot; );
+buffer_class.append( &quot;\t\tgraphics::BufferCreation constants_creation = { graphics::BufferType::Constant, graphics::ResourceUsageType::Dynamic, sizeof( LocalConstants ), &amp;constants, \&quot;LocalConstants\&quot; };\n&quot; );
+buffer_class.append( &quot;\t\tbuffer = device.create_buffer( constants_creation );\n\t}\n\n&quot; );
+buffer_class.append( &quot;\tvoid destroy( hydra::graphics::Device&amp; device ) {\n\t\tdevice.destroy_buffer( buffer );\n\t}\n\n&quot; );
+buffer_class.append( &quot;\tvoid updateUI( hydra::graphics::Device&amp; device ) {\n\t\t// Draw UI\n\t\tconstantsUI.reflectUI();\n\t\t// Update constants from UI\n&quot; );
+buffer_class.append( &quot;\t\thydra::graphics::MapBufferParameters map_parameters = { buffer.handle, 0, 0 };\n&quot; );
+buffer_class.append( &quot;\t\tLocalConstants* buffer_data = (LocalConstants*)device.map_buffer( map_parameters );\n\t\tif (buffer_data) {\n&quot; );
+
+// For GPU the struct must be 16 bytes aligned. Track alignment
+uint32_t gpu_struct_alignment = 0;
+
+DataBuffer* data_buffer = code_generator-&gt;parser-&gt;lexer-&gt;data_buffer;
+// For each property write code
+for ( size_t i = 0; i &lt; shader.properties.size(); i++ ) {
+    hfx::Property* property = shader.properties[i];
+
+    switch ( property-&gt;type ) {
+        case Property::Float:
+        {
+            constants_ui.append(&quot;\tfloat\t\t\t\t\t&quot;);
+            constants_ui.append( property-&gt;name );
+
+            cpu_constants.append( &quot;\tfloat\t\t\t\t\t&quot; );
+            cpu_constants.append( property-&gt;name );
+            
+            if ( property-&gt;data_index != 0xffffffff ) {
+                float value = 0.0f;
+                getData( data_buffer, property-&gt;data_index, value );
+                constants_ui.append( &quot;\t\t\t\t= %ff&quot;, value );
+                cpu_constants.append( &quot;\t\t\t\t= %ff&quot;, value );
+            }
+
+            constants_ui.append( &quot;;\n&quot; );
+
+            cpu_constants.append( &quot;;\n&quot; );
+
+            constants_ui_method.append(&quot;\t\tImGui::InputScalar( \&quot;&quot;);
+            constants_ui_method.append( property-&gt;ui_name );
+            constants_ui_method.append( &quot;\&quot;, ImGuiDataType_Float, &amp;&quot; );
+            constants_ui_method.append( property-&gt;name );
+            constants_ui_method.append( &quot;);\n&quot; );
+
+            // buffer_data-&gt;scale = constantsUI.scale;
+            buffer_class.append(&quot;\t\t\tbuffer_data-&gt;&quot;);
+            buffer_class.append( property-&gt;name );
+            buffer_class.append( &quot; = constantsUI.&quot; );
+            buffer_class.append( property-&gt;name );
+            buffer_class.append( &quot;;\n&quot; );
+
+            ++gpu_struct_alignment;
+
+            break;
+        }
+    }
+}
+
+// Post-property sections
+constants_ui.append( &quot;\n&quot; );
+
+constants_ui_method.append( &quot;\t}\n\n&quot; );
+constants_ui_method.append( &quot;\tvoid reflectUI() {\n\t\tImGui::Begin( \&quot;LocalConstants\&quot; );\n&quot; );
+constants_ui_method.append( &quot;\t\treflectMembers();\n\t\tImGui::End();\n\t}\n\n&quot; );
+constants_ui_method.append( &quot;}; // struct LocalConstantsUI\n\n&quot; );
+
+// Add tail padding data
+uint32_t tail_padding_size = 4 - (gpu_struct_alignment % 4);
+cpu_constants.append( &quot;\tfloat\t\t\t\t\tpad_tail[%u];\n\n&quot;, tail_padding_size );
+
+cpu_constants.append( &quot;}; // struct LocalConstants\n\n&quot; );
+
+buffer_class.append( &quot;\t\t\tdevice.unmap_buffer( map_parameters );\n\t\t}\n\t}\n}; // struct LocalConstantBuffer\n\n&quot; );
+
+fwrite( constants_ui.data, constants_ui.current_size, 1, output_file );
+fwrite( constants_ui_method.data, constants_ui_method.current_size, 1, output_file );
+fwrite( cpu_constants.data, cpu_constants.current_size, 1, output_file );
+fwrite( buffer_class.data, buffer_class.current_size, 1, output_file );
+
+
+// End
+fprintf( output_file, &quot;} // namespace &quot; );
+fwrite( shader.name.text, shader.name.length, 1, output_file );
+fprintf( output_file, &quot;\n\n&quot; );
+
+fclose( output_file );
+</code></pre>
+
+<p>This piece of code will generate a constant buffer from the properties:</p>
+
+<pre><code>// GLSL
+//
+static void generateConstantsCode( const Shader&amp; shader, StringBuffer&amp; out_buffer ) {
+    if ( !shader.properties.size() ) {
+        return;
+    }
+
+    // Add the local constants into the code.
+    out_buffer.append( &quot;\n\t\tlayout (std140, binding=7) uniform LocalConstants {\n\n&quot; );
+
+    // For GPU the struct must be 16 bytes aligned. Track alignment
+    uint32_t gpu_struct_alignment = 0;
+
+    const std::vector&lt;Property*&gt;&amp; properties = shader.properties;
+    for ( size_t i = 0; i &lt; shader.properties.size(); i++ ) {
+        hfx::Property* property = shader.properties[i];
+
+        switch ( property-&gt;type ) {
+            case Property::Float:
+            {
+                out_buffer.append( &quot;\t\t\tfloat\t\t\t\t\t&quot; );
+                out_buffer.append( property-&gt;name );
+                out_buffer.append( &quot;;\n&quot; );
+
+                ++gpu_struct_alignment;
+                break;
+            }
+        }
+    }
+
+    uint32_t tail_padding_size = 4 - (gpu_struct_alignment % 4);
+    out_buffer.append( &quot;\t\t\tfloat\t\t\t\t\tpad_tail[%u];\n\n&quot;, tail_padding_size );
+    out_buffer.append( &quot;\t\t} local_constants;\n\n&quot; );
+}
+</code></pre>
+
+<h3 id="expert-constants-an-interesting-problem">Expert constants: an interesting problem</h3>
+
+<p>A problem many times surfaces is that the material interface does not correspond to the buffer sent to the GPU, because the programmers will do the following:</p>
+
+<ol>
+<li>Add <em>system</em> constants, that don&rsquo;t need a UI</li>
+<li>Change order of the constants</li>
+<li>Change constants to more GPU friendly values, calculating some stuff on the CPU</li>
+<li>Pack constants into smaller ones</li>
+</ol>
+
+<p>This is an interesting topic and I&rsquo;ll cover it in another article, but a simple solution would be to add a mapping between the GPU constants and the UI, so that we can separate the UI constants from the GPU ones.</p>
+
+<p>I&rsquo;ll give a brief example but it would be too much for this article and will not be included in the source code.</p>
+
+<p>Basically we are trying to create a mapping between the material interface:</p>
+
+<pre><code>// C++
+struct LocalConstantsUI {
+
+    float                    scale                = 32.000000f;
+    float                    modulo                = 2.000000f;
+
+    void reflectMembers() {
+        ImGui::InputScalar( &quot;Scale&quot;, ImGuiDataType_Float, &amp;scale);
+        ImGui::InputScalar( &quot;Modulo&quot;, ImGuiDataType_Float, &amp;modulo);
+    }
+
+    void reflectUI() {
+        ImGui::Begin( &quot;LocalConstants&quot; );
+        reflectMembers();
+        ImGui::End();
+    }
+
+}; // struct LocalConstantsUI
+</code></pre>
+
+<p>And the GPU constants:</p>
+
+<pre><code>// C++
+struct LocalConstants {
+
+    float                    scale                = 32.000000f;
+    float                    modulo                = 2.000000f;
+    float                    pad_tail[2];
+
+}; // struct LocalConstants
+</code></pre>
+
+<p>We could enhance HFX with some syntax to mark the <em>derivate</em> properties and just add the <em>system</em> ones in an explicit buffer layout, and add a <em>layout</em> section in the HFX:</p>
+
+<pre><code>// HFX
+
+properties {
+
+    // Using Unity ShaderLab syntax:
+    scale(&quot;Scale&quot;, Range(0.0, 100.0)) = 100.0
+    modulo(&quot;Modulo&quot;, Float) = 2.0
+}
+
+layout {
+    CBuffer LocalConstants {
+        float4x4            world_view_projection;    // 'System' variable
+
+        float               scale01 = (scale);       // Silly normalized version of scale interface property
+        float               modulo;
+        float               pad[2];
+    }
+}
+</code></pre>
+
+<p>we could completely override the automatic constant buffer generation from the properties.<br>
+With this we can:</p>
+
+<ol>
+<li>Add a system variable like <em>world_view_projection</em></li>
+<li>Flag the property <strong>scale</strong> as UI only, by saying that property <strong>scale01</strong> uses it.</li>
+</ol>
+
+<p>I think that with this syntax both artists and programmers can be happy together!<br>
+I will try to work on this on a later article.</p>
+
+<h2 id="resource-bindings-vulkan-and-d3d12-mentality">Resource bindings: Vulkan and D3D12 mentality</h2>
+
+<p>As stated multiple times, the shift in mentality is towards the new APIs, and that includes the concept of <strong>resource lists</strong>.<br>
+The problem is that we don&rsquo;t want artists to have to handle this kind of things - especially if you want to quickly prototype things!<br>
+But at the same time, we want programmers to have the possibility to optimize the shaders the artists gave them.<br>
+What is the solution?<br>
+Simple: creating an optional <em>resource layout</em> section and <strong>automatically</strong> generate it if not present, so that artists (and not only) can happily create amazing tech and THEN worry about these details!</p>
+
+<h3 id="automatic-resource-layout">Automatic Resource Layout</h3>
+
+<p>The easiest way to handle resource layout is to make them <strong>SIMPLE</strong>. Remember the <strong>K.I.S.S. principle</strong>.<br>
+In this case it means that we can create a Resource List for each pass, that will contain:</p>
+
+<ol>
+<li>One constant/uniform buffer containing all the properties</li>
+<li>All the textures used by the shader</li>
+</ol>
+
+<p>How can we achieve that ?</p>
+
+<p>We already saw how we can generate the constant buffer from the properties in the previous section.
+For textures we have a couple of options.</p>
+
+<h4 id="list-of-textures">List of Textures</h4>
+
+<p>Being in automation land, there are 2 ways to add texture dependencies:</p>
+
+<ol>
+<li>Use reflection mechanism from the target shader language</li>
+<li>Parse identifiers in the current finalized shader</li>
+</ol>
+
+<p>For the sake of fun we will look into the second of course!<br>
+If we go back to <code>void declarationGlsl( Parser* parser )</code>, we can add a new method to parse the keyword:</p>
+
+<pre><code>// Parse hash for includes and defines
+if ( token.type == Token::Token_Hash ) {
+    // Get next token and check which directive is
+    nextToken( parser-&gt;lexer, token );
+
+    directiveIdentifier( parser, token, code_fragment );
+}
+else if ( token.type == Token::Token_Identifier ) {        &lt;------------  New Code!
+
+    // Parse uniforms to add resource dependencies if not explicit in the HFX file.
+    if ( expectKeyword( token.text, 7, &quot;uniform&quot; ) ) {
+        nextToken( parser-&gt;lexer, token );
+
+        uniformIdentifier( parser, token, code_fragment );
+    }
+}
+</code></pre>
+
+<p>In this way it will search for the identifier <em>uniform</em> and search for the other identifiers. This is GLSL centric of course.</p>
+
+<pre><code>inline void uniformIdentifier( Parser* parser, const Token&amp; token, CodeFragment&amp; code_fragment ) {
+    for ( uint32_t i = 0; i &lt; token.text.length; ++i ) {
+        char c = *(token.text.text + i);
+
+        switch ( c ) {
+            case 'i':
+            {
+                if ( expectKeyword( token.text, 7, &quot;image2D&quot; ) ) {
+                    // Advance to next token to get the name
+                    Token name_token;
+                    nextToken( parser-&gt;lexer, name_token );
+
+                    CodeFragment::Resource resource = { hydra::graphics::ResourceType::TextureRW, name_token.text };
+                    code_fragment.resources.emplace_back( resource );
+                }
+                break;
+            }
+
+            case 's':
+            {
+                if ( expectKeyword( token.text, 9, &quot;sampler2D&quot; ) ) {
+                    // Advance to next token to get the name
+                    Token name_token;
+                    nextToken( parser-&gt;lexer, name_token );
+
+                    CodeFragment::Resource resource = { hydra::graphics::ResourceType::Texture, name_token.text };
+                    code_fragment.resources.emplace_back( resource );
+                }
+                break;
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>Should be pretty straight-forward: if you find the identifier for texture, add a resource dependency with type and name to the current code fragment!<br>
+Is this the ideal solution ?<br>
+Probably not.<br>
+But I wanted to show what we can achieve once we have fun with parsing, including the understanding on when to say <strong>NO</strong> to it!<br></p>
+
+<h3 id="manual-resource-layout">Manual Resource Layout</h3>
+
+<p>Now that the effect can work without too much programmer time, it is time to give back to programmers the control they want.<br>
+In the previous paragraph about <em>Expert Constants</em> we talked about adding a new section, called <strong>layout</strong>.<br>
+In this section we can specify the resource list for each <em>pass</em> manually, and later on in the pass we can reference this lists as used by the pass.</p>
+
+<p>Going on a more complete solution, layouts <strong>should be included and merged when including other HFX files</strong>.<br>
+This is something we want and we&rsquo;ll look in another post, we can start simple by defining something local:</p>
+
+<pre><code>// HFX
+//
+// For the developer
+layout {
+    list LocalCompute {
+        cbuffer LocalConstants;
+
+        texture2Drw(rgba8) destination_texture;
+    }
+
+    list Local {
+        texture2D input_texture;
+    }
+}
+</code></pre>
+
+<p>This is a rather simple layout, but let&rsquo;s see it.<br>
+First of all, for each &lsquo;list&rsquo; keyword we define a single list with a unique name.<br>
+With that, we can reference in the pass which list to use.<br></p>
+
+<p>The code that does the parsing is (at this point) pretty straight-forward, both in <code>void declarationResourceList( Parser* parser, ResourceList&amp; resource_list )</code> and  <code>void resourceBindingIdentifier( Parser* parser, const Token&amp; token, ResourceBinding&amp; binding )</code>.<br>
+I will not go over it, but basically it will parse the resource lists and add them to the shader.<br>
+The parsing itself will read the text and create the <code>ResourceSetLayoutCreation::Binding</code> and add it to the list of the resources.<br></p>
+
+<p>We then add a new identifier in the pass to choose which resource list to be used:</p>
+
+<pre><code>// HFX
+//
+pass FillTexture {
+
+    resources = LocalCompute, ...
+
+    dispatch = 32, 32, 1
+    render_pass = compute
+    compute = ComputeTest
+}
+
+pass ToScreen {
+
+    resources = Local
+
+    render_pass = fullscreen
+    vertex = ToScreen
+    fragment = ToScreen
+}
+</code></pre>
+
+<p>The parsing will happen in <code>void declarationPassResources( Parser* parser, Pass&amp; pass )</code>.</p>
+
+<h3 id="adding-resource-layout-data-to-binary-hfx">Adding Resource Layout data to binary HFX</h3>
+
+<p>So after this amazing journey we are ready to embed those informations into the BHFX and use it right away into the rendering API.</p>
+
+<p>The big difference is <strong>if the hfx file contains a layout section</strong>.<br>
+If it is not present, then all the informations will be gathered automatically and will be added with the <code>writeAutomaticResourcesLayout</code> method.</p>
+
+<p>First we will add the LocalConstant buffer created from the properties:</p>
+
+<pre><code>static void writeAutomaticResourcesLayout( const hfx::Pass&amp; pass, StringBuffer&amp; pass_buffer, uint32_t&amp; pass_offset ) {
+
+    using namespace hydra::graphics;
+
+    // Add the local constant buffer obtained from all the properties in the layout.
+    hydra::graphics::ResourceSetLayoutCreation::Binding binding = { hydra::graphics::ResourceType::Constants, 0, 1, &quot;LocalConstants&quot; };
+
+    pass_buffer.append( (void*)&amp;binding, sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding) );
+    pass_offset += sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding );
+</code></pre>
+
+<p>Then we will cycle through all the shader stages and write the resources into the memory:</p>
+
+<pre><code>    for ( size_t s = 0; s &lt; pass.shader_stages.size(); ++s ) {
+        const Pass::ShaderStage shader_stage = pass.shader_stages[s];
+
+        for ( size_t p = 0; p &lt; shader_stage.code-&gt;resources.size(); p++ ) {
+            const hfx::CodeFragment::Resource&amp; resource = shader_stage.code-&gt;resources[p];
+
+            switch ( resource.type ) {
+                case ResourceType::Texture:
+                {
+                    copy( resource.name, binding.name, 32 );
+                    binding.type = hydra::graphics::ResourceType::Texture;
+
+                    pass_buffer.append( (void*)&amp;binding, sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding ) );
+                    pass_offset += sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding );
+                    break;
+                }
+
+                case ResourceType::TextureRW:
+                {
+                    copy( resource.name, binding.name, 32 );
+                    binding.type = hydra::graphics::ResourceType::TextureRW;
+
+                    pass_buffer.append( (void*)&amp;binding, sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding ) );
+                    pass_offset += sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding );
+                    break;
+                }
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>If instead there is a layout section, the method <code>writeResourcesLayout</code> is called and will be pretty straight-forward:</p>
+
+<pre><code>static void writeResourcesLayout( const hfx::Pass&amp; pass, StringBuffer&amp; pass_buffer, uint32_t&amp; pass_offset ) {
+
+    using namespace hydra::graphics;
+
+    for ( size_t r = 0; r &lt; pass.resource_lists.size(); ++r ) {
+        const ResourceList* resource_list = pass.resource_lists[r];
+
+        const uint32_t resources_count = (uint32_t)resource_list-&gt;resources.size();
+        pass_buffer.append( (void*)resource_list-&gt;resources.data(), sizeof(ResourceBinding) * resources_count );
+        pass_offset += sizeof( ResourceBinding ) * resources_count;
+    }
+}
+</code></pre>
+
+<p>And this will be put at the end of the current pass section:</p>
+
+<pre><code>pass_buffer.append( (void*)&amp;pass_header, sizeof( ShaderEffectFile::PassHeader ) );
+pass_buffer.append( shader_offset_buffer );
+pass_buffer.append( code_buffer );
+
+if ( automatic_layout ) {
+    writeAutomaticResourcesLayout( pass, pass_buffer, pass_offset );
+}
+else {
+    writeResourcesLayout( pass, pass_buffer, pass_offset );
+}
+</code></pre>
+
+<h1 id="conclusions-and-what-s-next">Conclusions and what&rsquo;s next</h1>
+
+<p>We arrived at the end of this article, and we started seeing how we can use HFX as a more complete language to embed different rendering features.<br>
+We saw how to embed shader code and resource lists so that the rendering API can create everything without hard-coded generation of resources. This also showed when it was useful to create data instead of code.<br>
+On the contrary, the UI and the Constants are generated in a new header file - thus code generation.<br>
+There are pros and cons to both approaches, but I hope that knowing how to generate code and create a custom language will let you play with the concepts and explore your own needs.</p>
+
+<p>As next steps, there are some questions opened: how to reload shaders ? Can I add new material properties without recompiling code ?</p>
+
+<p>We will also see a simple implementation of a frame-graph, that I use since my years in Codemasters and in my indie project. This will be much more data-driven than code-generated, but again, the purpose of these articles is to explore the concepts and understanding when to use what.</p>
+
+<p>As always please comment, feedback, share!</p>
+
+<p>Thanks for reading!
+   Gabriel</p>
+
+    </div>
+
+    
+
+
+    
+
+
+
+    
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+  
+  
+    
+  
+  
+  <div class="media author-card" itemscope itemtype="http://schema.org/Person">
+    
+      
+      <img class="portrait mr-3" src="/authors/admin/avatar_hu45846e015095c9654b2fb671ea5d5811_27176_250x250_fill_q90_lanczos_center.jpg" itemprop="image" alt="Avatar">
+    
+
+    <div class="media-body">
+      <h5 class="card-title" itemprop="name"><a href="/">Gabriel Sassone</a></h5>
+      <h6 class="card-subtitle">Senior Rendering/Engine Programmer</h6>
+      
+      <ul class="network-icon" aria-hidden="true">
+        
+          
+          
+          
+            
+          
+          
+          
+          
+          
+            
+          
+          <li>
+            <a itemprop="sameAs" href="https://twitter.com/GabrielSassone" target="_blank" rel="noopener">
+              <i class="fab fa-twitter"></i>
+            </a>
+          </li>
+        
+          
+          
+          
+            
+          
+          
+          
+          
+          
+            
+          
+          <li>
+            <a itemprop="sameAs" href="https://github.com/JorenJoestar" target="_blank" rel="noopener">
+              <i class="fab fa-github"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+
+
+      
+      
+    
+
+    
+
+    
+
+
+  </div>
+</article>
+
+      
+
+    
+    
+
+    
+    
+    
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js" integrity="sha256-lqvxZrPLtfffUl2G/e7szqSvPBILGbwmsGE1MKlOi0Q=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js" integrity="sha256-CBrpuqrMhXwcLLUd5tvQ4euBHCdh7wGlDfNz8vbu/iI=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" integrity="sha256-X5PoE3KU5l+JcX+w09p/wHl9AzK333C4hJ2I9S5mD4M=" crossorigin="anonymous"></script>
+
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js" integrity="sha256-aYTdUrn6Ow1DDgh5JTc3aDGnnju48y/1c8s1dgkYPQ8=" crossorigin="anonymous"></script>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/languages/cpp.min.js"></script>
+        
+      
+
+      
+      
+    
+
+    
+    
+
+    
+    
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+
+    
+    
+    <script>
+      const search_index_filename = "/index.json";
+      const i18n = {
+        'placeholder': "Search...",
+        'results': "results found",
+        'no_results': "No results found"
+      };
+      const content_type = {
+        'post': "Posts",
+        'project': "Projects",
+        'publication' : "Publications",
+        'talk' : "Talks"
+        };
+    </script>
+    
+
+    
+    
+
+    
+    
+    <script id="search-hit-fuse-template" type="text/x-template">
+      <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <a href="{{relpermalink}}">{{title}}</a>
+          <div class="article-metadata search-hit-type">{{type}}</div>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+      </div>
+    </script>
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha256-VzgmKYmhsGNNN4Ph1kMW+BjoYJM2jV5i4IlFoeZA9XI=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha256-4HLtjeVgH0eIB3aZ9mLYF6E8oU5chNdjU6p6rrXpl9U=" crossorigin="anonymous"></script>
+    
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+    
+    
+    
+    
+    <script src="/js/academic.min.4e51017b38c7ebaadd7e25fc9503f88c.js"></script>
+
+    
+
+
+
+
+
+
+  
+  <div class="container">
+    <footer class="site-footer">
+  
+
+  <p class="powered-by">
+    
+
+    Powered by the
+    <a href="https://sourcethemes.com/academic/" target="_blank" rel="noopener">Academic theme</a> for
+    <a href="https://gohugo.io" target="_blank" rel="noopener">Hugo</a>.
+
+    
+    <span class="float-right" aria-hidden="true">
+      <a href="#" id="back_to_top">
+        <span class="button_icon">
+          <i class="fas fa-chevron-up fa-2x"></i>
+        </span>
+      </a>
+    </span>
+    
+  </p>
+</footer>
+
+  </div>
+  
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cite</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> Copy
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> Download
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
