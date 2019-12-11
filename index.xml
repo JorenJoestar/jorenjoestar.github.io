@@ -6,10 +6,779 @@
     <description>Recent content on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 11 Sep 2019 00:42:13 -0400</lastBuildDate>
+    <lastBuildDate>Mon, 14 Oct 2019 10:43:49 -0400</lastBuildDate>
     
 	    <atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Writing a Shader Effect Language Part 3: Materials</title>
+      <link>/post/writing_shader_effect_language_3/</link>
+      <pubDate>Mon, 14 Oct 2019 10:43:49 -0400</pubDate>
+      
+      <guid>/post/writing_shader_effect_language_3/</guid>
+      <description>
+
+&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+
+&lt;p&gt;In &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&#34; target=&#34;_blank&#34;&gt;Part 2 of this series&lt;/a&gt; we added Resource Layouts and Properties to the &lt;strong&gt;HFX&lt;/strong&gt; language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.&lt;br&gt;
+In this article I would like to explore further adds to HFX, especially a proper &lt;strong&gt;Material System&lt;/strong&gt; to be used in conjunction with the HFX language.&lt;br&gt;
+I also separated the code a little bit for clarity and added the usage of STB array and hash maps.&lt;br&gt;
+With that I would like to develop a Material System that is robust and easy to use, even though I am (DISCLAIMER!) far from it!&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;I will first talk about the theory and thoughts behind those changes, and then go through the code changes and addition.&lt;/p&gt;
+
+&lt;h1 id=&#34;material-system-thoughts&#34;&gt;Material System thoughts&lt;/h1&gt;
+
+&lt;p&gt;Following a nomenclature from the amazing guys at &lt;a href=&#34;https://ourmachinery.com/post/&#34; target=&#34;_blank&#34;&gt;our_machinery&lt;/a&gt;, we are adding a &lt;em&gt;Tier 1 Shader System&lt;/em&gt; - something that builds on top of the graphics API created in the previous article.&lt;/p&gt;
+
+&lt;p&gt;First of all, a great series of article is again on their website:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://ourmachinery.com/post/the-machinery-shader-system-part-1/&#34; target=&#34;_blank&#34;&gt;https://ourmachinery.com/post/the-machinery-shader-system-part-1/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://ourmachinery.com/post/the-machinery-shader-system-part-2/&#34; target=&#34;_blank&#34;&gt;https://ourmachinery.com/post/the-machinery-shader-system-part-2/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://ourmachinery.com/post/the-machinery-shader-system-part-3/&#34; target=&#34;_blank&#34;&gt;https://ourmachinery.com/post/the-machinery-shader-system-part-3/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;We are building a Material System based on a graphics-API that exposes the following concepts:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Buffer&lt;/li&gt;
+&lt;li&gt;Texture&lt;/li&gt;
+&lt;li&gt;Pipeline (that includes shaders)&lt;/li&gt;
+&lt;li&gt;Render Pass&lt;/li&gt;
+&lt;li&gt;Resource List Layout&lt;/li&gt;
+&lt;li&gt;Resource List&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;We are using a Vulkan/D3D12 interface here, and these concepts map 1 to 1 with that.&lt;br&gt;
+One of the big changes from a typical low-level graphics API is both the &amp;lsquo;missing&amp;rsquo; concept of Shader as a resource, and the addition of Render Pass as resource.&lt;br&gt;
+A new concept is the one of &lt;strong&gt;Resource List Layout&lt;/strong&gt; and &lt;strong&gt;Resource List&lt;/strong&gt;.&lt;br&gt;
+The Vulkan names are &lt;strong&gt;Descriptor Set Layout&lt;/strong&gt; and &lt;strong&gt;Descriptor Set&lt;/strong&gt;, but even though they reflect more the underlying driver nature of the term, I changed to &lt;strong&gt;Resource List&lt;/strong&gt; just to have it clearer as a concept.&lt;/p&gt;
+
+&lt;p&gt;The &lt;strong&gt;King&lt;/strong&gt; here is the Pipeline: it is a structure that contains &lt;strong&gt;all the immutable data of a pipeline&lt;/strong&gt;. That includes our missing &lt;strong&gt;shaders&lt;/strong&gt;, all the &lt;strong&gt;render states&lt;/strong&gt; (DepthStencil, AlphaBlend, &amp;hellip;) and a &lt;strong&gt;Layout of the resources to be used by the shader&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Part of the &lt;strong&gt;dynamic&lt;/strong&gt; pipeline states are normally the &lt;strong&gt;geometry&lt;/strong&gt; and the &lt;strong&gt;resource lists&lt;/strong&gt;.&lt;br&gt;
+Note that I am using the plural here: each &lt;strong&gt;pipeline&lt;/strong&gt; can have 1 or more &lt;strong&gt;resource lists!!&lt;/strong&gt;.&lt;br&gt;
+This is a good to organize your resources based on update frequencies, something coming from the numerous talks about Approaching Zero Driver Overhead.&lt;/p&gt;
+
+&lt;p&gt;Remembering the simple interface of our API, now we have the following:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;struct Device {
+
+    ...
+
+    BufferHandle                    create_buffer( const BufferCreation&amp;amp; creation );
+    TextureHandle                   create_texture( const TextureCreation&amp;amp; creation );
+    PipelineHandle                  create_pipeline( const PipelineCreation&amp;amp; creation );
+    SamplerHandle                   create_sampler( const SamplerCreation&amp;amp; creation );
+    ResourceListLayoutHandle        create_resource_list_layout( const ResourceListLayoutCreation&amp;amp; creation );
+    ResourceListHandle              create_resource_list( const ResourceListCreation&amp;amp; creation );
+    RenderPassHandle                create_render_pass( const RenderPassCreation&amp;amp; creation );
+
+    ...
+};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you look at the OpenGL implementation (the only I wrote for now :( ) you will find that Shaders are considered resources, but it is more for convenience of the attach/linking OpenGL need than anything else.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s finally introduce the new concept for this article!&lt;/p&gt;
+
+&lt;h2 id=&#34;shader-effect&#34;&gt;Shader Effect&lt;/h2&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;A &lt;strong&gt;Shader Effect&lt;/strong&gt; is the blueprint of &lt;em&gt;static&lt;/em&gt; data needed to draw something on the screen.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;It needs to include &lt;strong&gt;shaders&lt;/strong&gt; (included in a &lt;strong&gt;Pipeline Description&lt;/strong&gt;), &lt;strong&gt;properties&lt;/strong&gt; (coming from the HFX file) and find its location into a &lt;strong&gt;render graph&lt;/strong&gt;.&lt;br&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;A &lt;strong&gt;Shader Effect&lt;/strong&gt; is 1 to 1 with a &lt;strong&gt;Binary HFX file&lt;/strong&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;As a convenience we will add also informations about the &lt;strong&gt;local constants&lt;/strong&gt;.&lt;br&gt;
+When creating a Shader Effect, we can define properties, and we put all the numerical properties into one buffer.&lt;/p&gt;
+
+&lt;p&gt;This is the current code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+struct ShaderEffect {
+
+    //
+    //
+    struct PropertiesMap {
+
+        char*                       key;
+        hfx::ShaderEffectFile::MaterialProperty* value;
+
+    }; // struct PropertiesMap
+
+    struct Pass {
+        PipelineCreation            pipeline_creation;
+        char                        name[32];
+        PipelineHandle              pipeline_handle;
+        uint32_t                    pool_id;
+    }; // struct Pass
+
+    Pass*                           passes;
+
+    uint16_t                        num_passes              = 0;
+    uint16_t                        num_properties          = 0;
+    uint32_t                        local_constants_size    = 0;
+
+    char*                           local_constants_default_data = nullptr;
+    char*                           properties_data         = nullptr;
+
+    PropertiesMap*                  name_to_property        = nullptr;
+
+    char                            name[32];
+    char                            pipeline_name[32];
+    uint32_t                        pool_id;
+
+}; // struct ShaderEffect
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You see both a &lt;strong&gt;pipeline name&lt;/strong&gt; and an array of &lt;strong&gt;passes&lt;/strong&gt; with a name. These are to insert the pass into a very &lt;strong&gt;primordial&lt;/strong&gt; render graph, that I wrote just because I didn&amp;rsquo;t want to hardcode the frame structure, especially because next article will be EXACTLY on this topic!&lt;/p&gt;
+
+&lt;p&gt;Having defined the Shader Effect, we can now move into the next big actor.&lt;/p&gt;
+
+&lt;h2 id=&#34;material&#34;&gt;Material&lt;/h2&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;A &lt;strong&gt;Material&lt;/strong&gt; is an instance of a &lt;strong&gt;Shader Effect&lt;/strong&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Given a HFX file, we generate a new file (HMT, Hydra Material) that will contain all the informations.&lt;br&gt;
+The concept of Material is really &lt;strong&gt;unique values for the properties of a Shader Effect&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;That is basically it.&lt;/p&gt;
+
+&lt;p&gt;For example, if a shader contains a property like an &lt;em&gt;albedo texture&lt;/em&gt;, the material answer the question &amp;ldquo;which albedo texture?&amp;rdquo;.&lt;br&gt;
+This is done for every property.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s have a look at our new material:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;{
+    &amp;quot;name&amp;quot;: &amp;quot;SimpleFullscreen&amp;quot;,
+    &amp;quot;effect_path&amp;quot;: &amp;quot;SimpleFullscreen.hfx&amp;quot;,
+    &amp;quot;properties&amp;quot;: [
+        {
+            &amp;quot;scale&amp;quot;: 16.0,
+            &amp;quot;albedo&amp;quot;: &amp;quot;AngeloCensorship.png&amp;quot;,
+            &amp;quot;modulo&amp;quot;: 2.0
+        }
+    ],
+    &amp;quot;bindings&amp;quot;: [
+        {
+            &amp;quot;LocalConstants&amp;quot;: &amp;quot;LocalConstants&amp;quot;,
+            &amp;quot;destination_texture&amp;quot;: &amp;quot;compute_output_texture&amp;quot;,
+            &amp;quot;input_texture&amp;quot;: &amp;quot;compute_output_texture&amp;quot;,
+            &amp;quot;albedo_texture&amp;quot;: &amp;quot;albedo&amp;quot;
+        }
+    ]
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As you can see there is a name, the effect path, the properties and the bindings. These will be explained in the next section.&lt;br&gt;
+Properties are just a name-value list, coming from the Shader Effect itself (the .bhfx file).&lt;/p&gt;
+
+&lt;p&gt;The texture is my horrible drawing after reading the fantastic &lt;a href=&#34;http://c0de517e.blogspot.com/2019/08/engineering-career-guide-leaked.html&#34; target=&#34;_blank&#34;&gt;rendering guide by Angelo Pesce&lt;/a&gt; and how he censored the parts that were internal to Roblox!&lt;/p&gt;
+
+&lt;h2 id=&#34;shader-resource-database-and-lookup&#34;&gt;Shader Resource Database and Lookup&lt;/h2&gt;
+
+&lt;p&gt;A concept that I saw only in the &lt;strong&gt;our_machinery&lt;/strong&gt; posts, but I personally adopted since a couple of years, is a way of automating a daunting task: &lt;em&gt;setting shader resources&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;I still need to finish the correct implementation of those, but the concepts are simple.&lt;br&gt;
+A &lt;strong&gt;Shader Resource Database&lt;/strong&gt; is a database of resources that can be searched using a &lt;strong&gt;Shader Resources Lookup&lt;/strong&gt;.&lt;br&gt;
+The name of the binding is the shader related name, while the value is the name into the database.&lt;br&gt;
+Of course you can use hashes instead of names, and compile them into a binary version of this, but this is not important now.&lt;/p&gt;
+
+&lt;p&gt;One interesting bit (sadly not implemented here, sorry!) is the binding specialization. &lt;br&gt;
+This is done so that resources can be specialized in the database.&lt;br&gt;
+This is done per pass and it let you write only one binding list for all the Material, and then gather the proper resource based on the specialization.&lt;br&gt;
+For example if there is a binding for a pass-dependent resource, writing a generic version can specialize the shader pass correctly. Or using special keywords in the bindings, you can retrieve input/output textures from the render pass in which the shader is rendered!&lt;/p&gt;
+
+&lt;p&gt;For now though it is more a manual written list, but it will be developed further.&lt;/p&gt;
+
+&lt;h1 id=&#34;where-is-my-code&#34;&gt;Where is my code ?&lt;/h1&gt;
+
+&lt;p&gt;Having introduced the new concept, let&amp;rsquo;s look at the changes that happened in the last weeks of night coding.&lt;br&gt;
+As said before, in general I separated the code in header/cpp for clarity and building performances (after a good talk on Twitter, &lt;a href=&#34;https://twitter.com/GabrielSassone/status/1179810419617275905?s=20&#34; target=&#34;_blank&#34;&gt;https://twitter.com/GabrielSassone/status/1179810419617275905?s=20&lt;/a&gt;).&lt;/p&gt;
+
+&lt;h2 id=&#34;applications&#34;&gt;Applications&lt;/h2&gt;
+
+&lt;p&gt;First big changes was separating the code from the previous articles in an &lt;em&gt;application&lt;/em&gt;: namely &lt;strong&gt;CustomShaderLanguageApplication&lt;/strong&gt; in &lt;strong&gt;CustomShaderLanguage.h/cpp&lt;/strong&gt; and &lt;strong&gt;MaterialSystemApplication&lt;/strong&gt; in &lt;strong&gt;MaterialSystem.h/cpp&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;The first contains all the application code that uses HDF and HFX, with code generation and HFX compilation.&lt;br&gt;
+The second contains both the new &lt;strong&gt;Material System&lt;/strong&gt; and the application that uses it.&lt;br&gt;
+I would love to say that is an usable app, but I really touched my limits in non designing clearly when night coding.&lt;br&gt;
+&lt;strong&gt;Personal note: I hope this could be the spark to create a FX Composer successor, open source and free for all!&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;stb&#34;&gt;STB&lt;/h2&gt;
+
+&lt;p&gt;As part of this experiment I wanted to try something different.&lt;br&gt;
+Instead of re-writing array and hash maps with templates, I wanted to give a try to the &lt;a href=&#34;https://github.com/nothings/stb&#34; target=&#34;_blank&#34;&gt;STB libraries&lt;/a&gt;: namely &lt;strong&gt;stb_ds.h&lt;/strong&gt; and &lt;strong&gt;stb_image.h&lt;/strong&gt;.&lt;br&gt;
+Arrays and Hash Maps are now included in hydra_lib.h to be used across the code.&lt;/p&gt;
+
+&lt;h2 id=&#34;hydra-graphics&#34;&gt;Hydra Graphics&lt;/h2&gt;
+
+&lt;p&gt;The device added render passes and the support for multiple resources layout.&lt;br&gt;
+It also creates FBOs for color passes and supports resize, especially thanks to the Render Pipeline.&lt;/p&gt;
+
+&lt;h2 id=&#34;primitive-render-graph-called-render-pipeline&#34;&gt;Primitive Render Graph (called Render Pipeline)&lt;/h2&gt;
+
+&lt;p&gt;I use the term I used since the inception in 2010, and honestly it is more true to what it does.&lt;br&gt;
+It is not a graph but more a list of &lt;strong&gt;Render Stages&lt;/strong&gt; with input/outputs defined clearly.&lt;br&gt;
+In the next article I will develop more on this, but for now I needed some structure like this to be explicit.&lt;/p&gt;
+
+&lt;p&gt;In the application there are 3 pipelines, one for a single pass ShaderToy shader, one for a silly compute to framebuffer shader(that for now loads a texture and outputs it to the framebuffer), and one for just a render to window.&lt;/p&gt;
+
+&lt;p&gt;I use this in my indie project, with a fully custom and data driven (written in json) pipeline that includes compute deferred lighting and shadows, shadow passes, various post-process passes and such, everything very easy to debug and very easy to modify/add/delete.&lt;br&gt;
+There is a mechanism to send the correct draw calls to the correct pass through the usage of render systems, but again this will be a topic for the next article!&lt;/p&gt;
+
+&lt;p&gt;In the included code, there is also a small but powerful tool: a pipeline explorer.&lt;br&gt;
+For now it will just show the render targets for each stage, and in these simple examples does not matter much.&lt;br&gt;
+In the next article we will dive deep into the &lt;strong&gt;Render Pipeline/Graph&lt;/strong&gt; subject and then all of this will make sense!&lt;/p&gt;
+
+&lt;h1 id=&#34;break-a-simple-resource-manager&#34;&gt;Break: a simple Resource Manager&lt;/h1&gt;
+
+&lt;p&gt;While being a very important topic, this is not the focus of this article.&lt;br&gt;
+Anyway I wanted a Resource Manager that would be helpful to handle resource creation and loading.&lt;br&gt;
+This includes also &lt;em&gt;resource compilation&lt;/em&gt;, something that normally happens at &lt;em&gt;build time&lt;/em&gt;, but in our exercise can be triggered at run-time.&lt;/p&gt;
+
+&lt;p&gt;The &lt;strong&gt;resource manager&lt;/strong&gt; is a class that simply manages resources using &lt;strong&gt;factories&lt;/strong&gt; and manages dependencies between resources.&lt;br&gt;
+We have only 3 resources for now:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Textures&lt;/li&gt;
+&lt;li&gt;Shader Effects&lt;/li&gt;
+&lt;li&gt;Materials&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&#34;resources&#34;&gt;Resources&lt;/h2&gt;
+
+&lt;p&gt;A resource is a class that both has data and let the dependency with other data be clear.&lt;br&gt;
+The &lt;strong&gt;resource&amp;rsquo;s data&lt;/strong&gt; is actually a pointer to actual raw data used by other systems, in this case rendering.&lt;br&gt;
+Let&amp;rsquo;s see its definition:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;struct Resource {
+
+    struct ResourceReference {
+        uint8_t                     type;
+        char                        path[255];
+    }; // struct ResourceReference
+
+    struct Header {
+
+        char                        header[7];
+        uint8_t                     type;   // ResourceType::enum
+
+        size_t                      data_size;
+        uint16_t                    num_external_references;
+        uint16_t                    num_internal_references;
+        
+    }; // struct Header
+
+    struct ResourceMap {
+        char*                       key;
+        Resource*                   value;
+    };
+
+    Header*                         header;
+    char*                           data;
+    void*                           asset;
+
+    Resource::ResourceReference*    external_references;
+    // External
+    ResourceMap*                    name_to_external_resources;
+    // Interal
+
+}; // struct Resource
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;A resource is loaded from a binary file and contains a header and some data coming from the file, and an asset containing a system specific pointer.&lt;/p&gt;
+
+&lt;p&gt;We added 3 system specific resources (Texture, Shader Effect and Material) but the class handled is always resource.&lt;br&gt;
+To access the system specific data, asset member is used.&lt;/p&gt;
+
+&lt;p&gt;A resource contains also a map to the external resources loaded within it - to handle external references.&lt;/p&gt;
+
+&lt;h2 id=&#34;compilation&#34;&gt;Compilation&lt;/h2&gt;
+
+&lt;p&gt;Starting from a &lt;em&gt;source file&lt;/em&gt; (.hfx, .png, .hmt) using the specific factory, the resource manager compiles the code to a binary resource.&lt;br&gt;
+This means both converting the source format to a binary representation but also adding &lt;strong&gt;external dependencies&lt;/strong&gt; to the file.&lt;br&gt;
+These dependencies will be loaded when loading the resource, and before it.&lt;/p&gt;
+
+&lt;h2 id=&#34;loading&#34;&gt;Loading&lt;/h2&gt;
+
+&lt;p&gt;Loading happens by first loading all the dependent resources and then using the specific factory to load the &lt;em&gt;system specific&lt;/em&gt; asset.&lt;br&gt;
+This is a very semplicistic resource management - synchronous only, single threaded, not optimized - so really was an exercise in having something running for both compiling a resource and managing dependencies.&lt;br&gt;
+The whole point is the separation between a source and human-readable format to a binary one and encapsulate this.&lt;/p&gt;
+
+&lt;p&gt;After this (very!) small break on resource management, let&amp;rsquo;s continue to the actual code for the materials!&lt;/p&gt;
+
+&lt;h1 id=&#34;material-system-implementation&#34;&gt;Material System implementation&lt;/h1&gt;
+
+&lt;p&gt;After all this thory let&amp;rsquo;s look at the code!&lt;br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;shader-effect-1&#34;&gt;Shader Effect&lt;/h2&gt;
+
+&lt;p&gt;The main parts of a &lt;strong&gt;Shader Effect&lt;/strong&gt; are &lt;strong&gt;Passes&lt;/strong&gt; and &lt;strong&gt;Properties&lt;/strong&gt;.&lt;br&gt;
+&lt;strong&gt;Passes&lt;/strong&gt; are the most important one, as they contain all the informations to create an actual &lt;strong&gt;Pipeline&lt;/strong&gt;, called &lt;strong&gt;Pipeline Creation&lt;/strong&gt;.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Remembering the Vulkan/DX12 interface, we cannot create singularly a shader, but we need all the pipeline data (depth stencil, alpha blend, &amp;hellip;) to actually create the shaders too.&lt;/p&gt;
+
+&lt;p&gt;The gist here is to access all those informations in a hiearchical way, basically reading them from the RenderPipeline and then overwriting with what is defined in the HFX file.&lt;/p&gt;
+
+&lt;p&gt;Right now there is almost nothing if not the shaders, so the creation is quite simple:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;for ( uint16_t p = 0; p &amp;lt; shader_effect_file.header-&amp;gt;num_passes; p++ ) {
+    hfx::ShaderEffectFile::PassHeader* pass_header = hfx::get_pass( shader_effect_file, p );
+
+    uint32_t shader_count = pass_header-&amp;gt;num_shader_chunks;
+
+    memcpy( effect-&amp;gt;passes[p].name, pass_header-&amp;gt;stage_name, 32 );
+
+    PipelineCreation&amp;amp; pipeline_creation = effect-&amp;gt;passes[p].pipeline_creation;
+    ShaderCreation&amp;amp; creation = pipeline_creation.shaders;
+    bool compute = false;
+
+    // Create Shaders
+    for ( uint16_t i = 0; i &amp;lt; shader_count; i++ ) {
+        hfx::get_shader_creation( pass_header, i, &amp;amp;creation.stages[i] );
+
+        if ( creation.stages[i].type == ShaderStage::Compute )
+            compute = true;
+    }
+
+    creation.name = pass_header-&amp;gt;name;
+    creation.stages_count = shader_count;
+
+    effect-&amp;gt;passes[p].pipeline_creation.compute = compute;
+
+    // Create Resource Set Layouts
+    for ( uint16_t l = 0; l &amp;lt; pass_header-&amp;gt;num_resource_layouts; l++ ) {
+
+        uint8_t num_bindings = 0;
+        const ResourceListLayoutCreation::Binding* bindings = get_pass_layout_bindings( pass_header, l, num_bindings );
+        ResourceListLayoutCreation resource_layout_creation = { bindings, num_bindings };
+
+        pipeline_creation.resource_list_layout[l] = context.device.create_resource_list_layout( resource_layout_creation );
+
+    }
+
+    pipeline_creation.num_active_layouts = pass_header-&amp;gt;num_resource_layouts;
+
+    // Create Pipeline
+    effect-&amp;gt;passes[p].pipeline_handle = context.device.create_pipeline( pipeline_creation );
+    if ( effect-&amp;gt;passes[p].pipeline_handle.handle == k_invalid_handle ) {
+        invalid_effect = true;
+        break;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;When we will have a proper RenderPipeline, we will get the basic pipeline creation from there, and overwrite the shaders and states that will be defined in the HFX.&lt;/p&gt;
+
+&lt;p&gt;There are 3 main steps here:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Create Shaders&lt;/li&gt;
+&lt;li&gt;Create Resource Set Layouts&lt;/li&gt;
+&lt;li&gt;Create Pipelines&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;These are simple operations that rely heavily on the device.&lt;br&gt;
+The objective of the HFX is to embed most information possible to create a complete pipeline.&lt;/p&gt;
+
+&lt;p&gt;Another important step is to populate the properties map:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;string_hash_init_arena( effect-&amp;gt;name_to_property );
+
+for ( uint32_t p = 0; p &amp;lt; effect-&amp;gt;num_properties; ++p ) {
+    hfx::ShaderEffectFile::MaterialProperty* property = hfx::get_property( effect-&amp;gt;properties_data, p );
+
+    string_hash_put( effect-&amp;gt;name_to_property, property-&amp;gt;name, property );
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We are using the STB String Hashmap here with the property that are inside the shader effect file. Those will contain the type, name for UI and the pointer to a default value. &lt;br&gt;
+The default value will be used based on the type of course.&lt;/p&gt;
+
+&lt;p&gt;We are also saving the local constant buffer size, so that we can allocate some memory in the Material and alter its property using the UI.&lt;/p&gt;
+
+&lt;p&gt;We will see the importance of this next.&lt;/p&gt;
+
+&lt;h2 id=&#34;material-1&#34;&gt;Material&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;struct ShaderInstance {
+
+    PipelineHandle                  pipeline;
+    ResourceListHandle              resource_lists[hydra::graphics::k_max_resource_layouts];
+
+    uint32_t                        num_resource_lists;
+}; // struct ShaderInstance
+
+struct Material {
+
+    ShaderInstance*                 shader_instances        = nullptr;
+    uint32_t                        num_instances           = 0;
+
+    ShaderResourcesLookup           lookups; // Per-pass resource lookup. Same count as shader instances.
+    ShaderEffect*                   effect                  = nullptr;
+
+    BufferHandle                    local_constants_buffer;
+    char*                           local_constants_data    = nullptr;
+
+    const char*                     name                    = nullptr;
+    StringBuffer                    loaded_string_buffer;
+    
+    uint32_t                        num_textures            = 0;
+    uint32_t                        pool_id                 = 0;
+
+    Texture**                       textures                = nullptr;
+
+}; // struct Material
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is the glue to actually render something on the screen.&lt;br&gt;
+As a recap, we need 3 informations to render something:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Pipeline (shaders + render states)&lt;/li&gt;
+&lt;li&gt;Resources (handles to buffers and textures)&lt;/li&gt;
+&lt;li&gt;Geometry (in this case a fullscreen quad)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Material gives all those informations.&lt;/p&gt;
+
+&lt;p&gt;A &lt;strong&gt;Shader Instance&lt;/strong&gt; is defined for each &lt;strong&gt;pass&lt;/strong&gt;, and actually contains the Pipeline Handle and the &lt;strong&gt;List of Resource Lists&lt;/strong&gt; to be used.&lt;br&gt;
+This is one of the new concepts for Vulkan/DX12: you can use one of more lists of resources to render, and normally it is better to group them by frequency.&lt;/p&gt;
+
+&lt;p&gt;Finally, a list of &lt;strong&gt;textures&lt;/strong&gt; is saved to be modified by the editor.&lt;/p&gt;
+
+&lt;p&gt;To understand more the process, let&amp;rsquo;s look at the loading code of a Material.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void* MaterialFactory::load( LoadContext&amp;amp; context ) {
+    
+    using namespace hydra::graphics;
+
+    // 1. Read header from file
+    MaterialFile material_file;
+    material_file.header = (MaterialFile::Header*)context.data;
+    material_file.property_array = (MaterialFile::Property*)(context.data + sizeof( MaterialFile::Header ));
+    material_file.binding_array = (MaterialFile::Binding*)(context.data + sizeof( MaterialFile::Header ) + sizeof( MaterialFile::Property ) * material_file.header-&amp;gt;num_properties);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We are using the data from the material file to access properties and bindings.&lt;br&gt;
+Properties are both numerical and path to textures, bindings are name to retrieve resources from the database. We will look into that later.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    // 2. Read shader effect
+    Resource* shader_effect_resource = string_hash_get( context.resource-&amp;gt;name_to_external_resources, material_file.header-&amp;gt;hfx_filename );
+    ShaderEffect* shader_effect = shader_effect_resource ? (ShaderEffect*)shader_effect_resource-&amp;gt;asset : nullptr;
+    if ( !shader_effect ) {
+        return nullptr;
+    }
+
+    // 3. Search pipeline
+    RenderPipeline* render_pipeline = string_hash_get( context.name_to_render_pipeline, shader_effect-&amp;gt;pipeline_name );
+    if ( !render_pipeline ) {
+        return nullptr;
+    }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Access the Shader Effect through the resource dependencies, and the Render Pipeline from the map.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    // 4. Load material
+    char* material_name = material_file.header-&amp;gt;name;
+    uint32_t pool_id = materials_pool.obtain_resource();
+    Material* material = new (materials_pool.access_resource(pool_id))Material();
+    material-&amp;gt;loaded_string_buffer.init( 1024 );
+    material-&amp;gt;pool_id = pool_id;
+
+    // TODO: for now just have one lookup shared.
+    material-&amp;gt;lookups.init();
+    // TODO: properly specialize.
+    // For each pass
+    //for ( uint32_t i = 0; i &amp;lt; effect-&amp;gt;num_pipelines; i++ ) {
+    //    PipelineCreation&amp;amp; pipeline = effect-&amp;gt;pipelines[i];
+    //    //final ShaderBindings specializedBindings = bindings.specialize( shaderTechnique.passName, shaderTechnique.viewName );
+    //    //shaderBindings.add( specializedBindings );
+    //}
+
+    material-&amp;gt;effect = shader_effect;
+    material-&amp;gt;num_instances = shader_effect-&amp;gt;num_passes;
+    material-&amp;gt;shader_instances = new ShaderInstance[shader_effect-&amp;gt;num_passes];
+    material-&amp;gt;name = material-&amp;gt;loaded_string_buffer.append_use( material_name );
+    material-&amp;gt;num_textures = material_file.header-&amp;gt;num_textures;
+    material-&amp;gt;textures = (Texture**)hydra::hy_malloc( sizeof( Texture* ) * material-&amp;gt;num_textures );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Here is the meaty part.&lt;br&gt;
+We create the Material, initialize a StringBuffer used to store all the names found in the file, init the db-&amp;gt;resource lookup and create the ShaderInstance array.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    // Init memory for local constants
+    material-&amp;gt;local_constants_data = (char*)hydra::hy_malloc( shader_effect-&amp;gt;local_constants_size );
+    // Copy default values to init to sane valuess
+    memcpy( material-&amp;gt;local_constants_data, material-&amp;gt;effect-&amp;gt;local_constants_default_data, material-&amp;gt;effect-&amp;gt;local_constants_size );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We cached the constant data size to allocate its memory, and we copy the default values in it.
+This memory will be overwritten by the other numerical properties and used to initialize the local constant buffer.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    // Add properties
+    uint32_t current_texture = 0;
+    for ( size_t p = 0; p &amp;lt; material_file.header-&amp;gt;num_properties; ++p ) {
+        MaterialFile::Property&amp;amp; property = material_file.property_array[p];
+
+        hfx::ShaderEffectFile::MaterialProperty* material_property = string_hash_get( material-&amp;gt;effect-&amp;gt;name_to_property, property.name );
+
+        switch ( material_property-&amp;gt;type ) {
+            case hfx::Property::Texture2D:
+            {
+                const char* texture_path = material-&amp;gt;loaded_string_buffer.append_use( property.data );
+                Resource* texture_resource = string_hash_get( context.resource-&amp;gt;name_to_external_resources, texture_path );
+                Texture* texture = (Texture*)texture_resource-&amp;gt;asset;
+                texture-&amp;gt;filename = texture_path;
+
+                render_pipeline-&amp;gt;resource_database.register_texture( property.name, texture-&amp;gt;handle );
+
+                material-&amp;gt;textures[current_texture] = texture;
+
+                ++current_texture;
+
+                break;
+            }
+
+            case hfx::Property::Float:
+            {
+                memcpy( material-&amp;gt;local_constants_data + material_property-&amp;gt;offset, property.data, sizeof( float ) );
+                break;
+            }
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;When cycling through the properties, we are copying the numerical properties into the newly allocated memory (local_constant_data) and we load the textures from the dependencies.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;     // Add bindings
+    for ( size_t b = 0; b &amp;lt; material_file.header-&amp;gt;num_bindings; ++b ) {
+        MaterialFile::Binding&amp;amp; binding = material_file.binding_array[b];
+
+        char* name = material-&amp;gt;loaded_string_buffer.append_use( binding.name );
+        char* value = material-&amp;gt;loaded_string_buffer.append_use( binding.value );
+        material-&amp;gt;lookups.add_binding_to_resource( name, value );
+    }
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We populate the resource lookups.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    BufferCreation checker_constants_creation = {};
+    checker_constants_creation.type = BufferType::Constant;
+    checker_constants_creation.name = s_local_constants_name;
+    checker_constants_creation.usage = ResourceUsageType::Dynamic;
+    checker_constants_creation.size = shader_effect-&amp;gt;local_constants_size;
+    checker_constants_creation.initial_data = material-&amp;gt;local_constants_data;
+
+    material-&amp;gt;local_constants_buffer = context.device.create_buffer( checker_constants_creation );
+    render_pipeline-&amp;gt;resource_database.register_buffer( (char*)s_local_constants_name, material-&amp;gt;local_constants_buffer );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Generate the actual constant buffer.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    // Bind material resources
+    update_material_resources( material, render_pipeline-&amp;gt;resource_database, context.device );
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And finally search the bindings for the resources.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;static void update_material_resources( hydra::graphics::Material* material, hydra::graphics::ShaderResourcesDatabase&amp;amp; database, hydra::graphics::Device&amp;amp; device ) {
+
+    using namespace hydra::graphics;
+
+    // Create resource list
+    // Get all resource handles from the database.
+    ResourceListCreation::Resource resources_handles[k_max_resources_per_list];
+
+    // For each pass
+    for ( uint32_t i = 0; i &amp;lt; material-&amp;gt;effect-&amp;gt;num_passes; i++ ) {
+        PipelineCreation&amp;amp; pipeline = material-&amp;gt;effect-&amp;gt;passes[i].pipeline_creation;
+
+        for ( uint32_t l = 0; l &amp;lt; pipeline.num_active_layouts; ++l ) {
+            // Get resource layout description
+            ResourceListLayoutDescription layout;
+            device.query_resource_list_layout( pipeline.resource_list_layout[l], layout );
+
+            // For each resource
+            for ( uint32_t r = 0; r &amp;lt; layout.num_active_bindings; r++ ) {
+                const ResourceBinding&amp;amp; binding = layout.bindings[r];
+
+                // Find resource name
+                // Copy string_buffer 
+                char* resource_name = material-&amp;gt;lookups.find_resource( (char*)binding.name );
+
+                switch ( binding.type ) {
+                    case hydra::graphics::ResourceType::Constants:
+                    case hydra::graphics::ResourceType::Buffer:
+                    {
+                        BufferHandle handle = resource_name ? database.find_buffer( resource_name ) : device.get_dummy_constant_buffer();
+                        resources_handles[r].handle = handle.handle;
+
+                        break;
+                    }
+
+                    case hydra::graphics::ResourceType::Texture:
+                    case hydra::graphics::ResourceType::TextureRW:
+                    {
+                        TextureHandle handle = resource_name ? database.find_texture( resource_name ) : device.get_dummy_texture();
+                        resources_handles[r].handle = handle.handle;
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        break;
+                    }
+                }
+            }
+
+            ResourceListCreation creation = { pipeline.resource_list_layout[l], resources_handles, layout.num_active_bindings };
+            material-&amp;gt;shader_instances[i].resource_lists[l] = device.create_resource_list( creation );
+        }
+        material-&amp;gt;shader_instances[i].num_resource_lists = pipeline.num_active_layouts;
+        material-&amp;gt;shader_instances[i].pipeline = material-&amp;gt;effect-&amp;gt;passes[i].pipeline_handle;
+    }
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;For each Pass, Resource Layout and Binding, we search the Database to retrieve the actual resource and create the Resource List.&lt;/p&gt;
+
+&lt;p&gt;This can be improved - having a global database of resources and a &amp;lsquo;local&amp;rsquo; one based on material resources.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    // 5. Bind material to pipeline
+    for ( uint8_t p = 0; p &amp;lt; shader_effect-&amp;gt;num_passes; ++p ) {
+        char* stage_name = shader_effect-&amp;gt;passes[p].name;
+        hydra::graphics::RenderStage* stage = string_hash_get( render_pipeline-&amp;gt;name_to_stage, stage_name );
+
+        if ( stage ) {
+            stage-&amp;gt;material = material;
+            stage-&amp;gt;pass_index = (uint8_t)p;
+        }
+    }
+
+    return material;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Finally, and this is hacky, we assing the current material and pass index to the found stage.&lt;br&gt;
+Once we have the real Render Pipeline/Graph working, we will use another dispatching mechanism.&lt;/p&gt;
+
+&lt;h1 id=&#34;rendering-of-a-material&#34;&gt;Rendering of a Material&lt;/h1&gt;
+
+&lt;p&gt;After all of this we finally have created a Material.&lt;br&gt;
+But how can we render it ?&lt;br&gt;
+The magic here happens in a &lt;strong&gt;Render Pipeline&lt;/strong&gt;!&lt;br&gt;
+A Render Pipeline is a list of Render Stages and some resources with it. In this case resources are the &lt;strong&gt;render targets&lt;/strong&gt; and the &lt;strong&gt;buffers&lt;/strong&gt; that are shared amongst &lt;strong&gt;Stages&lt;/strong&gt; (and Render Systems in the future).&lt;br&gt;
+Resources are inside a &lt;strong&gt;Shader Resources Database&lt;/strong&gt; and they can be retrieved using a &lt;strong&gt;Shader Resource Lookup&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Each &lt;strong&gt;Render Stage&lt;/strong&gt; has defined a list of input and output textures plus some resize data. This data is needed to recreate textures when a resize event arrives if needed, or change size if an option is changed (like a Shadow Map resolution option).&lt;br&gt;
+As everthing in this articles, this is primordial and simple, but I think is a very good start, especially from a mindset perspective.&lt;/p&gt;
+
+&lt;p&gt;In this simple scenario we render 1 material only, and normally it simply 1 &lt;em&gt;Material Pass&lt;/em&gt; for each &lt;em&gt;Render Stage Pass&lt;/em&gt;, rendering either using a fullscreen quad or through compute.&lt;/p&gt;
+
+&lt;p&gt;There are 2 pipelines, both simple and used as a test, one is for a &lt;em&gt;ShaderToy&lt;/em&gt; shader that I use as test, the other as a compute only pipeline. They are both hardcoded and created at the beginning of the &lt;em&gt;Material Application&lt;/em&gt;, but as said before, it should be data-driven and reloadable to have great rendering power.&lt;/p&gt;
+
+&lt;h2 id=&#34;rendering-of-a-pipeline&#34;&gt;Rendering of a Pipeline&lt;/h2&gt;
+
+&lt;p&gt;The code is simple:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void RenderPipeline::render( CommandBuffer* commands ) {
+
+    for ( size_t i = 0; i &amp;lt; string_hash_length( name_to_stage ); i++ ) {
+
+        RenderStage* stage = name_to_stage[i].value;
+        stage-&amp;gt;begin( commands );
+        stage-&amp;gt;render( commands );
+        stage-&amp;gt;end( commands );
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We cycle through each stage and render.&lt;br&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void RenderStage::begin( CommandBuffer* commands ) {
+    commands-&amp;gt;begin_submit( 0 );
+    commands-&amp;gt;begin_pass( render_pass );
+    commands-&amp;gt;set_viewport( { 0, 0, (float)current_width, (float)current_height, 0.0f, 1.0f } );
+    if ( clear_rt ) {
+        commands-&amp;gt;clear( clear_color[0], clear_color[1], clear_color[2], clear_color[3] );
+    }
+    commands-&amp;gt;end_submit();
+    // Set render stage states (depth, alpha, ...)
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Before rendering anything this code will bind the correct FBO/Render Targets, clear and set viewport and set render states.&lt;br&gt;
+After this we are ready to render the actual stage. In this simple implementation we have only 3 type of stages: Compute, Post and Swapchain.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;They are very simple and similar, like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;commands-&amp;gt;begin_submit( pass_index );
+commands-&amp;gt;bind_pipeline( shader_instance.pipeline );
+commands-&amp;gt;bind_resource_list( &amp;amp;shader_instance.resource_lists[0], shader_instance.num_resource_lists );
+commands-&amp;gt;draw( graphics::TopologyType::Triangle, 0, 3 );
+commands-&amp;gt;end_submit();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Set the pipeline, bind all the different resource lists and issue the draw (in this case a full screen triangle).&lt;/p&gt;
+
+&lt;h1 id=&#34;included-in-the-code&#34;&gt;Included in the code&lt;/h1&gt;
+
+&lt;h2 id=&#34;material-application&#34;&gt;Material application&lt;/h2&gt;
+
+&lt;p&gt;I just added a simple Material Application to render the content of one of those simple shaders.&lt;/p&gt;
+
+&lt;p&gt;Honestly not very happy about the code quality - and you can see why trying to add big features like memory management or multi-threading is a no-go.&lt;/p&gt;
+
+&lt;p&gt;The application let you switch between &lt;strong&gt;materials&lt;/strong&gt; by right clicking on the &lt;strong&gt;.hmt&lt;/strong&gt; file.&lt;br&gt;
+The whole purpose is to explore with the given code a couple of materials and their dependencies.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://www.shadertoy.com/view/XlfGRj&#34; target=&#34;_blank&#34;&gt;Starnest&lt;/a&gt; is a shader by the amazing &lt;a href=&#34;https://www.deviantart.com/fractkali&#34; target=&#34;_blank&#34;&gt;&lt;strong&gt;Pablo Roman Andrioli&lt;/strong&gt;&lt;/a&gt;, so all credits are to him! I wanted something beautiful to show in this simple example from ShaderToy.&lt;/p&gt;
+
+&lt;h1 id=&#34;conclusions-and-some-thoughts&#34;&gt;Conclusions and some thoughts&lt;/h1&gt;
+
+&lt;p&gt;We added a simple material system based on our HFX language.&lt;br&gt;
+Interestingly enough code generation is used much less - if almost nothing - instead of serializing data into files and using them.&lt;br&gt;
+As stated in the other articles, the goal is to have a parsing and code generation knowledge under your belt, and understand when it is time to use it!&lt;br&gt;
+We also introduced a lot of connections to other topics that are lengthy enough - like resource management - that need more time and dedication to properly be explored.&lt;br&gt;
+I am continuing working on this until it will become my &lt;em&gt;rendering explorer&lt;/em&gt; - a tool I can use to easily explore ideas, much like &lt;strong&gt;ShaderToy&lt;/strong&gt; but in an even more powerful way.&lt;br&gt;
+How ?&lt;br&gt;
+In the next article we will explore the final piece of the puzzle, and then we will probably start iterating and improving on what we have!&lt;br&gt;
+We will see how we can describe a frame and the rendering dependencies in an easy way, especially if done since the beginning, and how much having that knowledge upfront is GREAT to work on rendering.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;I am honestly not happy about the overall architecture though - here you have an example of &lt;em&gt;exploring code&lt;/em&gt; - code written to explore a subject that you don&amp;rsquo;t know, and after venturing more into it you want to rewrite it.&lt;br&gt;
+To properly rewrite it in a proper way you need to create solid foundations - namely &lt;strong&gt;Memory Management, Multi-Threading, Basic Data Structures, &amp;hellip;&lt;/strong&gt; and choose to pick your battles!&lt;/p&gt;
+
+&lt;p&gt;This is a huge lesson: pick your battles, choose what to concentrate on.&lt;br&gt;
+These articles are more towards code generation and rendering, but defining the constraints of the articles helps in narrowing down what to do.&lt;br&gt;
+If, as I would like, you want to use this code to evolve into something like a &amp;lsquo;desktop&amp;rsquo; Shadertoy, then you can&amp;rsquo;t ignore all the foundational topics.&lt;br&gt;
+On the other end if you just quickly want to experiment with those topics, this should suffice.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;I have two paths here: rewriting most of this code with a solid foundations, and delaying a RenderPipeline/Graph article, or finishing with this architecture and then re-write everything with the &amp;lsquo;desktop Shadertoy&amp;rsquo;.&lt;br&gt;
+Again, pick your battles :)&lt;/p&gt;
+
+&lt;p&gt;As always, please comment, feedback, share!&lt;br&gt;
+I really hope soon there will be some &lt;em&gt;rendering joy&lt;/em&gt;!&lt;/p&gt;
+
+&lt;p&gt;Gabriel&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Writing a Shader Effect Language Part 2</title>
