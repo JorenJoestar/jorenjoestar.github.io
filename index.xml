@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Posts on Joren&#39;s</title>
-    <link>/post/</link>
-    <description>Recent content in Posts on Joren&#39;s</description>
+    <title>Joren&#39;s</title>
+    <link>/</link>
+    <description>Recent content on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
     <lastBuildDate>Mon, 14 Oct 2019 10:43:49 -0400</lastBuildDate>
     
-	    <atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+	    <atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -813,47 +813,30 @@ Debugging broken features, studying features, understanding dependencies, shuffl
 
 &lt;h1 id=&#34;demo-and-code&#34;&gt;Demo and code&lt;/h1&gt;
 
-&lt;p&gt;The demo loads a model, apply a silly directional light and gives you some controls, and uses the render pipeline.&lt;br&gt;
-It was setup during the night just to show something usable, but it is far from ideal!&lt;/p&gt;
+&lt;p&gt;In the code provided there is everything I am talking here.&lt;br&gt;
+3 models are included from the free GLTF library.&lt;/p&gt;
 
-&lt;p&gt;In the code provided there is everything I am talking here.&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;Kudos to TinyGltf (&lt;a href=&#34;https://github.com/syoyo/tinygltf&#34; target=&#34;_blank&#34;&gt;https://github.com/syoyo/tinygltf&lt;/a&gt;) used to read the models.&lt;/p&gt;
 
-&lt;p&gt;And now some links to libraries/resources used.&lt;/p&gt;
+&lt;p&gt;There is also a simple shader reload to quickly iterate.&lt;/p&gt;
 
-&lt;p&gt;3 models are included from the free GLTF library:
-&lt;a href=&#34;https://github.com/KhronosGroup/glTF-Sample-Models&#34; target=&#34;_blank&#34;&gt;https://github.com/KhronosGroup/glTF-Sample-Models&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;TinyGLTF by &lt;a href=&#34;https://twitter.com/syoyo&#34; target=&#34;_blank&#34;&gt;Syoyo Fujita&lt;/a&gt;:&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&#34;https://github.com/syoyo/tinygltf&#34; target=&#34;_blank&#34;&gt;https://github.com/syoyo/tinygltf&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;The always present-always amazing ImGui by &lt;a href=&#34;https://twitter.com/ocornut&#34; target=&#34;_blank&#34;&gt;Omar&lt;/a&gt;:
-&lt;a href=&#34;https://github.com/ocornut/imgui&#34; target=&#34;_blank&#34;&gt;https://github.com/ocornut/imgui&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;With the NodeEditor by &lt;a href=&#34;https://github.com/thedmd&#34; target=&#34;_blank&#34;&gt;Michał Cichoń&lt;/a&gt;:
-&lt;a href=&#34;https://github.com/thedmd/imgui-node-editor&#34; target=&#34;_blank&#34;&gt;https://github.com/thedmd/imgui-node-editor&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;For the PBR rendering, kudos to the GREAT INFORMATIONS from &lt;a href=&#34;https://google.github.io/filament/Filament.md.html&#34; target=&#34;_blank&#34;&gt;Google Filament&lt;/a&gt; and &lt;a href=&#34;https://twitter.com/romainguy&#34; target=&#34;_blank&#34;&gt;Romain Guy&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;Lastly, this is not anywhere near production ready, but I am still happy to share it as a knowledge building block for others.&lt;br&gt;
-I am thinking of making some videos for this - if you are interested let me know (both in English and Italian).&lt;/p&gt;
+&lt;p&gt;Lastly, this is not anywhere near production ready, but I am still happy to share it as a knowledge building block for others.&lt;/p&gt;
 
 &lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
 
 &lt;p&gt;We arrived at defining the Render Pipeline - a way of describing how a frame is rendered.&lt;br&gt;
 It is a very simplified version of the RenderGraph/FrameGraph - as seen in many talks - and this is something I&amp;rsquo;ve used in my home projects (and current indie game) with great success.&lt;br&gt;
 No mention of adding resource barriers, sharing memory, async compute and more.&lt;br&gt;
-The whole purpose of this article was instead to focus on the more high level architecture side.&lt;/p&gt;
+The whole purpose of this article was instead to focus on the more high level architecture.&lt;/p&gt;
 
 &lt;p&gt;What is next ?&lt;/p&gt;
 
 &lt;p&gt;I would write about the improvements on the HFX shader effect and would like to cleanup and make that library more robust.&lt;br&gt;
-Then there is the Vulkan backend to be wrote and many examples to be done. Examples could be amazing to be tutorial and develop the technology more.&lt;br&gt;
-Then there is talking deeper about dispatching rendering draws, render managers and such - another interesting and very unique subject in Rendering Engine architectures. In all the companies I&amp;rsquo;ve worked, I always found completely different solutions!&lt;/p&gt;
+Then there is the Vulkan backend to be wrote and many examples to be done.&lt;br&gt;
+Talking deeper about dispatching rendering draws, render managers and such.&lt;/p&gt;
 
 &lt;p&gt;Please comment, share, send feedback!
-I am happy to answer any question and very happy to share this article.
-Thanks for reading!&lt;/p&gt;
+I am happy to answer any question!&lt;/p&gt;
 
 &lt;p&gt;Gabriel&lt;/p&gt;
 </description>
