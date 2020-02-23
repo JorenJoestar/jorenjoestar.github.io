@@ -12,6 +12,837 @@
     
     
     <item>
+      <title>Data Driven Rendering: Pipelines</title>
+      <link>/post/data_driven_rendering_pipeline/</link>
+      <pubDate>Mon, 14 Oct 2019 10:43:49 -0400</pubDate>
+      
+      <guid>/post/data_driven_rendering_pipeline/</guid>
+      <description>
+
+&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;GLTFHelmet.png&#34; &gt;
+
+&lt;img src=&#34;GLTFHelmet.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Model used in the demo.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+
+&lt;p&gt;Data Driven Rendering Series:
+1. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&lt;/a&gt;
+2. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&lt;/a&gt;
+3. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&lt;/a&gt;
+4. &lt;a href=&#34;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;We finally arrived in the &lt;strong&gt;Rendering Pipeline&lt;/strong&gt; realm.&lt;br&gt;
+Some can write that it is useless, some can hate it.&lt;br&gt;
+Many have some sort of abstraction for it since ages, and others have to now that new APIs like &lt;strong&gt;Vulkan&lt;/strong&gt; and &lt;strong&gt;DX12&lt;/strong&gt; have it as an explicit part of their design (finally!).&lt;/p&gt;
+
+&lt;p&gt;After we built a basic Material System in the previous article (&lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&lt;/a&gt;) we can add another layer on top of it and built a complete &lt;em&gt;Rendering Frame&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;In this article I will talk about a simplified version of &lt;strong&gt;Render Graph&lt;/strong&gt; that I call &lt;strong&gt;Render Pipeline&lt;/strong&gt; and came into my mind in the canteen of Codemasters after thinking:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;What is the biggest dependency in Rendering ?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The answer is simple:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Render Targets!&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;strong&gt;Render Targets&lt;/strong&gt; or &lt;strong&gt;Frame Buffers&lt;/strong&gt; is just an intermediate buffer in which we can draw something and use it later.&lt;br&gt;
+Basically a Read/Write texture!&lt;br&gt;
+It is not easy to shuffle around a Render Target, and having knowledge of which one are you using can make a huge difference for your rendering tech.&lt;br&gt;
+Textures and Render Targets are the biggest memory lord in any rendering application, thus knowing &lt;em&gt;where&lt;/em&gt; you are spending your memory can be really powerful.&lt;/p&gt;
+
+&lt;p&gt;From a pure &lt;em&gt;understanding&lt;/em&gt; of rendering techniques, having a clear visualization of this aspect makes a HUGE difference!&lt;/p&gt;
+
+&lt;p&gt;Once I started using to describe a frame of rendering with the &lt;strong&gt;Render Target Dependencies&lt;/strong&gt; I never looked back.&lt;br&gt;
+As always, knowledge is power.&lt;br&gt;&lt;/p&gt;
+
+&lt;h1 id=&#34;render-pipeline-thinking&#34;&gt;Render Pipeline Thinking&lt;/h1&gt;
+
+&lt;p&gt;First of all, let&amp;rsquo;s start defining some general concepts to describe the problem we are trying to solve.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;The problem we are trying to solve is:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;How to describe the inter-frame dependencies of Render Targets in a frame ?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The dependencies are who &lt;strong&gt;writes&lt;/strong&gt; and/or &lt;strong&gt;read&lt;/strong&gt; from/to a &lt;strong&gt;Render Target&lt;/strong&gt;.&lt;br&gt;
+That is exactly what is described in a Render Pipeline.
+Enter the &lt;em&gt;Render Pipeline&lt;/em&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;A Render Pipeline is a list of Passes that read and writes Render Targets.&lt;br&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;That&amp;rsquo;s it.&lt;br&gt;
+Done! See you next article!&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Of course I am kidding - but this is the gist of it.&lt;br&gt;
+The implications, however, are profound.&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Next logical question is:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;How can we read and write from/to a Render Target ?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Let&amp;rsquo;s list how we can &lt;em&gt;write&lt;/em&gt; to a Render Target&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Graphics - binding some geometry, render states and Render Targets&lt;/li&gt;
+&lt;li&gt;Compute - write anything to the Render Target&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Even a so called &lt;em&gt;&amp;lsquo;post-process&amp;rsquo;&lt;/em&gt; is just a &lt;em&gt;fullscreen triangle with a shader&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;And to read&amp;hellip;well any &lt;strong&gt;shader&lt;/strong&gt; that takes reads a texture!&lt;/p&gt;
+
+&lt;p&gt;It is incredible to think that with this simple building blocks you can describe almost everything to render!&lt;/p&gt;
+
+&lt;p&gt;For example, let&amp;rsquo;s try to express some common rendering techniques using only those concepts.&lt;/p&gt;
+
+&lt;h2 id=&#34;deferred-rendering&#34;&gt;Deferred Rendering&lt;/h2&gt;
+
+&lt;p&gt;We can define the following simple steps:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Meshes uses their materials (shaders + textures + constants) as input and write into GBuffer Render Target + depth.&lt;/li&gt;
+&lt;li&gt;A Compute/Post-process shader will read the Gbuffer Render Target and depth (to reconstruct the pixel position), a light list of some sort and outputs a texture with the result.&lt;/li&gt;
+&lt;li&gt;Transparent objects are drawn into this new Render Target using their materials.&lt;/li&gt;
+&lt;li&gt;And so on&amp;hellip;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;diagram goes here&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;exponential-variance-shadow-mapping-in-a-forward-rendering-pipeline&#34;&gt;Exponential Variance Shadow Mapping in a Forward Rendering Pipeline&lt;/h2&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Meshes writes into a depth-only render target using the light as &amp;lsquo;camera/point of view&amp;rsquo;.&lt;/li&gt;
+&lt;li&gt;Compute or Postprocess converts the depth-only render target into a EVSM one.&lt;/li&gt;
+&lt;li&gt;Meshes uses their materials and the &lt;em&gt;EVSM shadow map&lt;/em&gt; to render into a &lt;em&gt;&amp;lsquo;main&amp;rsquo;&lt;/em&gt; Render Target.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;diagram 2 goes here&gt;&lt;/p&gt;
+
+&lt;h1 id=&#34;other-rendering-concepts&#34;&gt;Other Rendering Concepts&lt;/h1&gt;
+
+&lt;p&gt;To give a full description of the frame we need to add other concepts that will help us.&lt;br&gt;
+These are the less strict ones - and just a personal way of seeing things.&lt;/p&gt;
+
+&lt;h2 id=&#34;render-view&#34;&gt;Render View&lt;/h2&gt;
+
+&lt;p&gt;The concept of &lt;em&gt;&amp;lsquo;Render View&amp;rsquo;&lt;/em&gt; is just a way or representing a &lt;em&gt;camera&lt;/em&gt; and a list of visible objects from it.&lt;br&gt;
+We will see how we use it later, but a simple example of Render View would be the &amp;lsquo;Sun Shadow&amp;rsquo; render view - representing the sun (as a camera) and a list of visible objects from it.&lt;br&gt;
+The &amp;lsquo;Main&amp;rsquo; render view of course represent the main camera and visible objects.&lt;br&gt;
+This, combined with &lt;strong&gt;render managers&lt;/strong&gt; becomes a powerful combination to describe &lt;em&gt;what&lt;/em&gt; needs to be rendered.&lt;/p&gt;
+
+&lt;h2 id=&#34;render-manager&#34;&gt;Render Manager&lt;/h2&gt;
+
+&lt;p&gt;If you think from an ECS mentality, this would be a &amp;lsquo;system&amp;rsquo;.&lt;br&gt;
+Each render manager is responsible to render one or more render &lt;em&gt;&amp;lsquo;aspects/entities&amp;rsquo;&lt;/em&gt; into a Render Pass.&lt;br&gt;
+A render manager can subscribe to any &amp;lsquo;graphics&amp;rsquo; pass and render from there.&lt;/p&gt;
+
+&lt;p&gt;For example, a &amp;lsquo;static geometry&amp;rsquo; render manager could setup an instancing buffer for the gbuffer-generation pass and draw all objects.&lt;/p&gt;
+
+&lt;h1 id=&#34;render-pipeline-implementation&#34;&gt;Render Pipeline Implementation&lt;/h1&gt;
+
+&lt;p&gt;After we defined the basic concepts let&amp;rsquo;s see an actual implementation of the Render Pipeline.&lt;br&gt;
+We will see the code of each component and arrive at the actual data definition (in json).&lt;/p&gt;
+
+&lt;p&gt;The code has changed a bit since last article, with the inclusion of CGLM as math library and other high-level rendering code, included in hydra_rendering.h/.cpp.&lt;/p&gt;
+
+&lt;h2 id=&#34;render-view-1&#34;&gt;Render View&lt;/h2&gt;
+
+&lt;p&gt;First element is the Render View:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// Render view is a &#39;contextualized&#39; camera - a way of using the camera in the render pipeline.
+//
+struct RenderView {
+
+    Camera                          camera;
+
+    array( RenderScene )            visible_render_scenes;
+
+}; // struct RenderView
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Using STB&amp;rsquo;s array (the macro is just an aid to know it is not just a pointer) we have a list of visible render scenes from that camera.&lt;br&gt;
+It should be pretty straighforward.&lt;/p&gt;
+
+&lt;h2 id=&#34;render-manager-1&#34;&gt;Render Manager&lt;/h2&gt;
+
+&lt;p&gt;Next is Render Manager:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+struct RenderManager {
+
+    struct RenderContext {
+        Device*                     device;
+
+        const RenderView*           render_view;
+        CommandBuffer*              commands;
+        
+        RenderScene*                render_scene_array;
+        uint16_t                    start;
+        uint16_t                    count;
+        
+        uint16_t                    stage_index;
+    }; // struct RenderContext
+
+    virtual void                    render( RenderContext&amp;amp; render_context ) = 0;
+
+}; // struct RenderManager
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The base class is really just a &amp;lsquo;render&amp;rsquo; method.&lt;br&gt;
+Here the RenderContext is interesting, and it gives access to all you need to render:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Device - used to map/unmap resources.&lt;/li&gt;
+&lt;li&gt;RenderView - access to camera (and more, but that&amp;rsquo;s for the next article!).&lt;/li&gt;
+&lt;li&gt;CommandBuffer - the actual draw commands are written here.&lt;/li&gt;
+&lt;li&gt;RenderScene - the RenderScene from start to start + count.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;In this very simple demo, we have just 2 &lt;em&gt;render managers&lt;/em&gt;: &lt;em&gt;Line Renderer&lt;/em&gt; and &lt;em&gt;Scene Renderer&lt;/em&gt;.&lt;br&gt;
+The most interesting one is the second: Line Renderer has commands to draw lines that will be mapped into a GPU buffer and uses instancing to draw them.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+void LineRenderer::render( RenderContext&amp;amp; render_context ) {
+
+    Device&amp;amp; device = *render_context.device;
+
+    // Update camera matrix
+    const Camera&amp;amp; camera = render_context.render_view-&amp;gt;camera;
+
+    MapBufferParameters cb_map = { lines_cb, 0, 0 };
+    
+    float L = 0, T = 0;
+    float R = device.swapchain_width, B = device.swapchain_height;
+    const float ortho_projection[4][4] =
+    {
+        { 2.0f / ( R - L ),   0.0f,         0.0f,   0.0f },
+        { 0.0f,         2.0f / ( T - B ),   0.0f,   0.0f },
+        { 0.0f,         0.0f,        -1.0f,   0.0f },
+        { ( R + L ) / ( L - R ),  ( T + B ) / ( B - T ),  0.0f,   1.0f },
+    };
+
+    LocalConstants* cb_data = (LocalConstants*)device.map_buffer( cb_map );
+    if ( cb_data ) {
+        cb_data-&amp;gt;view_projection = camera.view_projection;
+        
+        memcpy( &amp;amp;cb_data-&amp;gt;projection, &amp;amp;ortho_projection, 64 );
+        
+        cb_data-&amp;gt;resolution = { device.swapchain_width * 1.0f, device.swapchain_height * 1.0f, 1.0f / device.swapchain_width, 1.0f / device.swapchain_height };
+        device.unmap_buffer( cb_map );
+    }
+
+    if ( current_line_index ) {
+        const uint32_t mapping_size = sizeof( LinVertex ) * current_line_index;
+        MapBufferParameters map_parameters_vb = { lines_vb, 0, mapping_size };
+        LinVertex* vtx_dst = (LinVertex*)device.map_buffer( map_parameters_vb );
+        
+        if ( vtx_dst ) {
+            memcpy( vtx_dst, &amp;amp;s_line_buffer[0], mapping_size );
+            
+            device.unmap_buffer( map_parameters_vb );
+        }
+
+        CommandBuffer* commands = render_context.commands;
+        commands-&amp;gt;begin_submit( 2 );
+
+        ShaderInstance&amp;amp; shader_instance = line_material-&amp;gt;shader_instances[3];
+        commands-&amp;gt;bind_pipeline( shader_instance.pipeline );
+        commands-&amp;gt;bind_resource_list( shader_instance.resource_lists, shader_instance.num_resource_lists, nullptr, 0 );
+        commands-&amp;gt;bind_vertex_buffer( lines_vb, 0, 0 );
+        // Draw using instancing and 6 vertices.
+        const uint32_t num_vertices = 6;
+        commands-&amp;gt;draw( TopologyType::Triangle, 0, num_vertices, current_line_index / 2 );
+        commands-&amp;gt;end_submit();
+
+        current_line_index = 0;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Easy to notice how, with a Vulkan/DX12 interface, there are few less commands to write. Binding a pipeline sets everything considered &amp;lsquo;static&amp;rsquo; - render states, shaders - and with just &lt;em&gt;resource lists&lt;/em&gt; (that sets textures and constants) and &lt;em&gt;vertex/index buffers&lt;/em&gt; we have everything needed to render.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;NOTE&lt;/strong&gt;: HFX has gone some improvements and now supports &lt;em&gt;render states and vertex declarations/formats&lt;/em&gt;. I&amp;rsquo;ll write about it in the next post - but this has become crucial.&lt;/p&gt;
+
+&lt;h2 id=&#34;shader-resources-management&#34;&gt;Shader Resources Management&lt;/h2&gt;
+
+&lt;p&gt;This is another personal preference - but not necessary at all.&lt;br&gt;
+Two concepts are really useful to me to be explicit and centralized: &lt;em&gt;resources and bindings&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Resources are all referenced in a &lt;em&gt;&amp;lsquo;Shader Resource Database&amp;rsquo;&lt;/em&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// Struct used to retrieve textures, buffers and samplers.
+//
+struct ShaderResourcesDatabase {
+
+    struct BufferStringMap {
+        char*                       key;
+        BufferHandle                value;
+    }; // struct BufferStringMap
+
+    struct TextureStringMap {
+        char*                       key;
+        TextureHandle               value;
+    }; // struct TextureStringMap
+
+    struct SamplerStringMap {
+        char* key;
+        SamplerHandle               value;
+    }; // struct SamplerStringMap
+
+    BufferStringMap*                name_to_buffer = nullptr;
+    TextureStringMap*               name_to_texture = nullptr;
+    SamplerStringMap*               name_to_sampler = nullptr;
+
+    void                            init();
+    void                            terminate();
+
+    void                            register_buffer( char* name, BufferHandle buffer );
+    void                            register_texture( char* name, TextureHandle texture );
+    void                            register_sampler( char* name, SamplerHandle sampler );
+
+    BufferHandle                    find_buffer( char* name );
+    TextureHandle                   find_texture( char* name );
+    SamplerHandle                   find_sampler( char* name );
+
+}; // struct ShaderResourcesDatabase
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Simply put, any resource used by rendering is here.&lt;br&gt;
+Both Materials, Pipelines and Render Managers register and use the database to create the &lt;em&gt;resource lists&lt;/em&gt; used in rendering.&lt;/p&gt;
+
+&lt;p&gt;Next and more convoluted is the &lt;em&gt;shader resources lookup&lt;/em&gt; class:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// Struct to link between a Shader Binding Name and a Resource. Used both in Pipelines and Materials.
+//
+struct ShaderResourcesLookup {
+
+    enum Specialization {
+        Frame, Pass, View, Shader
+    }; // enum Specialization
+
+    struct NameMap {
+        char*                       key;
+        char*                       value;
+    }; // struct NameMap
+
+    struct SpecializationMap {
+        char*                       key;
+        Specialization              value;
+    }; // struct SpecializationMap
+
+    NameMap*                        binding_to_resource = nullptr;
+    SpecializationMap*              binding_to_specialization = nullptr;
+    NameMap*                        binding_to_sampler = nullptr;
+
+    void                            init();
+    void                            terminate();
+
+    void                            add_binding_to_resource( char* binding, char* resource );
+    void                            add_binding_to_specialization( char* binding, Specialization specialization );
+    void                            add_binding_to_sampler( char* binding, char* sampler );
+
+    char*                           find_resource( char* binding );
+    Specialization                  find_specialization( char* binding );
+    char*                           find_sampler( char* binding );
+
+    void                            specialize( char* pass, char* view, ShaderResourcesLookup&amp;amp; final_lookup );
+
+}; // struct ShaderResourcesLookup
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This class specify the binding between a &lt;em&gt;shader resource&lt;/em&gt; and an &lt;em&gt;actual resource&lt;/em&gt;.&lt;br&gt;
+As a simple example to clarify, a shader could have an &lt;em&gt;&amp;lsquo;albedo&amp;rsquo;&lt;/em&gt; texture defined in the code, but the &lt;em&gt;actual&lt;/em&gt; texture is defined by the material.&lt;br&gt;
+Or for a Render Stage, like a Post-Processing one, its input could be defined in the shader code as &lt;em&gt;&amp;lsquo;input 0, input 1&amp;hellip;&amp;rsquo;&lt;/em&gt; and the render pipeline creates the binding.&lt;/p&gt;
+
+&lt;p&gt;With those in place, we can finalize any resource used by any shader/material/pipeline.&lt;/p&gt;
+
+&lt;p&gt;The actual usage is into the Shader Instance class. Let&amp;rsquo;s have a quick look.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+struct ShaderInstance {
+
+    void                            load_resources( const PipelineCreation&amp;amp; pipeline, PipelineHandle pipeline_handle, ShaderResourcesDatabase&amp;amp; database, ShaderResourcesLookup&amp;amp; lookup, Device&amp;amp; device );
+
+    PipelineHandle                  pipeline;
+    ResourceListHandle              resource_lists[k_max_resource_layouts];
+
+    uint32_t                        num_resource_lists;
+}; // struct ShaderInstance
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This class is what actually contains the resource lists and pipeline used to render anything.&lt;br&gt;
+Not very happy with the name - any suggestion welcome.&lt;br&gt;
+A material contains a list of those - one for each pass - and is used to draw.&lt;br&gt;
+Again with the new Vulkan/DX12 mentality, Pipeline + Resource Lists + Geometry is all you need to render almost.&lt;/p&gt;
+
+&lt;p&gt;The magic happens when creating the resource lists:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void ShaderInstance::load_resources( const PipelineCreation&amp;amp; pipeline_creation, PipelineHandle pipeline_handle, ShaderResourcesDatabase&amp;amp; database, ShaderResourcesLookup&amp;amp; lookup, Device&amp;amp; device ) {
+    
+    using namespace hydra::graphics;
+    ResourceListCreation::Resource resources_handles[k_max_resources_per_list];
+
+    for ( uint32_t l = 0; l &amp;lt; pipeline_creation.num_active_layouts; ++l ) {
+        // Get resource layout description
+        ResourceListLayoutDescription layout;
+        device.query_resource_list_layout( pipeline_creation.resource_list_layout[l], layout );
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We know that a pipeline can have 1 or more resource lists, thus we just iterate through them.&lt;br&gt;
+Next we look into each resource of the current list:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+        // For each resource
+        for ( uint32_t r = 0; r &amp;lt; layout.num_active_bindings; r++ ) {
+            const ResourceBinding&amp;amp; binding = layout.bindings[r];
+
+            // Find resource name
+            // Copy string_buffer 
+            char* resource_name = lookup.find_resource( (char*)binding.name );
+
+            switch ( binding.type ) {
+                case hydra::graphics::ResourceType::Constants:
+                case hydra::graphics::ResourceType::Buffer:
+                {
+                    BufferHandle handle = resource_name ? database.find_buffer( resource_name ) : device.get_dummy_constant_buffer();
+                    resources_handles[r].handle = handle.handle;
+
+                    break;
+                }
+
+                ... same for textures
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;For each binding coming from the shader (think &amp;lsquo;albedo&amp;rsquo; for a PBR shader) we search for the actual resource name (&amp;lsquo;WoodBeamAlbedo&amp;rsquo;) and query the database to find it.&lt;br&gt;
+After we did that, we can create the list:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;            }
+        }
+
+        ResourceListCreation creation = { pipeline_creation.resource_list_layout[l], resources_handles, layout.num_active_bindings };
+        resource_lists[l] = device.create_resource_list( creation );
+    }
+
+    num_resource_lists = pipeline_creation.num_active_layouts;
+    pipeline = pipeline_handle;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;With this mechanism we added another explicit connection between resources.&lt;/p&gt;
+
+&lt;p&gt;It is finally time to see the actual render pipeline!&lt;/p&gt;
+
+&lt;h2 id=&#34;render-stage-pass&#34;&gt;Render Stage/Pass&lt;/h2&gt;
+
+&lt;p&gt;This is the &lt;em&gt;CORE&lt;/em&gt; of everything, and it must work with all both &lt;strong&gt;geometrical&lt;/strong&gt; stages and &lt;strong&gt;post-process&lt;/strong&gt; ones.&lt;br&gt;
+You can either create a base virtual class or doing something like here.&lt;br&gt;
+Important is understanding the concept!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// Encapsulate the rendering of anything that writes to one or more Render Targets.
+//
+struct RenderStage {
+
+    enum Type {
+        Geometry, Post, PostCompute, Swapchain, Count
+    };
+
+    Type                            type                                = Count;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Simply we define the types:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Geometry - uses render manager with meshes to draw.&lt;/li&gt;
+&lt;li&gt;Post - fullscreen triangle + shader.&lt;/li&gt;
+&lt;li&gt;PostCompute - any compute shader execution basically!&lt;/li&gt;
+&lt;li&gt;Swapchain - special case of binding the window framebuffer and render the last time.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Next is the most important part: dependencies!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    array( TextureHandle )          input_textures                      = nullptr;
+    array( TextureHandle )          output_textures                     = nullptr;
+
+    TextureHandle                   depth_texture;
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;When we create the pipeline, we save all inputs and outputs textures.&lt;br&gt;
+Depth/Stencil is a put in its own part.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    float                           scale_x                             = 1.0f;
+    float                           scale_y                             = 1.0f;
+    uint16_t                        current_width                       = 1;
+    uint16_t                        current_height                      = 1;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Here we handle scaling. When using scale, we use the framebuffer&amp;rsquo;s window width/height to calculate the Render Target size of the output ones. When using the current width/height we instead define a specific size (like for a shadow map).&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    RenderPassHandle                render_pass;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;hydra::graphics low level rendering needs this handle to actually handle the drawing.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    Material*                       material                            = nullptr;
+    uint8_t                         pass_index                          = 0;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is for PostProcesses : material and pass index to retrieve the &amp;lsquo;shader instance&amp;rsquo; containing the &lt;em&gt;pipeline&lt;/em&gt; and the &lt;em&gt;resource lists&lt;/em&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    RenderView*                     render_view                         = nullptr;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;RenderView used by this stage.&lt;br&gt;
+For example the &amp;lsquo;Sun Shadow Render Stage&amp;rsquo; will use the &amp;lsquo;Shadow Render View&amp;rsquo; to dispatch all its objects to each render manager.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    float                           clear_color[4];
+    float                           clear_depth_value;
+    uint8_t                         clear_stencil_value;
+
+    uint8_t                         clear_rt                            : 1;
+    uint8_t                         clear_depth                         : 1;
+    uint8_t                         clear_stencil                       : 1;
+    uint8_t                         resize_output                       : 1;
+    uint8_t                         pad                                 : 4;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If the stage needs to clear its output(s), these will tell what to do.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    uint64_t                        geometry_stage_mask;                // Used to send render objects to the proper stage. Not used by compute or postprocess stages.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This creates a link between render managers and stages.&lt;br&gt;
+An object is rendered only if its &lt;em&gt;stage mask&lt;/em&gt; equals at least one stage.&lt;br&gt;
+Why that ? &lt;br&gt;
+Because when defining a &lt;em&gt;render view&lt;/em&gt;, we have a list of objects visible from that camera, and we need a way of dispatching those objects to their respective managers.&lt;/p&gt;
+
+&lt;p&gt;For example a &amp;lsquo;dynamic render object&amp;rsquo; could have appear both on the gbuffer pass and an &amp;lsquo;object special effect&amp;rsquo; pass - both visible from the main camera.&lt;/p&gt;
+
+&lt;p&gt;This ideas comes from the &lt;em&gt;AMAZING&lt;/em&gt; talk by Bungie:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://advances.realtimerendering.com/destiny/gdc_2015/Tatarchuk_GDC_2015__Destiny_Renderer_web.pdf&#34; target=&#34;_blank&#34;&gt;http://advances.realtimerendering.com/destiny/gdc_2015/Tatarchuk_GDC_2015__Destiny_Renderer_web.pdf&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;A &lt;em&gt;render manager&lt;/em&gt; is what they call a &lt;em&gt;feature renderer&lt;/em&gt; - named differently because this version is much more basic!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    array( RenderManager* )         render_managers;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Render Managers can register to stages even if they don&amp;rsquo;t have objects, for example a &lt;em&gt;&amp;lsquo;Lighting Manager&amp;rsquo;&lt;/em&gt; would want to submit a list of visible light in a certain pass.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    // Interface
+    virtual void                    init();
+    virtual void                    terminate();
+
+    virtual void                    begin( Device&amp;amp; device, CommandBuffer* commands );
+    virtual void                    render( Device&amp;amp; device, CommandBuffer* commands );
+    virtual void                    end( Device&amp;amp; device, CommandBuffer* commands );
+
+    virtual void                    load_resources( ShaderResourcesDatabase&amp;amp; db, Device&amp;amp; device );
+    virtual void                    resize( uint16_t width, uint16_t height, Device&amp;amp; device );
+
+    void                            register_render_manager( RenderManager* manager );
+
+}; // struct RenderStage
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is the final interface.&lt;br&gt;
+Load resources is used for PostProcesses - they have a material and need to load its resources.&lt;/p&gt;
+
+&lt;h2 id=&#34;render-pipeline&#34;&gt;Render Pipeline&lt;/h2&gt;
+
+&lt;p&gt;We arrived at the last piece of the puzzle!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//
+// A full frame of rendering using RenderStages.
+//
+struct RenderPipeline {
+
+    struct StageMap {
+        char*                       key;
+        RenderStage*                value;
+    };
+
+    struct TextureMap {
+        char*                       key;
+        TextureHandle               value;
+    };
+
+    void                            init( ShaderResourcesDatabase* initial_db );
+    void                            terminate( Device&amp;amp; device );
+
+    void                            update();
+    void                            render( Device&amp;amp; device, CommandBuffer* commands );
+
+    void                            load_resources( Device&amp;amp; device );
+    void                            resize( uint16_t width, uint16_t height, Device&amp;amp; device );
+
+    StageMap*                       name_to_stage                       = nullptr;
+    TextureMap*                     name_to_texture                     = nullptr;
+
+    ShaderResourcesDatabase         resource_database;
+    ShaderResourcesLookup           resource_lookup;
+
+}; // struct RenderPipeline
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is literally IT!&lt;br&gt;
+This class contains all the stages and resources needed to render.&lt;br&gt;
+Most of the time it will just iterate over the stages and execute something per stage.&lt;/p&gt;
+
+&lt;p&gt;Resource database contains all the resources used actually - and the lookup instead is only for the PostProcess stages.&lt;br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;render-pipeline-description&#34;&gt;Render Pipeline Description&lt;/h2&gt;
+
+&lt;p&gt;We really have all the part to render a frame!&lt;br&gt;
+Let&amp;rsquo;s look at the data defining the pipeline.&lt;br&gt;
+We will define a simple-silly-non-effective PBR deferred rendering.&lt;br&gt;
+Probably the worst shaders you saw, but it will still work.&lt;/p&gt;
+
+&lt;p&gt;First we define the Render Targets:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;{
+    &amp;quot;name&amp;quot;: &amp;quot;PBR_Deferred&amp;quot;,
+    &amp;quot;RenderTargets&amp;quot;: [
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferAlbedo&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R8G8B8A8_UNORM&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferNormals&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R16G16B16A16_SNORM&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferProperties0&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R8G8B8A8_UNORM&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;D24_UNORM_S8_UINT&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;BackBufferColor&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R16G16B16A16_FLOAT&amp;quot;
+        }
+    ],
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;by default they will have the same size as the window framebuffer, unless otherwise written (scale_x/y, width/height).&lt;/p&gt;
+
+&lt;p&gt;Next are the actual render stages.&lt;br&gt;
+The first is the GBufferOpaque one:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    &amp;quot;RenderStages&amp;quot;: [
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferOpaque&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;Geometry&amp;quot;,
+            &amp;quot;render_view&amp;quot;: &amp;quot;main&amp;quot;,
+            &amp;quot;depth_stencil&amp;quot;: &amp;quot;Main&amp;quot;,
+            &amp;quot;inputs&amp;quot;: [
+
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;rts&amp;quot;: [ &amp;quot;GBufferAlbedo&amp;quot;, &amp;quot;GBufferNormals&amp;quot;, &amp;quot;GBufferProperties0&amp;quot; ],
+                &amp;quot;depth&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;,
+                &amp;quot;clear_color&amp;quot;: &amp;quot;000000ff&amp;quot;,
+                &amp;quot;clear_depth&amp;quot;: 1.0,
+                &amp;quot;clear_stencil&amp;quot;: 0
+            }
+        },
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As you see it outputs to 3 Render Targets + Depth.&lt;br&gt;
+It also specify clear color, depth and stencil.&lt;/p&gt;
+
+&lt;p&gt;Next is the silliest compute shader to calculate light:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;        {
+            &amp;quot;name&amp;quot;: &amp;quot;DeferredLights&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;PostCompute&amp;quot;,
+            &amp;quot;material_name&amp;quot;: &amp;quot;SimpleFullscreen&amp;quot;,
+            &amp;quot;material_pass_index&amp;quot;: 2,
+            &amp;quot;inputs&amp;quot;: [
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;GBufferAlbedo&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;gbuffer_albedo&amp;quot;
+                },
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;GBufferNormals&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;gbuffer_normals&amp;quot;
+                },
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;GBufferProperties0&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;gbuffer_properties0&amp;quot;
+                },
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;depth_texture&amp;quot;
+                }
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;images&amp;quot;: [
+                    {
+                        &amp;quot;name&amp;quot;: &amp;quot;BackBufferColor&amp;quot;,
+                        &amp;quot;binding&amp;quot;: &amp;quot;destination_texture&amp;quot;
+                    }
+                ],
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;
+            }
+        },
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It will read all the previously generated textures and run a compute shader to calculate the final lighting.&lt;br&gt;
+Worth noting &amp;lsquo;material&amp;rsquo; and &amp;lsquo;material pass index&amp;rsquo; - to retrieve the shader from the material. If you open SimpleFullscreen.hfx and go to the third defined pass, you will see the code.&lt;/p&gt;
+
+&lt;p&gt;Next is an example of reusing a Render Target to add informations (like transparent objects).&lt;br&gt;
+It will add debug rendering on top of the other objects and write in the BackBufferColor render target.&lt;br&gt;
+The absence of clear parameters dictates that we don&amp;rsquo;t want to clear.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;        {
+            &amp;quot;name&amp;quot;: &amp;quot;DebugRendering&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;Geometry&amp;quot;,
+            &amp;quot;render_view&amp;quot;: &amp;quot;main&amp;quot;,
+            &amp;quot;inputs&amp;quot;: [
+
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;rts&amp;quot;: [ &amp;quot;BackBufferColor&amp;quot; ],
+                &amp;quot;depth&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;
+            }
+        },
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Last step is the swapchain.&lt;br&gt;
+It is simply using a simple shader to write to the window framebuffer as the last step of the frame.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;        {
+            &amp;quot;name&amp;quot;: &amp;quot;Swapchain&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;Swapchain&amp;quot;,
+            &amp;quot;mask&amp;quot;: &amp;quot;FRAMEBUFFER&amp;quot;,
+            &amp;quot;material_name&amp;quot;: &amp;quot;Swapchain&amp;quot;,
+            &amp;quot;render_view&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;depth_stencil&amp;quot;: &amp;quot;Post&amp;quot;,
+            &amp;quot;inputs&amp;quot;: [
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;BackBufferColor&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;input_texture&amp;quot;
+                }
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;rts&amp;quot;: [
+                ],
+                &amp;quot;depth&amp;quot;: &amp;quot;&amp;quot;,
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;,
+                &amp;quot;clear_color&amp;quot;: &amp;quot;000000ff&amp;quot;
+            }
+        }
+    ]
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;visualization&#34;&gt;Visualization&lt;/h2&gt;
+
+&lt;p&gt;With all this defined, we can arrive to have something incredibly useful as this (included in the demo!):&lt;/p&gt;
+
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;HydraFrame.png&#34; &gt;
+
+&lt;img src=&#34;HydraFrame.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Render Pipeline&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+
+&lt;p&gt;To me this is the quintessence of rendering: visualization.&lt;br&gt;
+Seeing things helps me understanding much better.&lt;br&gt;
+Debugging broken features, studying features, understanding dependencies, shuffling things around becomes MUCH easier.&lt;/p&gt;
+
+&lt;h1 id=&#34;demo-and-code&#34;&gt;Demo and code&lt;/h1&gt;
+
+&lt;p&gt;In the code provided there is everything I am talking here.&lt;br&gt;
+3 models are included from the free GLTF library.&lt;/p&gt;
+
+&lt;p&gt;Kudos to TinyGltf (&lt;a href=&#34;https://github.com/syoyo/tinygltf&#34; target=&#34;_blank&#34;&gt;https://github.com/syoyo/tinygltf&lt;/a&gt;) used to read the models.&lt;/p&gt;
+
+&lt;p&gt;There is also a simple shader reload to quickly iterate.&lt;/p&gt;
+
+&lt;p&gt;Lastly, this is not anywhere near production ready, but I am still happy to share it as a knowledge building block for others.&lt;/p&gt;
+
+&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+
+&lt;p&gt;We arrived at defining the Render Pipeline - a way of describing how a frame is rendered.&lt;br&gt;
+It is a very simplified version of the RenderGraph/FrameGraph - as seen in many talks - and this is something I&amp;rsquo;ve used in my home projects (and current indie game) with great success.&lt;br&gt;
+No mention of adding resource barriers, sharing memory, async compute and more.&lt;br&gt;
+The whole purpose of this article was instead to focus on the more high level architecture.&lt;/p&gt;
+
+&lt;p&gt;What is next ?&lt;/p&gt;
+
+&lt;p&gt;I would write about the improvements on the HFX shader effect and would like to cleanup and make that library more robust.&lt;br&gt;
+Then there is the Vulkan backend to be wrote and many examples to be done.&lt;br&gt;
+Talking deeper about dispatching rendering draws, render managers and such.&lt;/p&gt;
+
+&lt;p&gt;Please comment, share, send feedback!
+I am happy to answer any question!&lt;/p&gt;
+
+&lt;p&gt;Gabriel&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Writing a Shader Effect Language Part 3: Materials</title>
       <link>/post/writing_shader_effect_language_3/</link>
       <pubDate>Mon, 14 Oct 2019 10:43:49 -0400</pubDate>
@@ -20,6 +851,12 @@
       <description>
 
 &lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+
+&lt;p&gt;Data Driven Rendering Series:
+1. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&lt;/a&gt;
+2. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&lt;/a&gt;
+3. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&lt;/a&gt;
+4. &lt;a href=&#34;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;In &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&#34; target=&#34;_blank&#34;&gt;Part 2 of this series&lt;/a&gt; we added Resource Layouts and Properties to the &lt;strong&gt;HFX&lt;/strong&gt; language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.&lt;br&gt;
 In this article I would like to explore further adds to HFX, especially a proper &lt;strong&gt;Material System&lt;/strong&gt; to be used in conjunction with the HFX language.&lt;br&gt;
@@ -762,8 +1599,8 @@ How ?&lt;br&gt;
 In the next article we will explore the final piece of the puzzle, and then we will probably start iterating and improving on what we have!&lt;br&gt;
 We will see how we can describe a frame and the rendering dependencies in an easy way, especially if done since the beginning, and how much having that knowledge upfront is GREAT to work on rendering.&lt;br&gt;&lt;/p&gt;
 
-&lt;p&gt;I am honestly not happy about the overall architecture though - here you have an example of &lt;em&gt;exploring code&lt;/em&gt; - code written to explore a subject that you don&amp;rsquo;t know, and after venturing more into it you want to rewrite it.&lt;br&gt;
-To properly rewrite it in a proper way you need to create solid foundations - namely &lt;strong&gt;Memory Management, Multi-Threading, Basic Data Structures, &amp;hellip;&lt;/strong&gt; and choose to pick your battles!&lt;/p&gt;
+&lt;p&gt;I am honestly not happy about the overall architecture though - here you have an example of &lt;em&gt;exploring code&lt;/em&gt; - code written to explore a specific subject, and after venturing more into it you want to rewrite it.&lt;br&gt;
+To properly rewrite it you need to create solid foundations - namely &lt;strong&gt;Memory Management, Multi-Threading, Basic Data Structures, &amp;hellip;&lt;/strong&gt; and choose to pick your battles!&lt;/p&gt;
 
 &lt;p&gt;This is a huge lesson: pick your battles, choose what to concentrate on.&lt;br&gt;
 These articles are more towards code generation and rendering, but defining the constraints of the articles helps in narrowing down what to do.&lt;br&gt;
@@ -789,6 +1626,12 @@ I really hope soon there will be some &lt;em&gt;rendering joy&lt;/em&gt;!&lt;/p&
       <description>
 
 &lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+
+&lt;p&gt;Data Driven Rendering Series:
+1. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&lt;/a&gt;
+2. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&lt;/a&gt;
+3. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&lt;/a&gt;
+4. &lt;a href=&#34;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;In &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&#34; target=&#34;_blank&#34;&gt;Part 1 of this series&lt;/a&gt; we created a simple &lt;em&gt;language&lt;/em&gt; to work as &amp;lsquo;shader effect&amp;rsquo; - a shader language superset to make our life easier, by adding missing features.&lt;br&gt;
 The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.&lt;/p&gt;
@@ -2211,6 +3054,12 @@ There are pros and cons to both approaches, but I hope that knowing how to gener
       <description>
 
 &lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+
+&lt;p&gt;Data Driven Rendering Series:
+1. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&lt;/a&gt;
+2. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&lt;/a&gt;
+3. &lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&lt;/a&gt;
+4. &lt;a href=&#34;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&#34; target=&#34;_blank&#34;&gt;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;In this article we will create a simple language that can encapsulate shader code (called &lt;strong&gt;code fragments&lt;/strong&gt;) and output different files for each fragment.&lt;br&gt;
 This is the initial step to switch from an engine that loads single files for each &lt;strong&gt;shader stage&lt;/strong&gt; (vertex, fragment, compute, &amp;hellip;) to one that uses an effect file that contains more than one shader.&lt;/p&gt;

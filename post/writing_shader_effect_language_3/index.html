@@ -28,9 +28,9 @@
   
     
   
-  <meta name="description" content="Overview In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.
-In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language.
-I also separated the code a little bit for clarity and added the usage of STB array and hash maps.">
+  <meta name="description" content="Overview Data Driven Rendering Series: 1. https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ 2. https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ 3. https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ 4. https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/
+In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.
+In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language.">
 
   
   <link rel="alternate" hreflang="en-us" href="/post/writing_shader_effect_language_3/">
@@ -113,9 +113,9 @@ I also separated the code a little bit for clarity and added the usage of STB ar
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="/post/writing_shader_effect_language_3/">
   <meta property="og:title" content="Writing a Shader Effect Language Part 3: Materials | Joren&#39;s">
-  <meta property="og:description" content="Overview In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.
-In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language.
-I also separated the code a little bit for clarity and added the usage of STB array and hash maps."><meta property="og:image" content="/img/icon-192.png">
+  <meta property="og:description" content="Overview Data Driven Rendering Series: 1. https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ 2. https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ 3. https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ 4. https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/
+In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.
+In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language."><meta property="og:image" content="/img/icon-192.png">
   <meta property="twitter:image" content="/img/icon-192.png"><meta property="og:locale" content="en-us">
   
   <meta property="article:published_time" content="2019-10-14T10:43:49-04:00">
@@ -476,6 +476,12 @@ I also separated the code a little bit for clarity and added the usage of STB ar
       
 
 <h1 id="overview">Overview</h1>
+
+<p>Data Driven Rendering Series:
+1. <a href="https://jorenjoestar.github.io/post/writing_shader_effect_language_1/" target="_blank">https://jorenjoestar.github.io/post/writing_shader_effect_language_1/</a>
+2. <a href="https://jorenjoestar.github.io/post/writing_shader_effect_language_2/" target="_blank">https://jorenjoestar.github.io/post/writing_shader_effect_language_2/</a>
+3. <a href="https://jorenjoestar.github.io/post/writing_shader_effect_language_3/" target="_blank">https://jorenjoestar.github.io/post/writing_shader_effect_language_3/</a>
+4. <a href="https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/" target="_blank">https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/</a></p>
 
 <p>In <a href="https://jorenjoestar.github.io/post/writing_shader_effect_language_2/" target="_blank">Part 2 of this series</a> we added Resource Layouts and Properties to the <strong>HFX</strong> language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.<br>
 In this article I would like to explore further adds to HFX, especially a proper <strong>Material System</strong> to be used in conjunction with the HFX language.<br>
@@ -1218,8 +1224,8 @@ How ?<br>
 In the next article we will explore the final piece of the puzzle, and then we will probably start iterating and improving on what we have!<br>
 We will see how we can describe a frame and the rendering dependencies in an easy way, especially if done since the beginning, and how much having that knowledge upfront is GREAT to work on rendering.<br></p>
 
-<p>I am honestly not happy about the overall architecture though - here you have an example of <em>exploring code</em> - code written to explore a subject that you don&rsquo;t know, and after venturing more into it you want to rewrite it.<br>
-To properly rewrite it in a proper way you need to create solid foundations - namely <strong>Memory Management, Multi-Threading, Basic Data Structures, &hellip;</strong> and choose to pick your battles!</p>
+<p>I am honestly not happy about the overall architecture though - here you have an example of <em>exploring code</em> - code written to explore a specific subject, and after venturing more into it you want to rewrite it.<br>
+To properly rewrite it you need to create solid foundations - namely <strong>Memory Management, Multi-Threading, Basic Data Structures, &hellip;</strong> and choose to pick your battles!</p>
 
 <p>This is a huge lesson: pick your battles, choose what to concentrate on.<br>
 These articles are more towards code generation and rendering, but defining the constraints of the articles helps in narrowing down what to do.<br>
