@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="generator" content="Source Themes Academic 4.4.0">
+
+  
+
+  
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="Gabriel Sassone">
+
+  
+  
+  
+    
+  
+  <meta name="description" content="UI using ImGUI, SDL and the code generated with this article.   Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!
+In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.
+The code is here:
+https://github.com/JorenJoestar/DataDrivenRendering
+There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written.">
+
+  
+  <link rel="alternate" hreflang="en-us" href="/post/writing_a_simple_code_generator/">
+
+  
+
+
+  
+
+  
+  
+  
+  <meta name="theme-color" content="hsl(339, 90%, 68%)">
+  
+
+  
+  
+  
+  
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.6/css/academicons.min.css" integrity="sha256-uFVgMKfistnJAfoCUQigIl+JfUaP47GrRKjf6CTPVmw=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.0/css/all.css" integrity="sha384-aOkxzJ5uQz7WBObEZcHvV5JvRW3TUc2rNPA7pe3AwnsUohiw1Vj2Rgx2KSOkF5+h" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" integrity="sha256-ygkqlh3CYSUri3LhQxzdcm0n1EQvH2Y+U5S2idbLtxs=" crossorigin="anonymous">
+
+    
+    
+    
+      
+    
+    
+      
+      
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/ocean.min.css" crossorigin="anonymous" title="hl-light">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/ocean.min.css" crossorigin="anonymous" title="hl-dark" disabled>
+      
+    
+
+    
+
+    
+
+  
+
+  
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inconsolata&display=swap">
+  
+
+  
+  
+  
+  <link rel="stylesheet" href="/css/academic.min.b41b9fe0454a4bd580d2b410d3ba6be2.css">
+
+  
+
+  
+  
+  
+
+  
+
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="icon" type="image/png" href="/img/icon.png">
+  <link rel="apple-touch-icon" type="image/png" href="/img/icon-192.png">
+
+  <link rel="canonical" href="/post/writing_a_simple_code_generator/">
+
+  
+  
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary">
+  
+  <meta property="twitter:site" content="@GabrielSassone">
+  <meta property="twitter:creator" content="@GabrielSassone">
+  
+  <meta property="og:site_name" content="Joren&#39;s">
+  <meta property="og:url" content="/post/writing_a_simple_code_generator/">
+  <meta property="og:title" content="Writing a simple Code Generator | Joren&#39;s">
+  <meta property="og:description" content="UI using ImGUI, SDL and the code generated with this article.   Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!
+In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.
+The code is here:
+https://github.com/JorenJoestar/DataDrivenRendering
+There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written."><meta property="og:image" content="/img/icon-192.png">
+  <meta property="twitter:image" content="/img/icon-192.png"><meta property="og:locale" content="en-us">
+  
+  <meta property="article:published_time" content="2019-07-27T18:46:03-04:00">
+  
+  <meta property="article:modified_time" content="2019-08-06T18:46:03-04:00">
+  
+
+  
+
+
+  
+
+
+
+
+
+  <title>Writing a simple Code Generator | Joren&#39;s</title>
+
+</head>
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="dark">
+
+  <aside class="search-results" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>Search</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="Search..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search">
+        
+      </div>
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+  
+<nav class="navbar navbar-light fixed-top navbar-expand-lg py-0 compensate-for-scrollbar" id="navbar-main">
+  <div class="container">
+
+    
+      <a class="navbar-brand" href="/">Joren&#39;s</a>
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+    
+    <div class="collapse navbar-collapse" id="navbar">
+
+      
+      
+      <ul class="navbar-nav mr-auto">
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#about"><span>Home</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#posts"><span>Posts</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#contact"><span>Contact</span></a>
+        </li>
+
+        
+        
+
+      
+      </ul>
+      <ul class="navbar-nav ml-auto">
+      
+
+        
+
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+
+        
+        <li class="nav-item">
+          <a class="nav-link js-dark-toggle" href="#"><i class="fas fa-moon" aria-hidden="true"></i></a>
+        </li>
+        
+
+      </ul>
+
+    </div>
+  </div>
+</nav>
+
+
+  <article class="article" itemscope itemtype="http://schema.org/Article">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1 itemprop="name">Writing a simple Code Generator</h1>
+
+  
+
+  
+    
+
+
+
+<meta content="2019-07-27 18:46:03 -0400 EDT" itemprop="datePublished">
+<meta content="2019-08-06 18:46:03 -0400 EDT" itemprop="dateModified">
+
+<div class="article-metadata">
+
+  
+  
+
+  
+  <span class="article-date">
+    
+    
+      
+          Last updated on
+      
+    
+    <time>2019-08-06</time>
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+    29 min read
+  </span>
+  
+
+  
+  
+  
+
+  
+  
+
+  
+    
+<div class="share-box" aria-hidden="true">
+  <ul class="share">
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://twitter.com/intent/tweet?url=/post/writing_a_simple_code_generator/&amp;text=Writing%20a%20simple%20Code%20Generator" target="_blank" rel="noopener" class="share-btn-twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.facebook.com/sharer.php?u=/post/writing_a_simple_code_generator/&amp;t=Writing%20a%20simple%20Code%20Generator" target="_blank" rel="noopener" class="share-btn-facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="mailto:?subject=Writing%20a%20simple%20Code%20Generator&amp;body=/post/writing_a_simple_code_generator/" target="_blank" rel="noopener" class="share-btn-email">
+          <i class="fas fa-envelope"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.linkedin.com/shareArticle?url=/post/writing_a_simple_code_generator/&amp;title=Writing%20a%20simple%20Code%20Generator" target="_blank" rel="noopener" class="share-btn-linkedin">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://reddit.com/submit?url=/post/writing_a_simple_code_generator/&amp;title=Writing%20a%20simple%20Code%20Generator" target="_blank" rel="noopener" class="share-btn-reddit">
+          <i class="fab fa-reddit-alien"></i>
+        </a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+
+</div>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+</div>
+
+
+
+  <div class="article-container">
+
+    <div class="article-style" itemprop="articleBody">
+      
+
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="front.png" >
+
+<img src="front.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" >
+  <h4>UI using ImGUI, SDL and the code generated with this article.</h4>
+  
+</figcaption>
+
+</figure>
+
+
+<h1 id="motivation">Motivation</h1>
+
+<p>Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!<br>
+In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.<br>
+The code is here:</p>
+
+<p><a href="https://github.com/JorenJoestar/DataDrivenRendering" target="_blank">https://github.com/JorenJoestar/DataDrivenRendering</a></p>
+
+<p>There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written.<br>
+From a data perspective, normally the ‘baking’ pipeline is a series of DCC formats as source transformed into very project specific and optimized data.<br>
+Code-wise, depending on the engine/technology you are using, ‘baking’ of the code is more uncommon.<br>
+In a time in which iteration time has become almost more important than the tech itself, playing with this balance can be the key for any successful software. It could sound exaggerated, but I really believe in that.<br>
+As always, both ImGui and SDL will be our sword and shields for this adventure.<br>
+This will be the second step into data-driven rendering: code generation.<br></p>
+
+<h2 id="are-we-writing-a-compiler">Are we writing a compiler ?</h2>
+
+<p>Short answer: yes!</p>
+
+<p>Long answer: we will be writing the simplest possible compiler that reads a source file and transform in a destination file, like Flatbuffers.</p>
+
+<p>There are few links on both theory and practice that can help shed some light on the subject:
+The “Dragon Book” (called because of the dragon in the cover) is still THE to-go in compiler writing as far as I know.<br>
+It is an intense book and explores writing a full compiler with depth, starting from <em>Automata theory</em> (just reminds me of how everything you study can be useful, I did 2 exams at University about that, wondering when I would use it! Hello prof <a href="http://www.dia.uniroma3.it/~compunet/www/view/person.php?id=gdb" target="_blank">Di Battista!</a>) to full code examples:</p>
+
+<p><a href="https://www.amazon.com/Compilers-Principles-Techniques-Tools-2nd/dp/0321486811" target="_blank">https://www.amazon.com/Compilers-Principles-Techniques-Tools-2nd/dp/0321486811</a></p>
+
+<p>This is for me the best website on the subject, very precise and readable and follows closely what is inside the Dragon Book:</p>
+
+<p><a href="https://craftinginterpreters.com/" target="_blank">https://craftinginterpreters.com/</a></p>
+
+<p>And github page:</p>
+
+<p><a href="https://github.com/munificent/craftinginterpreters" target="_blank">https://github.com/munificent/craftinginterpreters</a></p>
+
+<p>My interest was rekindled in 2015, when I was following the amazing Casey Muratori and his <a href="https://handmadehero.org/" target="_blank">Handmade Hero</a>.<br>
+He generates code for introspection purposes, and really show a simple and effective way of generating code that works for you.</p>
+
+<p>Wikipedia itself also contains a lot of good articles on the subject. The more you know about the it, the more you want to know.
+It is fascinating and very, very deep!</p>
+
+<h1 id="compiler-101">Compiler 101</h1>
+
+<p>A real compiler is a very complex and fascinating subject/software so I will try to get the simplest possible approach giving my (flawed and incomplete) perspective.</p>
+
+<p>A compiler is a series of transformations applied to data (you can apply this definition to every software actually…).</p>
+
+<p>The input data is a text, and normally the output is still text, but with very different meaning.</p>
+
+<p>The raw depth of the subject is astonishing, consider that we are defining a grammar and thus a language, and how to express concepts into it.</p>
+
+<p>The main steps are the following:</p>
+
+<ol>
+<li>Lexer/scanner/tokenizer</li>
+<li>Parser</li>
+<li>Code generation</li>
+</ol>
+
+<p>We will define the code generator from a custom language called HDF (<strong>Hydra Definition Format</strong>) to C++.
+HDF will be a subset of <strong>Flatbuffers</strong> in this exercise, but once the concepts are clear it can be expanded to more stuff.</p>
+
+<h1 id="lexer-scanner-tokenizer">Lexer/Scanner/Tokenizer</h1>
+
+<p>A <strong>lexer</strong> or <strong>scanner</strong> (or <strong>tokenizer</strong>) is a software that translates an input string into a list of Tokens based on Lexemes.
+A <strong>Lexeme</strong> is one or more characters that create a Token. Think of a keyword (like ‘if’, ‘class’, ‘static’ …).</p>
+
+<p>A Token is identified by a unique Lexeme and abstracts the Lexeme itself.
+It normally contains a type and some attributes, for example it can save where that lexeme is into the input text, the line. The final structure of the token can vary a bit.</p>
+
+<p>In trying to find a simple definition for this step:</p>
+
+<blockquote>
+<p>The act of Tokenizing is the act of abstracting the input text.</p>
+</blockquote>
+
+<p>For example, given the following input text:</p>
+
+<pre><code>static void amazing_method() {};
+</code></pre>
+
+<p>It will generate the list of tokens ‘<strong>keyword, identifier, identifier, open parenthesis, close parenthesis, open brace, close brace, semicolon</strong>’.</p>
+
+<p>This IS abstracting the text!</p>
+
+<p>Normally a lexer/scanner is used by the parser to go through the code and retrieve a token and use it in some way. Let’s start seeing what a lexer could be!</p>
+
+<h2 id="code">Code</h2>
+
+<p>Let&rsquo;s see the code used by the lexer.</p>
+
+<p>First thing will be to define the Token:</p>
+
+<pre><code>// Lexer/Tokenizer code. It is abstract enough so is not grammar specific.
+//
+struct Token {
+
+    enum Type {
+        Token_Unknown,
+
+        Token_OpenParen,
+        Token_CloseParen,
+        Token_Colon,
+        Token_Semicolon,
+        Token_Asterisk,
+        Token_OpenBracket,
+        Token_CloseBracket,
+        Token_OpenBrace,
+        Token_CloseBrace,
+        Token_OpenAngleBracket,
+        Token_CloseAngleBracket,
+
+        Token_String,
+        Token_Identifier,
+        Token_Number,
+
+        Token_EndOfStream,
+    }; // enum Type
+
+    Type                            type;
+    StringRef                       text;
+
+}; // struct Token
+</code></pre>
+
+<p>It is basically a enum with a StringRef.<br>
+A StringRef is basically a substring - used to avoid allocations when parsing by simply saving where the Token is in the parsed text and how long it is.</p>
+
+<p>Next is the Lexer itself:</p>
+
+<pre><code>//
+// The role of the Lexer is to divide the input string into a list of Tokens.
+struct Lexer {
+    
+    char*                           position            = nullptr;    
+    uint32_t                        line                = 0;
+    uint32_t                        column              = 0;
+
+    bool                            error               = false;
+    uint32_t                        error_line          = 0;
+
+}; // struct Lexer
+</code></pre>
+
+<p>The most important variable is <strong>position</strong> - it saves where the Lexer is in the current text for parsing.</p>
+
+<p>From now on there will be only methods.</p>
+
+<p>First some character classification that will help the Lexer:</p>
+
+<pre><code>//
+// All those methods are to classify a character.
+//
+inline bool IsEndOfLine( char c ) {
+    bool Result = ((c == '\n') || (c == '\r'));
+    return(Result);
+}
+
+inline bool IsWhitespace( char c ) {
+    bool Result = ((c == ' ') || (c == '\t') || (c == '\v') || (c == '\f') || IsEndOfLine( c ));
+    return(Result);
+}
+
+inline bool IsAlpha( char c ) {
+    bool Result = (((c &gt;= 'a') &amp;&amp; (c &lt;= 'z')) || ((c &gt;= 'A') &amp;&amp; (c &lt;= 'Z')));
+    return(Result);
+}
+
+inline bool IsNumber( char c ) {
+    bool Result = ((c &gt;= '0') &amp;&amp; (c &lt;= '9'));
+    return(Result);
+}
+</code></pre>
+
+<p>These should be quite straightforward.</p>
+
+<p>Then we have <strong>the most important method for the lexer: nextToken</strong>.<br>
+This method will contain all the logic to go to the next token, and we will see it step by step.</p>
+
+<p>First is skipping all the whitespaces (empty characters, tabs, returns, etc) to arrive at the correct character in the text.</p>
+
+<pre><code>//
+// This is the main method. Skip whitespaces and get next token. Save also the current position in the input string.
+//
+void nextToken( Lexer* lexer, Token&amp; token ) {
+
+    // Skip all whitespace first so that the token is without them.
+    skipWhitespace( lexer );
+</code></pre>
+
+<p>The code for skipping the whitespace is pretty straight-forward.
+First it checks if it is a pure whitespace:</p>
+
+<pre><code>void skipWhitespace( Lexer* lexer ) {
+    // Scan text until whitespace is finished.
+    for ( ;; ) {
+        // Check if it is a pure whitespace first.
+        if ( IsWhitespace( lexer-&gt;position[0] ) ) {
+            // Handle change of line
+            if ( IsEndOfLine( lexer-&gt;position[0] ) )
+                ++lexer-&gt;line;
+
+            // Advance to next character
+            ++lexer-&gt;position;
+
+</code></pre>
+
+<p>Then it checks if it is a single line comment:</p>
+
+<pre><code>        } // Check for single line comments (&quot;//&quot;)
+        else if ( (lexer-&gt;position[0] == '/') &amp;&amp; (lexer-&gt;position[1] == '/') ) {
+            lexer-&gt;position += 2;
+            while ( lexer-&gt;position[0] &amp;&amp; !IsEndOfLine( lexer-&gt;position[0] ) ) {
+                ++lexer-&gt;position;
+            }
+</code></pre>
+
+<p>And last it checks for c-style multiline comments:</p>
+
+<pre><code>        } // Check for c-style multi-lines comments
+        else if ( (lexer-&gt;position[0] == '/') &amp;&amp; (lexer-&gt;position[1] == '*') ) {
+            lexer-&gt;position += 2;
+
+            // Advance until the string is closed. Remember to check if line is changed.
+            while ( !((lexer-&gt;position[0] == '*') &amp;&amp; (lexer-&gt;position[1] == '/')) ) {
+                // Handle change of line
+                if ( IsEndOfLine( lexer-&gt;position[0] ) )
+                    ++lexer-&gt;line;
+
+                // Advance to next character
+                ++lexer-&gt;position;
+            }
+
+            if ( lexer-&gt;position[0] == '*' ) {
+                lexer-&gt;position += 2;
+            }
+        }
+        else {
+            break;
+        }
+    }
+}
+</code></pre>
+
+<p>After skipped all the whitespaces, we initialize the new token:</p>
+
+<pre><code>    // Initialize token
+    token.type = Token::Token_Unknown;
+    token.text.text = lexer-&gt;position;
+    token.text.length = 1;
+    token.line = lexer-&gt;line;
+</code></pre>
+
+<p>We get the current character and advance the position, so we can analize it.</p>
+
+<pre><code>    char c = lexer-&gt;position[0];
+    ++lexer-&gt;position;
+
+</code></pre>
+
+<p>Here comes the character analisys using a simple <strong>switch</strong>.</p>
+
+<pre><code>
+    switch ( c ) {
+        case '\0':
+        {
+            token.type = Token::Token_EndOfStream;
+        } break;
+        case '(':
+        {
+            token.type = Token::Token_OpenParen;
+        } break;
+        case ')':
+        {
+            token.type = Token::Token_CloseParen;
+        } break;
+        case ':':
+        {
+            token.type = Token::Token_Colon;
+        } break;
+        case ';':
+        {
+            token.type = Token::Token_Semicolon;
+        } break;
+        case '*':
+        {
+            token.type = Token::Token_Asterisk;
+        } break;
+        case '[':
+        {
+            token.type = Token::Token_OpenBracket;
+        } break;
+        case ']':
+        {
+            token.type = Token::Token_CloseBracket;
+        } break;
+        case '{':
+        {
+            token.type = Token::Token_OpenBrace;
+        } break;
+        case '}':
+        {
+            token.type = Token::Token_CloseBrace;
+        } break;
+</code></pre>
+
+<p>There are some special cases left.<br>
+First parsing a string starting from a &lsquo;&ldquo;&rsquo; character.<br>
+It requires to scan the text until it finds another &lsquo;&ldquo;&rsquo; to indicate the end of the string.<br>
+It also supports multiple-line strings with the characters &ldquo;\&rdquo; (double back-slash)</p>
+
+<pre><code>
+        case '&quot;':
+        {
+            token.type = Token::Token_String;
+
+            token.text.text = lexer-&gt;position;
+
+            while ( lexer-&gt;position[0] &amp;&amp;
+                    lexer-&gt;position[0] != '&quot;' )
+            {
+                if ( (lexer-&gt;position[0] == '\\') &amp;&amp;
+                     lexer-&gt;position[1] )
+                {
+                    ++lexer-&gt;position;
+                }
+                ++lexer-&gt;position;
+            }
+
+            // Saves total string length
+            token.text.length = lexer-&gt;position - token.text.text;
+
+            if ( lexer-&gt;position[0] == '&quot;' ) {
+                ++lexer-&gt;position;
+            }
+        } break;
+</code></pre>
+
+<p>Then the final classification step: first is checking if the token is an identifier (a string literal that starts with a character and is followed by characters, underscores or numbers).<br>
+If not a identifier, check to see if it is a number. This should be expanded to correctly parse numbers, but for now is not used.<br>.
+If everything else fails, than we don&rsquo;t recognize the token.</p>
+
+<pre><code>        default:
+        {
+            // Identifier/keywords
+            if ( IsAlpha( c ) ) {
+                token.type = Token::Token_Identifier;
+
+                while ( IsAlpha( lexer-&gt;position[0] ) || IsNumber( lexer-&gt;position[0] ) || (lexer-&gt;position[0] == '_') ) {
+                    ++lexer-&gt;position;
+                }
+
+                token.text.length = lexer-&gt;position - token.text.text;
+            } // Numbers
+            else if ( IsNumber( c ) ) {
+                token.type = Token::Token_Number;
+            }
+            else {
+                token.type = Token::Token_Unknown;
+            }
+        } break;
+    }
+}
+</code></pre>
+
+<p>With this code we already have a working Lexer!<br>
+I like to use the lexer in an abstract way - not knowing anything about the underlying language - so that it can be reused for different custom languages (Dr.Wily eyebrows movement goes here).<br></p>
+
+<p>If you want to dive deeper into this, the amazing Crafting Interpreters contains a great page on scanning:</p>
+
+<p><a href="https://www.craftinginterpreters.com/scanning.html" target="_blank">https://www.craftinginterpreters.com/scanning.html</a></p>
+
+<p>Also, some c-style parsing can be found here from the amazing <a href="https://twitter.com/niklasfrykholm" target="_blank">Niklas Frykohlm</a>:</p>
+
+<p><a href="https://github.com/niklasfrykholm/nflibs/blob/master/nf_json_parser.c" target="_blank">https://github.com/niklasfrykholm/nflibs/blob/master/nf_json_parser.c</a></p>
+
+<p>And another amazing parser from STB:</p>
+
+<p><a href="https://github.com/nothings/stb/blob/master/stb_c_lexer.h" target="_blank">https://github.com/nothings/stb/blob/master/stb_c_lexer.h</a></p>
+
+<h1 id="parser">Parser</h1>
+
+<p>So far we have abstracted the input text into a list of <strong>Tokens</strong>, and now we need to generate some more information before arriving at generating new code.</p>
+
+<p>As far as <em>I understood it</em>, a parser reads the tokens and generates an <strong>Abstract Syntax Tree</strong>.</p>
+
+<p>Sometimes, and in simpler parsers, the act of parsing itself can generates a new code if the language we are targeting is simple.
+Again, I prefer to separate Lexer and Parser to reuse the Lexer for different languages and separate the responsabilities!</p>
+
+<blockquote>
+<p>Given a list of tokens and a grammar, a parser generates an Abstract Syntax Tree.</p>
+
+<p>It gives meaning to the input text, and is responsible to check the syntax correctness.</p>
+</blockquote>
+
+<p>A simple definition for a grammar is the following:</p>
+
+<blockquote>
+<p>A grammar is a set of production rules that transforms a series of non-terminals into terminals.</p>
+</blockquote>
+
+<p>Putting everything in the perspective of data and transformations we can define:</p>
+
+<ol>
+<li><strong>Terminals</strong> are finalized data</li>
+<li><strong>Non-terminals</strong> are data that must be transformed</li>
+<li><strong>Production rules</strong> are transformations of <strong>non-terminals</strong> to <strong>terminals</strong></li>
+</ol>
+
+<p>Another definition of a parser than it could be :</p>
+
+<blockquote>
+<p>A parser is a software that transforms non-terminals in terminals following production rules.</p>
+</blockquote>
+
+<h2 id="grammar">Grammar</h2>
+
+<p>It is time to write the formal grammar (a context-free grammar) and see how it maps to code.<br>
+It will be very simple — much simpler than many examples you find around — but it is a starting point.<br>
+We will not deal with any expression, statements and such, not in the context of this code generator. I will point out some examples for more complex stuff, but I want to study more the subject for that to be more precise about the subject.<br></p>
+
+<p>Each line will be a <strong>production rule</strong> (a transformation), with the left-side being always a non-terminal.<br>
+We are using regular expressions syntax here:</p>
+
+<ol>
+<li>alphabet → [a-zA-z]</li>
+<li>number →[0–9]</li>
+<li>identifier → alphabet (alphabet | number | “_”)*</li>
+<li>variable_declaration → identifier identifier “;”</li>
+<li>struct_declaration → “struct” identifier “{“ (variable_declaration)+ “}” “;”</li>
+<li>enum_declaration → “enum” identifier “{“ (identifier)+ “}”</li>
+<li>module → (struct_declaration | enum_declaration)+*</li>
+</ol>
+
+<p>First we define what an identifier is — a sequence of alpha-numerical characters that can contains also the underscore character.<br>Notice that with the identifier production rule, the identifier cannot start with an underscore.<br>
+A variable then is declared simply by two identifiers: the first for the type and the second for the name, following a semicolon.<br>
+A struct is simply a list of variable declarations. Notice the “+” in the rule — this means that at least one element must be present.<br>
+Enums are literally a name for the enum and a list of identifiers in curly braces.<br>
+Finally the module is the root of our grammar. It will contain all the declarations we describe. See it as the data file we are writing to generate the code — one file is one module.<br>
+Now that we defined a simple grammar, we can move to the theory behind the parser.<br></p>
+
+<h2 id="predictive-recursive-descent-parser">Predictive Recursive Descent Parser</h2>
+
+<p>The grammar we defined is a context-free-grammar.<br>
+Depending on the type of grammar we can write different parsers.<br>
+One of the most common type of parser (and easier to start with) is the <a href="https://en.wikipedia.org/wiki/Recursive_descent_parser" target="_blank">Predictive Recursive Descent Parser</a>, and that is what we will write given our grammar. You can dive into all the details of writing a context-free grammar, writing a <a href="https://en.wikipedia.org/wiki/LL_parser" target="_blank">Left-to-right Leftmost-derivation grammar (LL(k))</a> and such and be amazed by all the concepts behind.<br></p>
+
+<p>Again, I am personally starting on this subject, so my knowledge is not deep.</p>
+
+<p>Back to the parser, the main characteristics of this parser are:</p>
+
+<ol>
+<li>Descent = top-down. Start from root and generate the Abstract Syntax Tree.</li>
+<li>Recursive = the parser has mutually recursive methods, one for each non-terminal.</li>
+<li>Predictive = no backtracking needed. For our simple grammar we do not need any backtracking.</li>
+</ol>
+
+<p>So the parser will start from the root (module non-terminal) and by sequentially reading all the tokens will generate a tree that represent our syntax.</p>
+
+<p>Let’s see some code!</p>
+
+<h2 id="code-1">Code</h2>
+
+<p>The central piece of code is the Parser.<br>
+It uses the Lexer and saves the Types by parsing the input text.<br></p>
+
+<pre><code>//
+// The Parser parses Tokens using the Lexer and generate an Abstract Syntax Tree.
+struct Parser {
+
+    Lexer*                          lexer               = nullptr;
+
+    ast::Type*                      types               = nullptr;
+    uint32_t                        types_count         = 0;
+    uint32_t                        types_max           = 0;
+
+}; // struct Parser
+</code></pre>
+
+<p>Let&rsquo;s have a look at the class <strong>Type</strong>.<br>
+This class will let us identify correctly primitive types, enums, struct and <em>commands</em> - a special keyword I create to show a concept that can be used away from the canonical C/C++ languages.<br>
+By saving a list of names and types we can successfully parse all the types listed above.</p>
+
+<pre><code>//
+// Define the language specific structures.
+namespace ast {
+
+    struct Type {
+
+        enum Types {
+            Types_Primitive, Types_Enum, Types_Struct, Types_Command, Types_None
+        };
+
+        enum PrimitiveTypes {
+            Primitive_Int32, Primitive_Uint32, Primitive_Int16, Primitive_Uint16, Primitive_Int8, Primitive_Uint8, Primitive_Int64, Primitive_Uint64, Primitive_Float, Primitive_Double, Primitive_Bool, Primitive_None
+        };
+
+        Types                       type;
+        PrimitiveTypes              primitive_type;
+        StringRef                   name;
+
+        std::vector&lt;StringRef&gt;      names;
+        std::vector&lt;const Type*&gt;    types;
+        bool                        exportable = true;
+
+    }; // struct Type
+
+} // namespace ast
+</code></pre>
+
+<p>And now the actual code making the magic happens!<br>
+Entry point for the parsing is generateAST.<br>
+It simply goes through ALL the tokens until it reaches the end of the file.<br>
+At this level of parsing, we parse only identifiers (keywords like &lsquo;struct&rsquo;, &lsquo;enum&rsquo;, &hellip;).</p>
+
+<pre><code>void generateAST( Parser* parser ) {
+
+    // Read source text until the end.
+    // The main body can be a list of declarations.
+    bool parsing = true;
+
+    while ( parsing ) {
+
+        Token token;
+        nextToken( parser-&gt;lexer, token );
+
+        switch ( token.type ) {
+
+            case Token::Token_Identifier:
+            {
+                identifier( parser, token );
+                break;
+            }
+
+            case Token::Type::Token_EndOfStream:
+            {
+                parsing = false;
+                break;
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>The method &lsquo;identifier&rsquo; searches for the language keywords and acts accordingly.<br>
+The method &lsquo;expectKeyword&rsquo; simply checks that the keywords are the same.<br></p>
+
+<pre><code>inline void identifier( Parser* parser, const Token&amp; token ) {
+
+    // Scan the name to know which 
+    for ( uint32_t i = 0; i &lt; token.text.length; ++i ) {
+        char c = *(token.text.text + i);
+
+        switch ( c ) {
+            case 's':
+            {
+                if ( expectKeyword( token.text, 6, &quot;struct&quot; ) ) {
+                    declarationStruct( parser );
+                    return;
+                }
+                    
+                break;
+            }
+
+            case 'e':
+            {
+                if ( expectKeyword( token.text, 4, &quot;enum&quot; ) ) {
+                    declarationEnum( parser );
+                    return;
+                }
+                break;
+            }
+
+            case 'c':
+            {
+                if ( expectKeyword( token.text, 7, &quot;command&quot; ) ) {
+                    declarationCommand( parser );
+                    return;
+                }
+                break;
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>The next methods are the real core of parsing a language.
+When declaring a struct, the token we have are:</p>
+
+<ol>
+<li>Identifier &lsquo;struct&rsquo; (parsed already by generateAST method)</li>
+<li>Name of the struct</li>
+<li>Open braces</li>
+<li>Zero or more variables</li>
+</ol>
+
+<p>The method expectToken checks the presence of the expected token and saves the line if an error occurs.</p>
+
+<pre><code>inline void declarationStruct( Parser* parser ) {
+    // name
+    Token token;
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+    
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_OpenBrace ) ) {
+        return;
+    }
+
+    // Add new type
+    ast::Type&amp; type = parser-&gt;types[parser-&gt;types_count++];
+    type.name = name;
+    type.type = ast::Type::Types_Struct;
+    type.exportable = true;
+
+    // Parse struct internals
+    while ( !equalToken( parser-&gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        if ( token.type == Token::Token_Identifier ) {
+            declarationVariable( parser, token.text, type );
+        }
+    }
+}
+
+</code></pre>
+
+<p>The parsing of a variable is even simpler, just a type followed by the name.
+When reading the type, it searches through the list of all types saved until then.</p>
+
+<pre><code>inline void declarationVariable( Parser* parser, const StringRef&amp; type_name, ast::Type&amp; type ) {
+    const ast::Type* variable_type = findType( parser, type_name );
+    Token token;
+    // Name
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_Semicolon ) ) {
+        return;
+    }
+
+    type.types.emplace_back( variable_type );
+    type.names.emplace_back( name );
+}
+</code></pre>
+
+<p>The parsing of the enum is:</p>
+
+<ol>
+<li>&lsquo;enum&rsquo; keyword</li>
+<li>Enum name</li>
+<li>(optional) Semicolon and type, taken from Flatbuffers syntax</li>
+<li>Open brace</li>
+<li>List of identifiers that corresponds to the enum values</li>
+</ol>
+
+<p><br></p>
+
+<pre><code>
+inline void declarationEnum( Parser* parser ) {
+    Token token;
+    // Name
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    // Optional ': type' for the enum
+    nextToken( parser-&gt;lexer, token );
+    if ( token.type == Token::Token_Colon ) {
+        // Skip to open brace
+        nextToken( parser-&gt;lexer, token );
+        // Token now contains type_name
+        nextToken( parser-&gt;lexer, token );
+        // Token now contains open brace.
+    }
+    
+    if ( token.type != Token::Token_OpenBrace ) {
+        return;
+    }
+
+    // Add new type
+    ast::Type&amp; type = parser-&gt;types[parser-&gt;types_count++];
+    type.name = name;
+    type.type = ast::Type::Types_Enum;
+    type.exportable = true;
+
+    // Parse struct internals
+    while ( !equalToken( parser-&gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        if ( token.type == Token::Token_Identifier ) {
+            type.names.emplace_back( token.text );
+        }
+    }
+}
+</code></pre>
+
+<p>A command is a special construct that I use in my code, normally with a CommandBuffer, and with the current syntax from HDF:</p>
+
+<pre><code>command WindowEvents {
+    Click {
+      int16 x;
+      int16 y;
+      int16 button;
+    }
+    Move {
+      int16 x;
+      int16 y;
+    }
+    Wheel {
+       int16 z;
+    }
+};
+</code></pre>
+
+<p>And this is the parsing of the command.<br>
+I think this can be the best example of mapping between the language and the parsing.<br>
+Parsing is:</p>
+
+<ol>
+<li>Name</li>
+<li>Open brace</li>
+<li>Scan of identifiers until close brace</li>
+<li>For each identifier, add a type and scan for internal variables.</li>
+</ol>
+
+<p><br></p>
+
+<pre><code>inline void declarationCommand( Parser* parser ) {
+    // name
+    Token token;
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    if ( !expectToken( parser-&gt;lexer, token, Token::Token_OpenBrace ) ) {
+        return;
+    }
+
+    // Add new type
+    ast::Type&amp; command_type = parser-&gt;types[parser-&gt;types_count++];
+    command_type.name = name;
+    command_type.type = ast::Type::Types_Command;
+    command_type.exportable = true;
+
+    // Parse struct internals
+    while ( !equalToken( parser-&gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        if ( token.type == Token::Token_Identifier ) {
+            // Create a new type for each command
+            // Add new type
+            ast::Type&amp; type = parser-&gt;types[parser-&gt;types_count++];
+            type.name = token.text;
+            type.type = ast::Type::Types_Struct;
+            type.exportable = false;
+
+            while ( !equalToken( parser-&gt;lexer, token, Token::Token_CloseBrace ) ) {
+                if ( token.type == Token::Token_Identifier ) {
+                    declarationVariable( parser, token.text, type );
+                }
+            }
+
+            command_type.names.emplace_back( type.name );
+            command_type.types.emplace_back( &amp;type );
+        }
+    }
+}
+</code></pre>
+
+<h2 id="abstract-syntax-tree">Abstract Syntax Tree</h2>
+
+<p>We choose to simply have data definitions, and I’ve decided that the nodes of the tree will be types.<br>
+A type can be a primitive type, a container of variables (like a Struct in C, but without methods) enums and commands.<br>
+Commands are just a way of showing the creation of a construct that I use and requires some boilerplate code, but I don’t want to write that code.<br>
+If we remember the definition of the class Type from the code before, it all boils down to a name,a list of names and optionally types.<br>
+With this simple definition I can express primitive types, structs and enums all in one!<br>
+For enums, I save the anme of the enum and in the name list all the different values. That is enough to later generate the code.<br>
+For structs, again the name is saved, and then the variables. A variable is a tuple of identifiers ‘type, name’. When parsing them, the type is searched in the registered ones.<br>
+A trick here is to initialize the parser with primitive types, and then add each type (both struct and enums) when parsing them.<br></p>
+
+<h1 id="code-generation">Code Generation</h1>
+
+<p>The last stage will generate the files in the language that we want, using the informations from the <strong>AST</strong>.<br>
+This part will literally write the code for us, the all purpose of this code.<br>
+The most fundamental question is: <em>“what code do I want to generate?”</em>.<br>
+A simple but deep question.<br>
+We are trying to remove the writing of boilerplate code from or lives, so anything that you consider boilerplate and easy to automate goes here.
+Even if until here we wrote in C++, the final output can be any language.<br>
+This means that you can define data and translate it to multiple languages!<br></p>
+
+<p>For our example, we will output C++ code and add UI using ImGui, similar to the Flatbuffers example I wrote before.<br>
+Let’s see the three different construct we can output with our language.<br></p>
+
+<h2 id="enum">Enum</h2>
+
+<p>We defined an enum as a name and a list of named values.
+For the simplicity of this example, we are not assigning manual values to the enum, but it is something easily changeable, and I will do it in the future.
+Given the enum in HDF:</p>
+
+<pre><code>enum BlendOperation : byte { Add, Subtract, RevSubtract, Min, Max }
+</code></pre>
+
+<p>Which code do we want to generate ?</p>
+
+<p>When I write enums, I almost always need the stringed version of the values. Also I want to add a last value, Count, so that I can use it if I need to allocate anything based on the enum.<br>
+As a bonus, I can create a second enum with the bit shifts — called mask — for some use cases.<br>
+All of this will be automatically done by the code generator, starting with a simple enum!<br>
+In this piece of code, I will use three different streams for the different parts of the enum (enum itself, value names and mask) and combine them into the final generated file.<br>
+Also to note that the strings here are ‘String Ref’ — basically a string that points to the input source code and stores the length of the string, so that there is no need to allocate it newly.<br>
+I will use a temporary buffer to null terminate it and write into the output file.<br></p>
+
+<p>This will be the generated code:</p>
+
+<pre><code>namespace BlendOperation {
+	enum Enum {
+		Add, Subtract, RevSubtract, Min, Max, Count
+	};
+
+	enum Mask {
+		Add_mask = 1 &lt;&lt; 0, Subtract_mask = 1 &lt;&lt; 1, RevSubtract_mask = 1 &lt;&lt; 2, Min_mask = 1 &lt;&lt; 3, Max_mask = 1 &lt;&lt; 4, Count_mask = 1 &lt;&lt; 5
+	};
+
+	static const char* s_value_names[] = {
+		&quot;Add&quot;, &quot;Subtract&quot;, &quot;RevSubtract&quot;, &quot;Min&quot;, &quot;Max&quot;, &quot;Count&quot;
+	};
+
+	static const char* ToString( Enum e ) {
+		return s_value_names[(int)e];
+	}
+} // namespace BlendOperation
+</code></pre>
+
+<p>The enum itself (inside a namespace), a mask and the string version for debugging purposes.<br>
+All generated from that one line!<br></p>
+
+<p>Let&rsquo;s go into a step by step review of the code.<br>
+First there is the initialization of some auxiliary buffers to handle dynamic strings without allocating memory.<br>
+These are the usages:</p>
+
+<ol>
+<li>Values will contain all the enum comma separated values</li>
+<li>Value_names will contain the string version of the values</li>
+
+<li><p>Value_masks will contain an optional bitmask for the values.
+<br></p>
+
+<pre><code>void outputCPPEnum( CodeGenerator* code_generator, FILE* output, const ast::Type&amp; type ) {
+
+// Empty enum: skip output.
+if ( type.names.size() == 0 )
+    return;
+
+code_generator-&gt;string_buffer_0.clear();
+code_generator-&gt;string_buffer_1.clear();
+code_generator-&gt;string_buffer_2.clear();
+
+StringBuffer&amp; values = code_generator-&gt;string_buffer_0;
+StringBuffer&amp; value_names = code_generator-&gt;string_buffer_1;
+StringBuffer&amp; value_masks = code_generator-&gt;string_buffer_2;
+</code></pre></li>
+</ol>
+
+<p>We start by adding the character &lsquo;&ldquo;&rsquo; in the names - they will be C strings!<br>
+Then we have a couple of options, just as demonstration: add mask (for the bitmask) and add max, that adds a last element to the generated enum.<br></p>
+
+<pre><code>    value_names.append( &quot;\&quot;&quot; );
+
+    bool add_max = true;
+    bool add_mask = true;
+</code></pre>
+
+<p>Next step is the core: go through all the names saved in the enum <strong>ast::Type</strong> during the <strong>parsing</strong> phase, and add the literal as is in the enum, the literal in string version and optional mask.<br>
+We also need to take care of the enum with 1 values, they behave in a different way.<br></p>
+
+<pre><code>    char name_buffer[256];
+
+    // Enums with more than 1 values
+    if ( type.names.size() &gt; 1 ) {
+        const uint32_t max_values = type.names.size() - 1;
+        for ( uint32_t v = 0; v &lt; max_values; ++v ) {
+
+            if ( add_mask ) {
+                value_masks.append( type.names[v] );
+                value_masks.append( &quot;_mask = 1 &lt;&lt; &quot; );
+                value_masks.append( _itoa( v, name_buffer, 10 ) );
+                value_masks.append( &quot;, &quot; );
+            }
+
+            values.append( type.names[v] );
+            values.append( &quot;, &quot; );
+
+            value_names.append( type.names[v] );
+            value_names.append( &quot;\&quot;, \&quot;&quot; );
+        }
+
+        if ( add_mask ) {
+            value_masks.append( type.names[max_values] );
+            value_masks.append( &quot;_mask = 1 &lt;&lt; &quot; );
+            value_masks.append( _itoa( max_values, name_buffer, 10 ) );
+        }
+
+        values.append( type.names[max_values] );
+
+        value_names.append( type.names[max_values] );
+        value_names.append( &quot;\&quot;&quot; );
+    }
+    else {
+        
+        if ( add_mask ) {
+            value_masks.append( type.names[0] );
+            value_masks.append( &quot;_mask = 1 &lt;&lt; &quot; );
+            value_masks.append( _itoa( 0, name_buffer, 10 ) );
+        }
+
+        values.append( type.names[0] );
+
+        value_names.append( type.names[0] );
+        value_names.append( &quot;\&quot;&quot; );
+    }
+
+</code></pre>
+
+<p>After writing all the values we can add the optional max value in the output:</p>
+
+<pre><code>    if ( add_max ) {
+        values.append( &quot;, Count&quot; );
+
+        value_names.append( &quot;, \&quot;Count\&quot;&quot; );
+
+        if ( add_mask ) {
+            value_masks.append( &quot;, Count_mask = 1 &lt;&lt; &quot; );
+            value_masks.append( _itoa( type.names.size(), name_buffer, 10 ) );
+        }
+    }
+    
+</code></pre>
+
+<p>Until now we just saved all those values in the StringBuffers, but still not in the file.<br>
+The final piece of code output to file the enum with all the additional data:<br></p>
+
+<pre><code>    copy( type.name, name_buffer, 256 );
+
+    fprintf( output, &quot;namespace %s {\n&quot;, name_buffer );
+
+    fprintf( output, &quot;\tenum Enum {\n&quot; );
+    fprintf( output, &quot;\t\t%s\n&quot;, values.data );
+    fprintf( output, &quot;\t};\n&quot; );
+
+    // Write the mask
+    if ( add_mask ) {
+        fprintf( output, &quot;\n\tenum Mask {\n&quot; );
+        fprintf( output, &quot;\t\t%s\n&quot;, value_masks.data );
+        fprintf( output, &quot;\t};\n&quot; );
+    }
+
+    // Write the string values
+    fprintf( output, &quot;\n\tstatic const char* s_value_names[] = {\n&quot; );
+    fprintf( output, &quot;\t\t%s\n&quot;, value_names.data );
+    fprintf( output, &quot;\t};\n&quot; );
+
+    fprintf( output, &quot;\n\tstatic const char* ToString( Enum e ) {\n&quot; );
+    fprintf( output, &quot;\t\treturn s_value_names[(int)e];\n&quot; );
+    fprintf( output, &quot;\t}\n&quot; );
+
+    fprintf( output, &quot;} // namespace %s\n\n&quot;, name_buffer );
+}
+</code></pre>
+
+<h2 id="struct">Struct</h2>
+
+<p>Structs are the bread-and-butter of data definition.
+In this simple example we do not handle pointers or references, so it is pretty straight-forward, but as a start in coding generation this could already be powerful for many cases.
+Let’s start with a definition for our dream Data-Driven-Rendering:</p>
+
+<pre><code>// file.hdf
+struct RenderTarget {
+    uint16 			width;
+    uint16 			height;
+    float 			scale_x;
+    float 			scale_y;
+    TextureFormat 	format;
+};
+
+struct RenderPass {
+    RenderTarget 	rt0;
+};
+</code></pre>
+
+<p>We want to generate both the ready to use header in C++ and UI using ImGui.<br>
+The output for this struct will be obtained by simply iterating through all its members and, based on the type of the member, write some code.<br>
+For primitive types there is a translation that must be done to the C++ language — thus we saved a list of c++ primitive types keyword into the code.<br>
+For the UI area we will define two methods: reflectMembers, that simply adds the ImGui commands needed, and reflectUI, that embeds the members into a Window. This is done so that when starting from a root type I can create a window that let me edit its value, and recursively it can add other member’s UI if they are coming from another struct.<br>
+This is shown with the RenderPass struct.<br></p>
+
+<p>This will be the generated code, that includes ImGui too:<br></p>
+
+<pre><code>// CodeGenerated.h
+
+struct RenderTarget {
+
+	uint16_t width;
+	uint16_t height;
+	float scale_x;
+	float scale_y;
+	TextureFormat::Enum format;
+
+	void reflectMembers() {
+		ImGui::InputScalar( &quot;width&quot;, ImGuiDataType_U16, &amp;width );
+		ImGui::InputScalar( &quot;height&quot;, ImGuiDataType_U16, &amp;height );
+		ImGui::InputScalar( &quot;scale_x&quot;, ImGuiDataType_Float, &amp;scale_x );
+		ImGui::InputScalar( &quot;scale_y&quot;, ImGuiDataType_Float, &amp;scale_y );
+		ImGui::Combo( &quot;format&quot;, (int32_t*)&amp;format, TextureFormat::s_value_names, TextureFormat::Count );
+	}
+
+	void reflectUI() {
+		ImGui::Begin(&quot;RenderTarget&quot;);
+		reflectMembers();
+		ImGui::End();
+	}
+
+
+}; // struct RenderTarget
+</code></pre>
+
+<p>Now let&rsquo;s have a look at the code that will generate that.<br>
+First some init steps: clear and alias the StringBuffer, allocate some char buffers on the stack, copy the StringRef into the name buffer:<br></p>
+
+<pre><code>
+void outputCPPStruct( CodeGenerator* code_generator, FILE* output, const ast::Type&amp; type ) {
+    const char* tabs = &quot;&quot;;
+
+    code_generator-&gt;string_buffer_0.clear();
+
+    StringBuffer&amp; ui_code = code_generator-&gt;string_buffer_0;
+
+    char name_buffer[256], member_name_buffer[256], member_type_buffer[256];
+    copy( type.name, name_buffer, 256 );
+
+</code></pre>
+
+<p>Next is already a powerful piece of code.<br>
+Outputting the UI code and iterating through each member.<br></p>
+
+<pre><code>    if ( code_generator-&gt;generate_imgui ) {
+        ui_code.append( &quot;\n\tvoid reflectMembers() {\n&quot; );
+    }
+
+    fprintf( output, &quot;%sstruct %s {\n\n&quot;, tabs, name_buffer );
+
+    for ( int i = 0; i &lt; type.types.size(); ++i ) {
+        const ast::Type&amp; member_type = *type.types[i];
+        const StringRef&amp; member_name = type.names[i];
+
+        copy( member_name, member_name_buffer, 256 );
+
+</code></pre>
+
+<p>We are in the middle of the loop, and we want to check if the current member type is a primitive one, then it needs some work to do.<br>
+First, output the language specific primitive type keyword (using the s_primitive_type_cpp array).<br>
+Second, add some ImGui code to edit the field directly.<br></p>
+
+<pre><code>
+        // Translate type name based on output language.
+        switch ( member_type.type ) {
+            case ast::Type::Types_Primitive:
+            {
+                strcpy_s( member_type_buffer, 256, s_primitive_type_cpp[member_type.primitive_type] );
+                fprintf( output, &quot;%s\t%s %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+                
+                if ( code_generator-&gt;generate_imgui ) {
+                    switch ( member_type.primitive_type ) {
+                        case ast::Type::Primitive_Int8:
+                        case ast::Type::Primitive_Uint8:
+                        case ast::Type::Primitive_Int16:
+                        case ast::Type::Primitive_Uint16:
+                        case ast::Type::Primitive_Int32:
+                        case ast::Type::Primitive_Uint32:
+                        case ast::Type::Primitive_Int64:
+                        case ast::Type::Primitive_Uint64:
+                        case ast::Type::Primitive_Float:
+                        case ast::Type::Primitive_Double:
+                        {
+                            ui_code.append( &quot;\t\tImGui::InputScalar( \&quot;%s\&quot;, %s, &amp;%s );\n&quot;, member_name_buffer, s_primitive_type_imgui[member_type.primitive_type], member_name_buffer );
+                            
+                            break;
+                        }
+                        
+                        case ast::Type::Primitive_Bool:
+                        {
+                            ui_code.append( &quot;\t\tImGui::Checkbox( \&quot;%s\&quot;, &amp;%s );\n&quot;, member_name_buffer, member_name_buffer );
+                            break;
+                        }
+                    }
+                }
+
+                break;
+            }
+
+</code></pre>
+
+<p>In case of a struct as a member, use the typename as is and call the &lsquo;reflectMembers&rsquo; method for the UI generation:<br></p>
+
+<pre><code>            case ast::Type::Types_Struct:
+            {
+                copy( member_type.name, member_type_buffer, 256 );
+                fprintf( output, &quot;%s\t%s %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+
+                if ( code_generator-&gt;generate_imgui ) {
+                    ui_code.append( &quot;\t\tImGui::Text(\&quot;%s\&quot;);\n&quot;, member_name_buffer );
+                    ui_code.append( &quot;\t\t%s.reflectMembers();\n&quot;, member_name_buffer );
+                }
+
+                break;
+            }
+
+</code></pre>
+
+<p>For enums use the format namespace::Enum that comes with the generated code (and can be anything else) and add a Combo for ImGui. The combo is using the string array generated previously! This is powerful!<br></p>
+
+<pre><code>            case ast::Type::Types_Enum:
+            {
+                copy( member_type.name, member_type_buffer, 256 );
+                fprintf( output, &quot;%s\t%s::Enum %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+
+                if ( code_generator-&gt;generate_imgui ) {
+                    ui_code.append( &quot;\t\tImGui::Combo( \&quot;%s\&quot;, (int32_t*)&amp;%s, %s::s_value_names, %s::Count );\n&quot;, member_name_buffer, member_name_buffer, member_type_buffer, member_type_buffer );
+                }
+
+                break;
+            }
+
+</code></pre>
+
+<p>To finish up simlpy add the reflectUI method, that embed the members reflection in a window and finish.<br></p>
+
+<pre><code>            default:
+            {
+                break;
+            }
+        }
+    }
+
+    ui_code.append( &quot;\t}&quot; );
+    ui_code.append( &quot;\n\n\tvoid reflectUI() {\n\t\tImGui::Begin(\&quot;%s\&quot;);\n\t\treflectMembers();\n\t\tImGui::End();\n\t}\n&quot;, name_buffer );
+
+    fprintf( output, &quot;%s\n&quot;, ui_code.data );
+
+    fprintf( output, &quot;\n%s}; // struct %s\n\n&quot;, tabs, name_buffer );
+}
+
+</code></pre>
+
+<h2 id="command">Command</h2>
+
+<p>I wanted to include an example of something that does not exist in any language, but it shows the power of removing boilerplate code.</p>
+
+<p>I define commands as little structs with a type used anytime I need to do some command parsing, normally from a ring buffer.</p>
+
+<p>The command should have an enum with all the types already, and each struct should have its type assigned.
+The type is normally used to cycle through the commands and do something accordingly.</p>
+
+<p>It will output structs because of the need to allocate them in the ring buffer, thus must be simple.</p>
+
+<p>First let&rsquo;s see the HDF file. The example are window events commands:<br></p>
+
+<pre><code>command WindowEvents {
+
+	Click {
+		int16 x;
+        int16 y;
+        int16 button;
+	}
+
+	Move {
+		int16 x;
+		int16 y;
+	}
+
+    Wheel {
+        int16 z;
+    }
+};
+</code></pre>
+
+<p>The generated code will be:<br></p>
+
+<pre><code>namespace WindowEvents {
+	enum Type {
+		Type_Click, Type_Move, Type_Wheel
+	};
+
+	struct Click {
+
+		int16_t x;
+		int16_t y;
+		int16_t button;
+
+		static Type GetType() { return Type_Click; }
+
+	}; // struct Wheel
+
+	struct Move {
+
+		int16_t x;
+		int16_t y;
+
+		static Type GetType() { return Type_Move; }
+
+	}; // struct Wheel
+
+	struct Wheel {
+
+		int16_t z;
+
+		static Type GetType() { return Type_Wheel; }
+
+	}; // struct Wheel
+
+}; // namespace WindowEvents
+</code></pre>
+
+<p>And finally the C++ code that generates the output.<br>
+The output starts with an enum with all the types, that I normally use to switch commands:<br></p>
+
+<pre><code>void outputCPPCommand( CodeGenerator* code_generator, FILE* output, const ast::Type&amp; type ) {
+
+    char name_buffer[256], member_name_buffer[256], member_type_buffer[256];
+    copy( type.name, name_buffer, 256 );
+
+    fprintf( output, &quot;namespace %s {\n&quot;, name_buffer );
+
+    // Add enum with all types
+    fprintf( output, &quot;\tenum Type {\n&quot; );
+    fprintf( output, &quot;\t\t&quot; );
+    for ( int i = 0; i &lt; type.types.size() - 1; ++i ) {
+        const ast::Type&amp; command_type = *type.types[i];
+        copy( command_type.name, name_buffer, 256 );
+        fprintf( output, &quot;Type_%s, &quot;, name_buffer );
+    }
+
+    const ast::Type* last_type = type.types[type.types.size() - 1];
+    copy( last_type-&gt;name, name_buffer, 256 );
+    fprintf( output, &quot;Type_%s&quot;, name_buffer );
+    fprintf( output, &quot;\n\t};\n\n&quot; );
+</code></pre>
+
+<p>Then we output all the command structs (like Click, Move, &hellip;).<br>
+For each command type we output a struct with all its members. This is similar to the output of the structs:<br></p>
+
+<pre><code>    const char* tabs = &quot;\t&quot;;
+
+    for ( int i = 0; i &lt; type.types.size(); ++i ) {
+        const ast::Type&amp; command_type = *type.types[i];
+
+        copy( command_type.name, member_type_buffer, 256 );
+        fprintf( output, &quot;%sstruct %s {\n\n&quot;, tabs, member_type_buffer );
+        
+        for ( int i = 0; i &lt; command_type.types.size(); ++i ) {
+            const ast::Type&amp; member_type = *command_type.types[i];
+            const StringRef&amp; member_name = command_type.names[i];
+
+            copy( member_name, member_name_buffer, 256 );
+
+            // Translate type name based on output language.
+            switch ( member_type.type ) {
+                case ast::Type::Types_Primitive:
+                {
+                    strcpy_s( member_type_buffer, 256, s_primitive_type_cpp[member_type.primitive_type] );
+                    fprintf( output, &quot;%s\t%s %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+
+                    break;
+                }
+
+                case ast::Type::Types_Struct:
+                {
+                    copy( member_type.name, member_type_buffer, 256 );
+                    fprintf( output, &quot;%s\t%s %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+
+                    break;
+                }
+
+                case ast::Type::Types_Enum:
+                {
+                    copy( member_type.name, member_type_buffer, 256 );
+                    fprintf( output, &quot;%s\t%s::Enum %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+
+                    break;
+                }
+
+                default:
+                {
+                    break;
+                }
+            }
+        }
+
+        copy( command_type.name, member_type_buffer, 256 );
+
+        fprintf( output, &quot;\n%s\tstatic Type GetType() { return Type_%s; }\n&quot;, tabs, member_type_buffer );
+        fprintf( output, &quot;\n%s}; // struct %s\n\n&quot;, tabs, name_buffer );
+    }
+
+    copy( type.name, name_buffer, 256 );
+    fprintf( output, &quot;}; // namespace %s\n\n&quot;, name_buffer );
+
+}
+</code></pre>
+
+<h1 id="conclusions">Conclusions</h1>
+
+<p>We learnt how to write a complete Code Generator, an incredible tool that can speed up the development if used correctly and remove most boilerplate code possible.</p>
+
+<p>The usage of the <em>command</em> keyword was an example of something I use and I don’t want to write code, something that is custom enough and hopefully will give you more ideas on how you can break free from languages constriction when you write…your own language!</p>
+
+<p>In the quest for data-driven rendering, the next step will be to use the knowledge from code generation to create a <em>shader effect language</em>, that can generate both CPU and GPU code for you.</p>
+
+<p>This article is the longest and more code-heavy I have ever written. There are many concepts that I am beginning to be familiar with, but still not so used to.</p>
+
+<p>So please comment, give feedback, share!
+Thank you for reading!</p>
+
+    </div>
+
+    
+
+
+    
+
+
+
+    
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+  
+  
+    
+  
+  
+  <div class="media author-card" itemscope itemtype="http://schema.org/Person">
+    
+      
+      <img class="portrait mr-3" src="/authors/admin/avatar_hu45846e015095c9654b2fb671ea5d5811_27176_250x250_fill_q90_lanczos_center.jpg" itemprop="image" alt="Avatar">
+    
+
+    <div class="media-body">
+      <h5 class="card-title" itemprop="name"><a href="/">Gabriel Sassone</a></h5>
+      <h6 class="card-subtitle">Senior Rendering/Engine Programmer</h6>
+      
+      <ul class="network-icon" aria-hidden="true">
+        
+          
+          
+          
+            
+          
+          
+          
+          
+          
+            
+          
+          <li>
+            <a itemprop="sameAs" href="https://twitter.com/GabrielSassone" target="_blank" rel="noopener">
+              <i class="fab fa-twitter"></i>
+            </a>
+          </li>
+        
+          
+          
+          
+            
+          
+          
+          
+          
+          
+            
+          
+          <li>
+            <a itemprop="sameAs" href="https://github.com/JorenJoestar" target="_blank" rel="noopener">
+              <i class="fab fa-github"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+
+
+      
+      
+    
+
+    
+
+    
+
+
+  </div>
+</article>
+
+      
+
+    
+    
+
+    
+    
+    
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js" integrity="sha256-lqvxZrPLtfffUl2G/e7szqSvPBILGbwmsGE1MKlOi0Q=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js" integrity="sha256-CBrpuqrMhXwcLLUd5tvQ4euBHCdh7wGlDfNz8vbu/iI=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" integrity="sha256-X5PoE3KU5l+JcX+w09p/wHl9AzK333C4hJ2I9S5mD4M=" crossorigin="anonymous"></script>
+
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js" integrity="sha256-aYTdUrn6Ow1DDgh5JTc3aDGnnju48y/1c8s1dgkYPQ8=" crossorigin="anonymous"></script>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/languages/cpp.min.js"></script>
+        
+      
+
+      
+      
+    
+
+    
+    
+
+    
+    
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+
+    
+    
+    <script>
+      const search_index_filename = "/index.json";
+      const i18n = {
+        'placeholder': "Search...",
+        'results': "results found",
+        'no_results': "No results found"
+      };
+      const content_type = {
+        'post': "Posts",
+        'project': "Projects",
+        'publication' : "Publications",
+        'talk' : "Talks"
+        };
+    </script>
+    
+
+    
+    
+
+    
+    
+    <script id="search-hit-fuse-template" type="text/x-template">
+      <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <a href="{{relpermalink}}">{{title}}</a>
+          <div class="article-metadata search-hit-type">{{type}}</div>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+      </div>
+    </script>
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha256-VzgmKYmhsGNNN4Ph1kMW+BjoYJM2jV5i4IlFoeZA9XI=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha256-4HLtjeVgH0eIB3aZ9mLYF6E8oU5chNdjU6p6rrXpl9U=" crossorigin="anonymous"></script>
+    
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+    
+    
+    
+    
+    <script src="/js/academic.min.4e51017b38c7ebaadd7e25fc9503f88c.js"></script>
+
+    
+
+
+
+
+
+
+  
+  <div class="container">
+    <footer class="site-footer">
+  
+
+  <p class="powered-by">
+    
+
+    Powered by the
+    <a href="https://sourcethemes.com/academic/" target="_blank" rel="noopener">Academic theme</a> for
+    <a href="https://gohugo.io" target="_blank" rel="noopener">Hugo</a>.
+
+    
+    <span class="float-right" aria-hidden="true">
+      <a href="#" id="back_to_top">
+        <span class="button_icon">
+          <i class="fas fa-chevron-up fa-2x"></i>
+        </span>
+      </a>
+    </span>
+    
+  </p>
+</footer>
+
+  </div>
+  
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cite</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> Copy
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> Download
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
