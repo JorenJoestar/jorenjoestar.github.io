@@ -2,22 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Authors on Joren&#39;s</title>
-    <link>/authors/</link>
+    <link>https://jorenjoestar.github.io/authors/</link>
     <description>Recent content in Authors on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
     
-	    <atom:link href="/authors/index.xml" rel="self" type="application/rss+xml" />
+	    <atom:link href="https://jorenjoestar.github.io/authors/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title></title>
-      <link>/authors/admin/</link>
+      <link>https://jorenjoestar.github.io/authors/admin/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/authors/admin/</guid>
+      <guid>https://jorenjoestar.github.io/authors/admin/</guid>
       <description>&lt;p&gt;Video-games Lover. Guitar enthusiast. Life-surfer.&lt;/p&gt;
-
 &lt;p&gt;Passion, mistakes and curiosity.&lt;/p&gt;
 </description>
     </item>
