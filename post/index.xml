@@ -6,10 +6,539 @@
     <description>Recent content in Posts on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 14 Oct 2019 10:43:49 -0400</lastBuildDate>
+    <lastBuildDate>Mon, 16 Mar 2020 12:11:37 -0400</lastBuildDate>
     
 	    <atom:link href="https://jorenjoestar.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Augmenting shader languages for modern rendering APIs</title>
+      <link>https://jorenjoestar.github.io/post/shader_augment_for_pipelines/shader_augment_for_pipelines/</link>
+      <pubDate>Mon, 16 Mar 2020 12:11:37 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/shader_augment_for_pipelines/shader_augment_for_pipelines/</guid>
+      <description>&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+&lt;p&gt;In the last articles we looked at progressively building tools to move rendering code towards data.&lt;!-- raw HTML omitted --&gt;
+We looked on how to create a simple &lt;strong&gt;lexer&lt;/strong&gt;, a simple &lt;strong&gt;parser&lt;/strong&gt; and a &lt;strong&gt;code generator&lt;/strong&gt;.&lt;!-- raw HTML omitted --&gt;
+With those we were able to create a very simple language to &lt;strong&gt;augment&lt;/strong&gt; shaders.&lt;/p&gt;
+&lt;p&gt;Why that ?&lt;/p&gt;
+&lt;p&gt;There are few reasons:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Shader languages misses any way of linking multiple programs&lt;/li&gt;
+&lt;li&gt;Shader languages misses any way to define render states&lt;/li&gt;
+&lt;li&gt;CGFX and Microsoft FX are mostly dead&lt;/li&gt;
+&lt;li&gt;Ability to use ANY shader language - and just add the infrastructure&lt;/li&gt;
+&lt;li&gt;Ability to generate permutations without manually creating them&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Hydra FX aims to add all the missing features and becoming just an augmentation to ANY shader language.&lt;/p&gt;
+&lt;p&gt;There is also a fundamental reason for me:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Define all the rendering informations needed as soon as possible!&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;With this reason then defining everything inside an HFX file, with the possibility of overriding some properties, it is paramount.&lt;/p&gt;
+&lt;p&gt;This is by far a new concept, and with the newer Graphics APIs (Vulkan and D3D12) it is becoming more and more of a need.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;In this article we will see how we have all those features and add the missing ones. I will try to define everything in a more API-Independent way, so it can be adapted to any engine needs.&lt;/p&gt;
+&lt;h1 id=&#34;why-we-need-shader-augmentation&#34;&gt;Why we need shader augmentation&lt;/h1&gt;
+&lt;p&gt;The augmentation that I have in mind is needed for different reasons, not only if you are targeting the newer APIs.&lt;!-- raw HTML omitted --&gt;
+Some of the reasons are the following:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Write the NECESSARY code. Nothing more.&lt;/li&gt;
+&lt;li&gt;Logically group shaders in the same file.&lt;/li&gt;
+&lt;li&gt;Describe a priori all the STATIC parts of rendering.&lt;/li&gt;
+&lt;li&gt;Being more data driven, improve iteration time.&lt;/li&gt;
+&lt;li&gt;Being more data driven, encourage rendering experimentation.&lt;/li&gt;
+&lt;li&gt;Easiness of debugging.&lt;/li&gt;
+&lt;li&gt;Encourages less hardcoded data.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;write-the-necessary-code-nothing-more&#34;&gt;Write the NECESSARY code. Nothing more.&lt;/h2&gt;
+&lt;p&gt;As I wrote in previous articles writing code is our biggest power and liability.&lt;!-- raw HTML omitted --&gt;
+Wasting time writing useless code is like slowly typing with one finger, without any clue of a design nor knowledge of the subject.&lt;!-- raw HTML omitted --&gt;
+Of course this is very personal, but any time I have to reiterate some steps (in anything in my life) for no purpose but bad-design/bad-architecture/technical-debt it really makes me feel bad.&lt;!-- raw HTML omitted --&gt;
+Again, it is like playing Diablo and clicking all the time to attack, instead of knowing that you can hold the mouse button!&lt;/p&gt;
+&lt;p&gt;Finally to the topic: shader augmentation means moving to data what many times is expressed in code.&lt;!-- raw HTML omitted --&gt;
+We can both have a data-driven rendering, or even generate code for us, or a combination of both.&lt;!-- raw HTML omitted --&gt;
+There is not right or wrong, and this will change in the future!&lt;!-- raw HTML omitted --&gt;
+The best solution is the one that solves your (incredibly well described) problem.&lt;/p&gt;
+&lt;p&gt;Adding render states, vertex inputs, render graph informations let a simple text file to find its space into your awesome rendering quite easily.&lt;/p&gt;
+&lt;h2 id=&#34;logically-group-shaders-in-the-same-file&#34;&gt;Logically group shaders in the same file.&lt;/h2&gt;
+&lt;p&gt;Having to write separated files it can be ok, but many times having everything in one file (well divided) will be easier to logically connects the shader themselves.&lt;!-- raw HTML omitted --&gt;
+Sometimes you can get lost into the combination of shaders quite easily.&lt;!-- raw HTML omitted --&gt;
+And anyway you NEED to define which shaders are used together since the dawn of time.&lt;/p&gt;
+&lt;p&gt;So put them into the same file!&lt;/p&gt;
+&lt;h2 id=&#34;describe-a-priori-all-the-static-parts-of-rendering&#34;&gt;Describe a priori all the STATIC parts of rendering.&lt;/h2&gt;
+&lt;p&gt;Knowing all the static parts of rendering can lead to offline analysis and build, statistics, and all kind of things you can think of.&lt;!-- raw HTML omitted --&gt;
+It also serves to really have knowledge of the combinational explosion of rendering &lt;strong&gt;before&lt;/strong&gt; it arrives in your beloved renderer!&lt;!-- raw HTML omitted --&gt;
+Sometimes you can group shaders together and improve speed and usability by just analysing how &lt;strong&gt;similar&lt;/strong&gt; some shaders are.&lt;/p&gt;
+&lt;h2 id=&#34;being-more-data-driven-improve-iteration-time&#34;&gt;Being more data driven, improve iteration time.&lt;/h2&gt;
+&lt;p&gt;If you think of reloading assets, then a shader reload will also load all the render stage associated.&lt;!-- raw HTML omitted --&gt;
+If you want to bring it a step further, adding/removing passes, changing were in the &lt;em&gt;render graph&lt;/em&gt; the shaders are used can be an incredible tool to quickly prototype, optimize, develop ideas.&lt;/p&gt;
+&lt;h2 id=&#34;being-more-data-driven-encourage-rendering-experimentation&#34;&gt;Being more data driven, encourage rendering experimentation.&lt;/h2&gt;
+&lt;p&gt;You can also add some non-coding tools to augment a shader with all those data.&lt;!-- raw HTML omitted --&gt;
+And again, defining this in data let&amp;rsquo;s you check relationship with the rest of the renderer more easily.&lt;/p&gt;
+&lt;h2 id=&#34;easiness-of-debugging&#34;&gt;Easiness of debugging.&lt;/h2&gt;
+&lt;p&gt;Data-drivenness means that data is always available.&lt;!-- raw HTML omitted --&gt;
+In the example I am adding here, you can see how useful can be to even have a simple ImGui debug of a HFX file.&lt;!-- raw HTML omitted --&gt;
+Bring that to a realtime renderer, and you can quickly debug rendering problems without having to use external tools like Pix, RenderDoc and such. These are wonderful tools, but I always love to have a defense before arriving there.&lt;/p&gt;
+&lt;p&gt;An example is to debug on someone&amp;rsquo;s machine that does not have installed those tools.&lt;/p&gt;
+&lt;p&gt;Same can be applied to performances, to quickly check performances in realtime.&lt;/p&gt;
+&lt;p&gt;Tooling is essential to any developer, and should be developed with the technology itself.&lt;/p&gt;
+&lt;h2 id=&#34;encourages-less-hardcoded-data&#34;&gt;Encourages less hardcoded data.&lt;/h2&gt;
+&lt;p&gt;Nothing wrong to hardcoding data, and many times is necessary and useful.&lt;!-- raw HTML omitted --&gt;
+But the question is: &lt;strong&gt;when&lt;/strong&gt; is necessary ?&lt;/p&gt;
+&lt;p&gt;Having a common data format gives you the tools (see previous point) to analyze, compared to hardcoded.&lt;/p&gt;
+&lt;h1 id=&#34;shader-augmentations&#34;&gt;Shader Augmentations&lt;/h1&gt;
+&lt;p&gt;We will take a HFX shader and will see all the augmentations.&lt;!-- raw HTML omitted --&gt;
+This is used in the &lt;a href=&#34;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&#34;&gt;Render Pipeline Article&lt;/a&gt; and renders the GLTF assets:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;shader PBR {
+
+    properties {
+        albedo_texture(&amp;quot;Albedo&amp;quot;, 2D) = &amp;quot;&amp;quot;
+        normals_texture(&amp;quot;Normals&amp;quot;, 2D) = &amp;quot;&amp;quot;
+        metal_roughness_texture(&amp;quot;MetalRoughness&amp;quot;, 2D) = &amp;quot;&amp;quot;
+        emissive_texture(&amp;quot;Emissive&amp;quot;, 2D) = &amp;quot;&amp;quot;
+        occlusion_texture(&amp;quot;Occlusion&amp;quot;, 2D) = &amp;quot;&amp;quot;
+        scale(&amp;quot;Scale&amp;quot;, Float) = 16.0
+    }
+
+    layout {
+        vertex main3D {
+            binding 0 16 vertex
+            attribute float3 Position 0 0 0
+            attribute ubyte4n Color 0 1 12
+        }
+
+        vertex main3DPosition {
+            binding 0 12 vertex
+            attribute float3 Position 0 0 0
+        }
+
+        vertex main3DPositionNormal {
+            binding 0 12 vertex
+            binding 1 12 vertex
+            binding 3 64 instance
+            attribute float3 Position 0 0 0
+            attribute float3 Normal 1 1 0
+            attribute float4 InstanceTransform 3 3 0
+            attribute float4 InstanceTransform 3 4 16
+            attribute float4 InstanceTransform 3 5 32
+            attribute float4 InstanceTransform 3 6 48
+        }
+
+        vertex gbuffer {
+            binding 0 12 vertex
+            binding 1 12 vertex
+            binding 2 8 vertex
+            binding 3 64 instance
+            attribute float3 Position 0 0 0
+            attribute float3 Normal 1 1 0
+            attribute float2 UV 2 2 0
+            attribute float4 InstanceTransform 3 3 0
+            attribute float4 InstanceTransform 3 4 16
+            attribute float4 InstanceTransform 3 5 32
+            attribute float4 InstanceTransform 3 6 48
+        }
+
+        list gbuffer {
+            cbuffer ViewConstants ViewConstants;
+
+            texture2D albedo;
+            texture2D normals;
+            texture2D metalRoughness;
+            texture2D emissive;
+            texture2D occlusion;
+
+            sampler2D linear_sampler
+        }
+    }
+
+    sampler_states {
+        state linear_sampler {
+            Filter MinMagMipLinear
+            AddressU Clamp
+            AddressV Clamp
+        }
+    }
+
+    render_states {
+        state main {
+            Cull Back
+            ZTest LEqual
+            ZWrite On
+        }
+
+        state linesZTest {
+            Cull None
+            ZTest LEqual
+            ZWrite Off
+            BlendMode Alpha
+        }
+    }
+
+    glsl GBuffer_V {
+
+        #pragma include &amp;quot;Platform.h&amp;quot;
+
+        layout (location = 0) in vec3 Position;
+        layout (location = 1) in vec3 Normal;
+        layout (location = 2) in vec2 UV;
+        layout (location = 3) in mat4 instanceTransform;
+
+        layout (std140, binding=0) uniform ViewConstants {
+            mat4                    view_projection_matrix;
+            mat4                    projection_matrix;
+            vec4                    resolution;
+        };
+
+        out vec3 vertexNormal;
+        out vec2 uv;
+        out vec3 worldPosition;
+
+        void main()
+        {
+            vertexNormal = (inverse(transpose((instanceTransform))) * vec4(Normal,0)).rgb;
+            uv = UV;
+
+            vec4 world_pos = instanceTransform * vec4(Position.xyz, 1.0f);
+            worldPosition = world_pos.xyz;
+            gl_Position = view_projection_matrix * world_pos;
+        }
+    }
+
+    glsl GBuffer_F {
+
+        #pragma include &amp;quot;Platform.h&amp;quot;
+    
+        layout (location = 0) out vec4 Out_Color;
+        layout (location = 1) out vec4 Out_Normals;
+        layout (location = 2) out vec4 Out_Properties0;
+        //layout (location = 3) out vec4 Out_WorldPosition;
+
+        layout(binding=0) uniform sampler2D albedo;
+        layout(binding=1) uniform sampler2D normals;
+        layout(binding=2) uniform sampler2D metalRoughness;
+        layout(binding=3) uniform sampler2D emissive;
+        layout(binding=4) uniform sampler2D occlusion;
+
+        in vec3 vertexNormal;
+        in vec2 uv;
+        in vec3 worldPosition;
+
+        void generate_TB_basis( out vec3 vT, out vec3 vB, vec2 texST, vec3 base_normal, vec3 sigma_x, vec3 sigma_y, float flip_sign )
+        {
+            vec2 dSTdx = dFdxFine ( texST ) , dSTdy = dFdyFine ( texST ) ;
+            float det = dot ( dSTdx , vec2 ( dSTdy .y ,- dSTdy .x ));
+            float sign_det = det &amp;lt;0 ? -1 : 1;
+
+            // invC0 represents ( dXds , dYds ) ; but we don ’t divide by
+            // determinant ( scale by sign instead )
+            vec2 invC0 = sign_det * vec2 ( dSTdy .y , - dSTdx .y );
+
+            vT = sigma_x * invC0 .x + sigma_y * invC0 .y;
+            if( abs ( det ) &amp;gt; 0.0)
+                vT = normalize ( vT );
+
+            vB = ( sign_det * flip_sign ) * cross ( base_normal , vT );
+        }
+
+        void main()
+        {
+            // Calculate gradient base:
+            vec3 base_normal = normalize(vertexNormal);
+
+            vec3 position_derivate_x = dFdxFine( worldPosition );
+            vec3 position_derivate_y = dFdyFine( worldPosition );
+
+            vec3 sigma_x = position_derivate_x - dot( position_derivate_x, base_normal ) * base_normal;
+            vec3 sigma_y = position_derivate_y - dot( position_derivate_y, base_normal ) * base_normal;
+            float flip_sign = dot ( position_derivate_y, cross ( base_normal, position_derivate_x )) &amp;lt; 0 ? -1 : 1;
+
+            vec3 tangent, bitangent;
+            generate_TB_basis( tangent, bitangent, uv.xy, base_normal, sigma_x, sigma_y, flip_sign );
+
+            vec3 tangent_normal = texture(normals, uv.xy).xyz * 2 - 1;
+
+            vec3 normal = tangent * tangent_normal.x + bitangent * tangent_normal.y + base_normal * tangent_normal.z;
+            normal = normalize(normal);
+
+            vec3 emissive_color = texture(emissive, uv.xy).rgb;
+
+            //Out_Normals = vec4(vertexNormal, 1);
+            //Out_Normals = vec4(tangent_normal * 0.5 + 0.5, 1);
+            Out_Normals = vec4(normal, emissive_color.r);
+
+            vec3 color = texture(albedo, uv.xy).xyz;
+            float occlusion = texture(occlusion, uv.xy).r;
+            Out_Color = vec4(color, occlusion);
+
+            // G = Rougthness, B = Metalness
+            vec2 roughness_metal = texture(metalRoughness, uv.xy).yz;
+            Out_Properties0 = vec4(roughness_metal.xy, emissive_color.gb);
+
+            // TODO: remove! This is to test world space reconstruction!
+            //Out_WorldPosition = vec4(worldPosition, 1);
+        }
+    }
+
+    glsl PositionOnly {
+
+        #pragma include &amp;quot;Platform.h&amp;quot;
+
+        #if defined VERTEX
+
+        layout (location = 0) in vec3 Position;
+
+        uniform ViewConstants { 
+            mat4                    view_projection_matrix;
+            mat4                    projection_matrix;
+            vec4                    resolution;
+        };
+
+        void main()
+        {
+            gl_Position = view_projection_matrix * vec4(Position.xyz, 1.0f);
+        }
+        out vec4 vTexCoord;
+
+        #endif // VERTEX
+
+        #if defined FRAGMENT
+
+        layout (location = 0) out vec4 Out_Color;
+        
+        void main()
+        {
+            Out_Color = vec4(1,1,1,1);
+        }
+        #endif // FRAGMENT
+    }
+
+    glsl PositionNormals {
+
+        #pragma include &amp;quot;Platform.h&amp;quot;
+
+        #if defined VERTEX
+
+        layout (location = 0) in vec3 Position;
+        layout (location = 1) in vec3 Normal;
+        layout (location = 3) in mat4 instanceTransform;
+
+        layout (std140, binding=0) uniform ViewConstants { 
+            mat4                    view_projection_matrix;
+            mat4                    projection_matrix;
+            vec4                    resolution;
+        };
+
+        out vec3 vertexNormal;
+
+        void main()
+        {
+            vertexNormal = Normal;
+            gl_Position = view_projection_matrix * instanceTransform * vec4(Position.xyz, 1.0f);
+        }
+        
+
+        #endif // VERTEX
+
+        #if defined FRAGMENT
+
+        layout (location = 0) out vec4 Out_Color;
+        layout (location = 1) out vec4 Out_Normals;
+        in vec3 vertexNormal;
+        
+        void main()
+        {
+            Out_Normals = vec4(vertexNormal * 0.5 + 0.5, 1);
+
+            vec3 L = vec3(-0.7, 0.7, 0 );
+            float lambert_diffuse = max(0, dot(vertexNormal, L));
+            Out_Color = vec4(lambert_diffuse.xxx, 1);
+        }
+        #endif // FRAGMENT
+    }
+
+    pass GBuffer {
+        resources = gbuffer
+        render_states = main
+        vertex_layout = gbuffer
+        vertex = GBuffer_V
+        fragment = GBuffer_F
+    }
+
+    pass PositionN {
+        render_states = main
+        vertex_layout = main3DPositionNormal
+        vertex = PositionNormals
+        fragment = PositionNormals
+    }
+
+    pass PositionOnly {
+        render_states = main
+        vertex_layout = main3DPosition
+        vertex = PositionOnly
+        fragment = PositionOnly
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;1-linking-multiple-programs&#34;&gt;1: Linking Multiple Programs&lt;/h2&gt;
+&lt;p&gt;This is a pretty simple task, and the first one to be tackled.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;In Vulkan all the Pipelines need all the shader used at creation, using an array of &lt;a href=&#34;https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VkPipelineShaderStageCreateInfo.html&#34;&gt;VkPipelineStageCreationInfo&lt;/a&gt; for graphics, compute and ray-tracing.&lt;/p&gt;
+&lt;p&gt;In D3D12, you have the &lt;a href=&#34;https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode&#34;&gt;ShaderBytecode&lt;/a&gt; used in the pipelines, but not as arrays (just member of the various creation structs).&lt;/p&gt;
+&lt;p&gt;From a functionality perspective, they are EQUAL. It makes sense - a &lt;strong&gt;Pipeline&lt;/strong&gt; is the description of all the static part of a GPU pipeline, and shaders are amongst the most important part of it.&lt;/p&gt;
+&lt;p&gt;You can see it in the &amp;lsquo;pass&amp;rsquo; section of the HFX file:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pass PositionOnly {
+    vertex = PositionOnly
+    fragment = PositionOnly
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For a compute pipeline is even simpler, and dispatch size can be added as well:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pass DeferredCompute {
+    compute = DeferredCompute
+    dispatch = 32, 32, 1
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Even just with something like this it is easy to organize different shaders.&lt;/p&gt;
+&lt;h2 id=&#34;2-define-render-states&#34;&gt;2: Define Render States&lt;/h2&gt;
+&lt;p&gt;Following the previous point, Pipelines need also (almost) all the render states (depth/stencil, alpha, raster, &amp;hellip;) to be defined.&lt;!-- raw HTML omitted --&gt;
+This was one of the main features of CGFX and Microsoft&amp;rsquo;s FX - and still now is incredibly useful.&lt;!-- raw HTML omitted --&gt;
+Unity&amp;rsquo;s ShaderLab also incorporates render states.&lt;/p&gt;
+&lt;p&gt;I decided to separate render states on their own group:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;render_states {
+    state main {
+        Cull Back
+        ZTest LEqual
+        ZWrite On
+    }
+
+    state linesZTest {
+        Cull None
+        ZTest LEqual
+        ZWrite Off
+        BlendMode Alpha
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Here two different render states are defined.&lt;!-- raw HTML omitted --&gt;
+In this case a render states defines depth/stencil, blend and rasterization.&lt;/p&gt;
+&lt;p&gt;A great addition to that is to add the possibility of inherit/override render states.&lt;!-- raw HTML omitted --&gt;
+For example in a Transparent pass, the blend state could be defined in the Render Pass data, and be inherited explicitly here.&lt;/p&gt;
+&lt;p&gt;Also very important is the definition of &lt;strong&gt;input assembly&lt;/strong&gt; - how the vertices are fed into the &lt;em&gt;vertex program&lt;/em&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;layout {
+    vertex main3D {
+        binding 0 16 vertex
+        attribute float3 Position 0 0 0
+        attribute ubyte4n Color 0 1 12
+    }
+
+    vertex main3DPosition {
+        binding 0 12 vertex
+        attribute float3 Position 0 0 0
+    }
+
+    vertex main3DPositionNormal {
+        binding 0 12 vertex
+        binding 1 12 vertex
+        binding 3 64 instance
+        attribute float3 Position 0 0 0
+        attribute float3 Normal 1 1 0
+        attribute float4 InstanceTransform 3 3 0
+        attribute float4 InstanceTransform 3 4 16
+        attribute float4 InstanceTransform 3 5 32
+        attribute float4 InstanceTransform 3 6 48
+    }
+
+    vertex gbuffer {
+        binding 0 12 vertex
+        binding 1 12 vertex
+        binding 2 8 vertex
+        binding 3 64 instance
+        attribute float3 Position 0 0 0
+        attribute float3 Normal 1 1 0
+        attribute float2 UV 2 2 0
+        attribute float4 InstanceTransform 3 3 0
+        attribute float4 InstanceTransform 3 4 16
+        attribute float4 InstanceTransform 3 5 32
+        attribute float4 InstanceTransform 3 6 48
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Here we can see some instancing use case, just to show the flexibility of writing this code.&lt;!-- raw HTML omitted --&gt;
+The bytes offset could be removed as well.&lt;/p&gt;
+&lt;h2 id=&#34;3-use-any-shader-language&#34;&gt;3: Use ANY Shader Language&lt;/h2&gt;
+&lt;p&gt;The best way to diffuse these augmentation is to change the less possible the shader languate itself.&lt;!-- raw HTML omitted --&gt;
+This is because you want to be portable, and when having different platform it can be paramount even to define shaders with different languages into the same file, and switch based on platforms.&lt;!-- raw HTML omitted --&gt;
+This is becoming less and less of a need (see HLSL working on Vulkan) but there could be some special cases.&lt;!-- raw HTML omitted --&gt;
+Would it be great to fix those special cases by writing platform specific shader fragments without any of your internal rendering code changing ?&lt;/p&gt;
+&lt;p&gt;The choise here is to use a keyword to identify the type of language and then simply write the code in that language.&lt;!-- raw HTML omitted --&gt;
+This is &lt;em&gt;ideal&lt;/em&gt; to also incorporate code from previous codebases with a small amount of work.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s look at the GBuffer Vertex GLSL code:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;glsl GBuffer_V {
+
+    #pragma include &amp;quot;Platform.h&amp;quot;
+
+    layout (location = 0) in vec3 Position;
+    layout (location = 1) in vec3 Normal;
+    layout (location = 2) in vec2 UV;
+    layout (location = 3) in mat4 instanceTransform;
+
+    layout (std140, binding=0) uniform ViewConstants {
+        mat4                    view_projection_matrix;
+        mat4                    projection_matrix;
+        vec4                    resolution;
+    };
+
+    out vec3 vertexNormal;
+    out vec2 uv;
+    out vec3 worldPosition;
+
+    void main()
+    {
+        vertexNormal = (inverse(transpose((instanceTransform))) * vec4(Normal,0)).rgb;
+        uv = UV;
+
+        vec4 world_pos = instanceTransform * vec4(Position.xyz, 1.0f);
+        worldPosition = world_pos.xyz;
+        gl_Position = view_projection_matrix * world_pos;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The only modification I did, and it is sadly necessary in GLSL, is to add the &amp;lsquo;#pragma include&amp;rsquo; custom parsing to add the include in the HFX compiler.&lt;/p&gt;
+&lt;h2 id=&#34;4-resource-layouts-as-first-citizens&#34;&gt;4: Resource Layouts as First Citizens&lt;/h2&gt;
+&lt;p&gt;A new addition of the new APIs, resource layouts are another great factor to take care of.&lt;!-- raw HTML omitted --&gt;
+Architecturally they can be implemented in different ways, but I like the idea of having them &amp;lsquo;in your face&amp;rsquo; since the beginning!&lt;/p&gt;
+&lt;p&gt;In the &lt;em&gt;layout&lt;/em&gt; section, you can define resources like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;list gbuffer {
+    cbuffer ViewConstants ViewConstants;
+
+    texture2D albedo;
+    texture2D normals;
+    texture2D metalRoughness;
+    texture2D emissive;
+    texture2D occlusion;
+
+    sampler2D linear_sampler
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The name will be used in the pass section to define which resource list is used.&lt;!-- raw HTML omitted --&gt;
+There can be multiple resource lists, normally they should be grouped per frequency (most frequent changes to least frequent ones) and can be separated by a comma for example.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;A small addition is to use externally specified resource list and code, like for &lt;strong&gt;starnest.hfx&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pass main {
+	...
+	resources = &amp;quot;ShaderToy.Main&amp;quot;	
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This means that the pass named &amp;lsquo;main&amp;rsquo; will simply use the resources defined in &amp;lsquo;shadertoy.hfx&amp;rsquo; - resource list called main.&lt;/p&gt;
+&lt;h2 id=&#34;5-permutations&#34;&gt;5: Permutations&lt;/h2&gt;
+&lt;p&gt;This is the most tedious of the tasks, and also one of the most dangerous.&lt;!-- raw HTML omitted --&gt;
+Permutations explosion is a well known problem, and there are different ways of tackling this. If you don&amp;rsquo;t have a shader augmentation a good option is to write some scripts to help with generating the code.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Otherwise if you have a shader augmentation and you define a &amp;lsquo;shader state&amp;rsquo;, you can define some &amp;lsquo;permutation flags&amp;rsquo;, and just add the defines when you compile shaders. Even in GLSL, you can do some easy string concatenation to add those defines, or use tools like GLSLang + SpirV to help.&lt;/p&gt;
+&lt;p&gt;This becomes a cartesian product of all the &lt;em&gt;permutations/options groups&lt;/em&gt; and again can lead to a lot of created shader.&lt;!-- raw HTML omitted --&gt;
+I am still investigating the best approach and I will update this article with the results, because I want to include them into HFX but avoid that to become a huge file - and worst to include unused permutations.&lt;/p&gt;
+&lt;p&gt;So stay tuned as I will update this article with the solution I find!&lt;/p&gt;
+&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+&lt;p&gt;I tried to explain the reasons of the different &lt;strong&gt;shader augmentations&lt;/strong&gt; and trying to focus more on the importance of not trying to create a new shading language, but instead empowering it with new informations.&lt;/p&gt;
+&lt;p&gt;I can&amp;rsquo;t stress enough how important is to me to have an abstraction that is slightly on top of current shaders API - and create other systems to hide the complexities if needed.&lt;/p&gt;
+&lt;p&gt;With HFX, I would like to &lt;em&gt;expand&lt;/em&gt; any language by adding all those features.&lt;!-- raw HTML omitted --&gt;
+I wish this could become a used tool by many in their project, and really wish it will be the initial spark.&lt;/p&gt;
+&lt;p&gt;Next in line is a revisiting of higher level of rendering, to arrive to explore different rendering techniques with the easiness that the data-driven approach should give.&lt;/p&gt;
+&lt;p&gt;As always please comment, give me feedback, share and enjoy!&lt;/p&gt;
+&lt;p&gt;Thanks for reading!
+Gabriel&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Data Driven Rendering: Pipelines</title>
