@@ -81,7 +81,7 @@
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.ad3806488b87675a634db142f24b6938.css">
+  <link rel="stylesheet" href="/css/academic.min.5ab1ccc3e20e871c687798da1d096982.css">
 
   
 
@@ -122,6 +122,32 @@
   
 
   
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.0.3/cookieconsent.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.0.3/cookieconsent.min.js"></script>
+<script>
+  window.addEventListener("load", function(){
+    window.cookieconsent.initialise({
+      "palette": {
+        "popup": {
+          "background": "hsl(339, 90%, 68%)",
+          "text": "#fff"
+        },
+        "button": {
+          "background": "#fff",
+          "text": "hsl(339, 90%, 68%)"
+        }
+      },
+      "theme": "classic",
+      "content": {
+        "message": "This website uses cookies to ensure you get the best experience on our website.",
+        "dismiss": "Got it!",
+        "link": "Learn more",
+        "href": "https://cookies.insites.com"
+      }
+    })});
+</script>
+
 
 
   
@@ -334,8 +360,8 @@
 
 
 
-<meta content="2019-09-11 00:42:13 -0400 EDT" itemprop="datePublished">
-<meta content="2019-09-11 00:42:13 -0400 EDT" itemprop="dateModified">
+<meta content="2019-09-11 00:42:13 -0400 -0400" itemprop="datePublished">
+<meta content="2019-09-11 00:42:13 -0400 -0400" itemprop="dateModified">
 
 <div class="article-metadata">
 
@@ -992,7 +1018,7 @@ properties {
     scale(&quot;Scale&quot;, Float) = 32.00
     modulo(&quot;Modulo&quot;, Float) = 2.0
 }
-</code></pre><p>We added a new section in the language, named &ldquo;<em>properties</em>&quot;.<!-- raw HTML omitted -->
+</code></pre><p>We added a new section in the language, named &ldquo;<em>properties</em>&rdquo;.<!-- raw HTML omitted -->
 Why this name ?<!-- raw HTML omitted -->
 Because properties contains both <em>numerical properties and textures</em>!<!-- raw HTML omitted -->
 The name makes sense in this way. Naming &lsquo;constants&rsquo; and having also textures, not.</p>
@@ -1112,7 +1138,7 @@ Let&rsquo;s check the code!</p>
     if ( !expectToken( parser-&gt;lexer, token, Token::Token_OpenParen ) ) {
         return;
     }
-</code></pre><p>We just parsed the property name and the &lsquo;('. Next is the string containing the UI name:</p>
+</code></pre><p>We just parsed the property name and the &lsquo;(&rsquo;. Next is the string containing the UI name:</p>
 <pre><code>    // Advance to the string representing the ui_name
     if ( !expectToken( parser-&gt;lexer, token, Token::Token_String ) ) {
         return;
@@ -1637,7 +1663,7 @@ Gabriel</p>
   <div class="media author-card" itemscope itemtype="http://schema.org/Person">
     
       
-      <img class="portrait mr-3" src="/authors/admin/avatar_hu45846e015095c9654b2fb671ea5d5811_27176_250x250_fill_q90_lanczos_center.jpg" itemprop="image" alt="Avatar">
+      <img class="portrait mr-3" src="/authors/admin/avatar_hu4ba9915415047fa4e8e4f547c8f3933e_319586_250x250_fill_q90_lanczos_center.jpg" itemprop="image" alt="Avatar">
     
 
     <div class="media-body">
@@ -1702,6 +1728,9 @@ Gabriel</p>
 
     
     
+    
+    <script src="/js/mathjax-config.js"></script>
+    
 
     
     
@@ -1711,6 +1740,8 @@ Gabriel</p>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js" integrity="sha256-CBrpuqrMhXwcLLUd5tvQ4euBHCdh7wGlDfNz8vbu/iI=" crossorigin="anonymous"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" integrity="sha256-X5PoE3KU5l+JcX+w09p/wHl9AzK333C4hJ2I9S5mD4M=" crossorigin="anonymous"></script>
 
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js" integrity="sha256-0w92bcB21IY5+rGI84MGj52jNfHNbXVeQLrZ0CGdjNY=" crossorigin="anonymous" title="mermaid"></script>
       
 
       
@@ -1722,6 +1753,8 @@ Gabriel</p>
       
 
       
+      
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS_CHTML-full" integrity="sha256-GhM+5JHb6QUzOQPXSJLEWP7R73CbkisjzK5Eyij4U9w=" crossorigin="anonymous" async></script>
       
     
 

@@ -1492,7 +1492,7 @@ struct ShaderEffect {
 &lt;p&gt;Given a HFX file, we generate a new file (HMT, Hydra Material) that will contain all the informations.&lt;!-- raw HTML omitted --&gt;
 The concept of Material is really &lt;strong&gt;unique values for the properties of a Shader Effect&lt;/strong&gt;.&lt;/p&gt;
 &lt;p&gt;That is basically it.&lt;/p&gt;
-&lt;p&gt;For example, if a shader contains a property like an &lt;em&gt;albedo texture&lt;/em&gt;, the material answer the question &amp;ldquo;which albedo texture?&amp;quot;.&lt;!-- raw HTML omitted --&gt;
+&lt;p&gt;For example, if a shader contains a property like an &lt;em&gt;albedo texture&lt;/em&gt;, the material answer the question &amp;ldquo;which albedo texture?&amp;rdquo;.&lt;!-- raw HTML omitted --&gt;
 This is done for every property.&lt;/p&gt;
 &lt;p&gt;Let&amp;rsquo;s have a look at our new material:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;{
@@ -2518,7 +2518,7 @@ properties {
     scale(&amp;quot;Scale&amp;quot;, Float) = 32.00
     modulo(&amp;quot;Modulo&amp;quot;, Float) = 2.0
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We added a new section in the language, named &amp;ldquo;&lt;em&gt;properties&lt;/em&gt;&amp;quot;.&lt;!-- raw HTML omitted --&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We added a new section in the language, named &amp;ldquo;&lt;em&gt;properties&lt;/em&gt;&amp;rdquo;.&lt;!-- raw HTML omitted --&gt;
 Why this name ?&lt;!-- raw HTML omitted --&gt;
 Because properties contains both &lt;em&gt;numerical properties and textures&lt;/em&gt;!&lt;!-- raw HTML omitted --&gt;
 The name makes sense in this way. Naming &amp;lsquo;constants&amp;rsquo; and having also textures, not.&lt;/p&gt;
@@ -2638,7 +2638,7 @@ Let&amp;rsquo;s check the code!&lt;/p&gt;
     if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_OpenParen ) ) {
         return;
     }
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just parsed the property name and the &amp;lsquo;(&#39;. Next is the string containing the UI name:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just parsed the property name and the &amp;lsquo;(&amp;rsquo;. Next is the string containing the UI name:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;    // Advance to the string representing the ui_name
     if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_String ) ) {
         return;
@@ -3612,7 +3612,7 @@ case &#39;p&#39;:
     }
     break;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is simply saving the filename after the include, that being surrounded by &amp;quot;&amp;rdquo; is classified as string, and is using the current stage to know which stage should include that file!&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is simply saving the filename after the include, that being surrounded by &amp;quot;&amp;quot; is classified as string, and is using the current stage to know which stage should include that file!&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
 &lt;h4 id=&#34;parsing-endif&#34;&gt;Parsing &amp;lsquo;#endif&amp;rsquo;&lt;/h4&gt;
 &lt;p&gt;Final part is the &lt;strong&gt;#endif&lt;/strong&gt; identifier:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;case &#39;e&#39;:
