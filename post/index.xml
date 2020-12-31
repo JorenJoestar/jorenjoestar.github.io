@@ -6,10 +6,571 @@
     <description>Recent content in Posts on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 13 Apr 2020 10:43:00 -0400</lastBuildDate>
+    <lastBuildDate>Sat, 26 Dec 2020 11:54:39 +0100</lastBuildDate>
     
 	    <atom:link href="https://jorenjoestar.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Rendering Astronomic Stars</title>
+      <link>https://jorenjoestar.github.io/post/realistic_stars/realistic_stars/</link>
+      <pubDate>Sat, 26 Dec 2020 11:54:39 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/realistic_stars/realistic_stars/</guid>
+      <description>&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+&lt;p&gt;Since growing up I&amp;rsquo;ve always been fascinated by stars, and being exposed to anime like Sainy Seiya and Hokuto No Ken just fueled the passion.
+My 4th year of high-school had a full year course on &amp;lsquo;geographical astronomy&amp;rsquo; - an in depth look at our planet and the stars from a scientific perspective.
+Many years has passed (20+!) and I&amp;rsquo;ve never dwelved into these kind of topic.&lt;/p&gt;
+&lt;p&gt;Then few years ago, while researching for rendering un Just Cause 4 I stumbled upon a couple of papers about realistic rendering of stars.
+I did a working prototype in Unity but did not understood many things, and I had no time to look back into this.&lt;/p&gt;
+&lt;p&gt;Then came Christmas time, with lockdown and such I finally had an excuse to dwelve deeper into this topic.
+Also I am searching for little rendering demos I can use to test and cleanup my libraries to write code.&lt;/p&gt;
+&lt;p&gt;A &lt;em&gt;HUGE&lt;/em&gt; shout to the author of &lt;a href=&#34;https://github.com/cgcostume/osghimmel&#34;&gt;SGHimmel&lt;/a&gt; - code that contains a much deeper and precise implementation.&lt;/p&gt;
+&lt;p&gt;Mine is more a starting point and a small subset of what is needed to render realistic stars - the ones &lt;em&gt;visible with naked eye&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;There is a seminal paper that put all these informations in one place:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://graphics.stanford.edu/~henrik/papers/nightsky/nightsky.pdf&#34;&gt;A Physically Based Night Sky Model&lt;/a&gt;.&lt;!-- raw HTML omitted --&gt;
+This paper contains all the stars rendering informations (and much more, like Moon and Sun) and it is the real deal.&lt;/p&gt;
+&lt;p&gt;A second paper also expanded that and gave us the SGHimmel code:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.researchgate.net/publication/287031803_Single-pass_Rendering_of_Day_and_Night_Sky_Phenomena&#34;&gt;Single Pass Rendering of Day and Night Sky Phenomena&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;My only contribution is to distill the very complex informations in a few files of code, and maybe help someone else to start looking into this amazing world.&lt;/p&gt;
+&lt;h1 id=&#34;astronomy&#34;&gt;Astronomy&lt;/h1&gt;
+&lt;p&gt;Where do we start ?&lt;/p&gt;
+&lt;h2 id=&#34;catalogs&#34;&gt;Catalogs&lt;/h2&gt;
+&lt;p&gt;We need DATA.
+In Astronomy, and for stars, there are the so called &amp;lsquo;&lt;em&gt;catalogs&lt;/em&gt;&amp;rsquo; - a collection of data relative to stars normally collected by hand (!) by astronomers from different sources.&lt;!-- raw HTML omitted --&gt;
+A list of catalogs can be found here:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://heasarc.gsfc.nasa.gov/docs/cgro/db-perl/W3Browse/w3table.pl?MissionHelp=star_catalog&#34;&gt;https://heasarc.gsfc.nasa.gov/docs/cgro/db-perl/W3Browse/w3table.pl?MissionHelp=star_catalog&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&amp;hellip; catalogs types and story ?&lt;/p&gt;
+&lt;p&gt;Amongst all the catalogs the most beginner friendly to use is the &lt;a href=&#34;http://tdc-www.harvard.edu/catalogs/bsc5.html&#34;&gt;&lt;em&gt;Yale Bright Stars Catalog&lt;/em&gt;&lt;/a&gt;.&lt;!-- raw HTML omitted --&gt;
+This catalog was created around 1908 and different was updated until &amp;lsquo;recently&amp;rsquo;.&lt;!-- raw HTML omitted --&gt;
+It contains all the stars that are visible with naked eye from Earth - 9100 objects - normally visible if the have a visual magnitude of more than 6.5.&lt;!-- raw HTML omitted --&gt;
+The online version is both a binary based one and a text based one.&lt;!-- raw HTML omitted --&gt;
+I decided to use the binary version, but possibly it will change in the future.&lt;/p&gt;
+&lt;h2 id=&#34;star-entry&#34;&gt;Star Entry&lt;/h2&gt;
+&lt;p&gt;Now that we chose a catalog let&amp;rsquo;s see what we really need to properly place and visualize a star.&lt;!-- raw HTML omitted --&gt;
+Using the binary version shows the minimum necessary data that can be used, and in this case following &lt;a href=&#34;http://tdc-www.harvard.edu/catalogs/bsc5.entry.html&#34;&gt;this&lt;/a&gt; link:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Right Ascension and Declination&lt;/li&gt;
+&lt;li&gt;Spectral Type&lt;/li&gt;
+&lt;li&gt;Visual Magnitude&lt;/li&gt;
+&lt;li&gt;Proper Motion&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Before dwelving into this, an &lt;em&gt;incredibly important&lt;/em&gt; thing to consider is &lt;em&gt;WHEN&lt;/em&gt; the catalog is compiled - more specifically what &lt;em&gt;time reference point&lt;/em&gt; is used in the catalog.&lt;/p&gt;
+&lt;h3 id=&#34;epoch-julian-dates-and-j2000&#34;&gt;Epoch, Julian Dates and J2000&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR&lt;/strong&gt;: convert from Gregorian Calendar to Julian Date to properly rotate stars.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;
+Between different astronomers different &lt;em&gt;epochs&lt;/em&gt; were used in different calendars, thus referencing different catalogs had problems in understanding which reference system was used.&lt;!-- raw HTML omitted --&gt;
+As some of you may know, depending on your culture you could use different calendars as well!&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;For astronomy related things, a common &amp;lsquo;time reference point&amp;rsquo; was decided by the &lt;a href=&#34;https://www.iau.org/&#34;&gt;International Astronomical Union&lt;/a&gt;, and this is the &lt;strong&gt;Julian Calendar&lt;/strong&gt; with the precise moment called &lt;em&gt;J2000&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Different &amp;lsquo;reference points&amp;rsquo; were used, and in 1984 the IAU switched from the J1950 to the J2000 epoch.&lt;/p&gt;
+&lt;p&gt;Specifically an &lt;strong&gt;epoch&lt;/strong&gt; is a moment in time that is used as central reference point to calculate positions and motions of celestial objects.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;J2000&lt;/strong&gt; thus is the date of January 1, 2000 at 12:00 Terrestrial Time in the Gregorian Calendar at the Greenwich meridian, and all the positional data in the catalog is relative to this moment.&lt;/p&gt;
+&lt;p&gt;There are plenty of conversions between Gregorian Calendar and Julian Calendar, and in the code provided there will be some links also to some pages with the math involved.&lt;/p&gt;
+&lt;h3 id=&#34;right-ascension-and-declination&#34;&gt;Right Ascension and Declination&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR&lt;/strong&gt;: stars &amp;lsquo;latitude and longitude&amp;rsquo; to place them.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Now that we have a reference time, we can finally use the Right Ascension and Declination data.&lt;/p&gt;
+&lt;p&gt;A very simple explanation of Right Ascension and Declination is that they are the celestial equivalent to latitude and longitude on earth, but they reference the &lt;strong&gt;celestial sphere&lt;/strong&gt; - an ideal sphere centered in the Earth center and &lt;strong&gt;not&lt;/strong&gt; following the Earth axis inclination.&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;https://upload.wikimedia.org/wikipedia/commons/9/95/JostBurgi-MechanisedCelestialGlobe1594.jpg&#34; &gt;
+
+&lt;img src=&#34;https://upload.wikimedia.org/wikipedia/commons/9/95/JostBurgi-MechanisedCelestialGlobe1594.jpg&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Jost Burgi Celestial Sphere. Source: Wikipedia.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;Both Right Ascension and Declination are relative to the &lt;strong&gt;Celestial Equator&lt;/strong&gt; - an ideal equator that has a different inclination than the natural Earth equator (due to its tilt axis).&lt;!-- raw HTML omitted --&gt;
+Right Ascension thus is the eastward angular distance relative to the Celestial Equator, expressed in hours, minutes and seconds.&lt;!-- raw HTML omitted --&gt;
+Declination instead is the north/south angle relative to the Celestial Equator, expressed in degrees (in the range -90, 90).&lt;/p&gt;
+&lt;p&gt;All this combined defines the &lt;strong&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/Equatorial_coordinate_system&#34;&gt;Equatorial Coordinate System&lt;/a&gt;&lt;/strong&gt;, used to locate celestial objects.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Right Ascension and Declination relative to J2000&lt;/strong&gt; are then the celestial &amp;lsquo;latitude and longitude&amp;rsquo; to locate a celestial object around the Earth, relative to a reference system that is not tilted with the axis but more &amp;lsquo;absolute&amp;rsquo;.&lt;/p&gt;
+&lt;h3 id=&#34;spectral-type&#34;&gt;Spectral Type&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR&lt;/strong&gt;: convert from Spectral Type to RGB color.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;To help organize stars they needed to categorize them based on some parameters.&lt;!-- raw HTML omitted --&gt;
+In 1817 already Josepth Von FraunHofer started analyzing the &lt;em&gt;spectrum&lt;/em&gt; of the visible stars and in the following years, but it is with the work of &lt;strong&gt;Annie Cannon&lt;/strong&gt;, that catalogued &lt;em&gt;hundreds of thousands&lt;/em&gt; of stars, that spectrum-based classification became more common.&lt;/p&gt;
+&lt;p&gt;There are two main spectral classifications, the &lt;a href=&#34;https://starparty.com/topics/astronomy/stars/the-morgan-keenan-system/&#34;&gt;Morgan-Keenan System&lt;/a&gt; and the &lt;a href=&#34;https://en.wikipedia.org/wiki/UBV_photometric_system&#34;&gt;UBV or Johnson-Morgan-system&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Interestingly enough the &lt;em&gt;Yale Bright Star Catalog&lt;/em&gt; contains the &lt;em&gt;MK Spectral Type&lt;/em&gt; in the binary format, and the &lt;em&gt;BV&lt;/em&gt; index in the text format.&lt;/p&gt;
+&lt;p&gt;I ended up creating a list of MK types to colors in the code, starting from these:&lt;/p&gt;
+&lt;p&gt;Spectral Type to temperature
+&lt;a href=&#34;https://www.handprint.com/ASTRO/specclass.html&#34;&gt;https://www.handprint.com/ASTRO/specclass.html&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Temperature to color
+&lt;a href=&#34;http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html&#34;&gt;http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;As an alternative I could have parse the text version and using the BV indices, possibly I&amp;rsquo;ll do that and cross reference colors to see if the are exact.&lt;/p&gt;
+&lt;p&gt;There is also this incredibly useful post about all this:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://stackoverflow.com/questions/21977786/star-b-v-color-index-to-apparent-rgb-color&#34;&gt;https://stackoverflow.com/questions/21977786/star-b-v-color-index-to-apparent-rgb-color&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The key information here&lt;/strong&gt; is that once we read the &lt;em&gt;Spectral Type&lt;/em&gt; of each star, we have a table that converts it to an RGB value.&lt;/p&gt;
+&lt;h3 id=&#34;visual-magnitude&#34;&gt;Visual Magnitude&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR:&lt;/strong&gt; magnitude shows how visible is a star.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;This is the part in which I still don&amp;rsquo;t feel confident about what is really happening, but I&amp;rsquo;ll try to give the better explanation of what I understood.&lt;!-- raw HTML omitted --&gt;
+It will possibly be subject to changes in the code!&lt;/p&gt;
+&lt;p&gt;In the seminal paper a correlation between the &lt;em&gt;Magnitude&lt;/em&gt; and the &lt;em&gt;Glaring&lt;/em&gt; is done, with the Glaring coming from another very important paper on visual perception, defining Glare as the sum of the flare and bloom optical phenomena happening to our eyes &lt;a href=&#34;https://www.researchgate.net/publication/2593999_Physically-Based_Glare_Effects_for_Digital_Images&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;We are trying to create a correlation between the Magnitude of a star and how big is seen in the screen, and this is a pretty accurate description of what happens to us when seeing &amp;lsquo;brighter stars&amp;rsquo;.&lt;/p&gt;
+&lt;p&gt;We have 2 ways to achieve this:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Output a pixel color intensity that works with tonemapping and engages the bloom&lt;/li&gt;
+&lt;li&gt;Make the star bigger based on magnitude.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The second approach is the one used here, but I would like to experiment also with the other option.&lt;/p&gt;
+&lt;p&gt;In the second paper (Single Pass &amp;hellip;) there are some equations that correlate pixel intensity with visual magnitude AND &amp;lsquo;how big&amp;rsquo; the stars appear to the same magnitude.&lt;/p&gt;
+&lt;p&gt;We will see more in detail in the code how to use those.&lt;/p&gt;
+&lt;h3 id=&#34;proper-motion&#34;&gt;Proper Motion&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR:&lt;/strong&gt; adjust right ascension and declination with this per-year changes.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The final data relative to the stars is the proper motion.&lt;!-- raw HTML omitted --&gt;
+Proper motion can be simply defined as the yearly move of a star in Equatorial Coordinate System.&lt;!-- raw HTML omitted --&gt;
+Most of the stars visible with naked eye are so distant that their motion is not as diverse as the J2000 position specified, but few (the closest ones) need a more precise calculation.&lt;/p&gt;
+&lt;p&gt;Taking in account &lt;em&gt;proper motion&lt;/em&gt; will give the most precise star positioning of all.&lt;/p&gt;
+&lt;h1 id=&#34;coding&#34;&gt;Coding&lt;/h1&gt;
+&lt;p&gt;After this lenghty introduction in astronomy we can finally see the code!&lt;!-- raw HTML omitted --&gt;
+The repository is still &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering&#34;&gt;DataDrivenRendering&lt;/a&gt; - but all the code and data is contained under the StarApplication folders in source/articles and data/articles!&lt;!-- raw HTML omitted --&gt;
+I am working on improving my framework so I can experiment faster and faster.&lt;/p&gt;
+&lt;p&gt;As already wrote before, one of the biggest problem was retrieving the data and understanding its meaning!&lt;/p&gt;
+&lt;h2 id=&#34;project-structure&#34;&gt;Project Structure&lt;/h2&gt;
+&lt;p&gt;Data: &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/data/articles/StarRendering&#34;&gt;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/data/articles/StarRendering&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Source: &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/StarRendering&#34;&gt;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/StarRendering&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;All the relevant code is in star_map_application.h/.cpp.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h2 id=&#34;star-data-parsing&#34;&gt;Star Data Parsing&lt;/h2&gt;
+&lt;p&gt;We chose the &lt;strong&gt;Yale Bright Star Catalog&lt;/strong&gt;, and there are two versions here (&lt;a href=&#34;http://tdc-www.harvard.edu/software/catalogs/bsc5.html):&#34;&gt;http://tdc-www.harvard.edu/software/catalogs/bsc5.html):&lt;/a&gt; one binary and one text.&lt;!-- raw HTML omitted --&gt;
+I chose to use the binary one, even though I could change idea and revise this code and article.&lt;/p&gt;
+&lt;p&gt;The binary is pretty easy to parse, with a caveat: you need an alignment of 1 to correctly parse the data!&lt;!-- raw HTML omitted --&gt;
+The parsing structures are just 2, one for the header and one for each star entry:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://tdc-www.harvard.edu/software/catalogs/bsc5.header.html&#34;&gt;http://tdc-www.harvard.edu/software/catalogs/bsc5.header.html&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://tdc-www.harvard.edu/software/catalogs/bsc5.entry.html&#34;&gt;http://tdc-www.harvard.edu/software/catalogs/bsc5.entry.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Once we parse from the file we have all our stars with &lt;em&gt;right ascension, declination and visual magnitude&lt;/em&gt; ready for us!&lt;/p&gt;
+&lt;h2 id=&#34;constellation-data-parsing&#34;&gt;Constellation Data Parsing&lt;/h2&gt;
+&lt;p&gt;Constellations are another set of data that needs to be relative to a specific &lt;strong&gt;catalog&lt;/strong&gt;.&lt;!-- raw HTML omitted --&gt;
+I found this website that presents the constellation lines in a text format:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;http://cdsarc.u-strasbg.fr/viz-bin/Cat?VI/49&#34;&gt;http://cdsarc.u-strasbg.fr/viz-bin/Cat?VI/49&lt;/a&gt;&lt;!-- raw HTML omitted --&gt;
+&lt;a href=&#34;https://github.com/hemel-waarnemen-com/Constellation-lines&#34;&gt;https://github.com/hemel-waarnemen-com/Constellation-lines&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The problem is that the file contains the constellations as a series of line (line strips) that you need to continuously draw &lt;em&gt;like a pen not leaving the paper&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+I decided to convert this in a list of segments, so I have to parse the text file and make the conversion.&lt;/p&gt;
+&lt;p&gt;There are a couple of caveats here:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Constellations can be present more than once, the they have 2 non contiguous lines.&lt;/li&gt;
+&lt;li&gt;Parsing is done 2 times, first to calculate offsets of final segments (especially for the constellations with more lines), second to actually parse the data.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;This is also an interesting use of the hydra_lexer - backbone of the HFX language.&lt;!-- raw HTML omitted --&gt;
+In this demo it is already used but in following ones I&amp;rsquo;ll update it more and more.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;    // Read constellation file
+    char* constellation_data = hydra::file_read_into_memory( &amp;quot;..\\data\\articles\\StarRendering\\constellations_lines.txt&amp;quot;, nullptr, false, *allocator );
+    // Allocate raw memory and entries for the data parsed.
+    // Not elegant, but functioning.
+    DataBuffer data_buffer;
+    data_buffer_init( &amp;amp;data_buffer, 10000, 10000 * 4 );
+
+    Lexer lexer;
+    lexer_init( &amp;amp;lexer, constellation_data, &amp;amp;data_buffer );
+
+    // First parse: calculate offsets and total size of indices array.
+    uint32_t data_size = 0;
+    bool parsing = true;
+
+    // An example entry:
+    // Ant   4 4273 4104 3871 3765
+    // Hash is used as line comment.
+    //
+    while ( parsing ) {
+
+        Token token;
+        lexer_next_token( &amp;amp;lexer, token );
+
+        switch ( token.type ) {
+
+            case Token::Token_Hash:
+            {
+                // Skip the line
+                lexer_goto_next_line( &amp;amp;lexer );
+
+                break;
+            }
+
+            case Token::Token_Identifier:
+            {
+                // Ant   4 4273 4104 3871 3765
+                // Read name
+                char name[ 4 ];
+                name[ 0 ] = toupper( token.text.text[ 0 ] );
+                name[ 1 ] = toupper( token.text.text[ 1 ] );
+                name[ 2 ] = toupper( token.text.text[ 2 ] );
+                name[ 3 ] = 0;
+
+                int32_t constellation_index = Constellations::get_index( &amp;amp;constellations, name );
+
+                // Read segment count
+                lexer_expect_token( &amp;amp;lexer, token, Token::Token_Number );
+
+                uint32_t count = atoi( token.text.text );
+                constellations.entries[ constellation_index ].count += count - 1; // This is segments count
+                data_size += count - 1; // Segments count
+
+                // Just advance the token to the next line.
+                for ( uint32_t i = 0; i &amp;lt; count; ++i ) {
+                    lexer_next_token( &amp;amp;lexer, token );
+                }
+
+                break;
+            }
+
+            case Token::Type::Token_EndOfStream:
+            {
+                parsing = false;
+                break;
+            }
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The most interesting part for me is seeing the parsing loop and having a lexer/tokenizer as a personal tool is a MUST!&lt;!-- raw HTML omitted --&gt;
+Constellations contains a map from the name to the entry.&lt;!-- raw HTML omitted --&gt;
+The second parse just reads the actual star numbers and puts them in the correct place.&lt;!-- raw HTML omitted --&gt;
+Not sure it is interesting code to read here.&lt;!-- raw HTML omitted --&gt;
+We now have a list of segments, and thus 2 points, for each constellation, in a contiguous block of memory.&lt;/p&gt;
+&lt;p&gt;Next is&amp;hellip;&lt;/p&gt;
+&lt;h2 id=&#34;temperature-to-color&#34;&gt;Temperature to Color&lt;/h2&gt;
+&lt;p&gt;In the binary data we parsed from the Catalog we have the &lt;strong&gt;Spectral Type&lt;/strong&gt; of a star, a letter+number identification system to classify a star.&lt;!-- raw HTML omitted --&gt;
+To properly calculate the color of a star we need to do the following:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Read the star &lt;em&gt;Spectral Type&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;Convert the &lt;em&gt;Spectral Type&lt;/em&gt; to &lt;em&gt;Temperature&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;Convert &lt;em&gt;Temperature&lt;/em&gt; to &lt;em&gt;RGB color&lt;/em&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Taking the data form the links in the MK part of the article, we parse the &lt;em&gt;Temperature to Color&lt;/em&gt; data from a file containing the &lt;strong&gt;black bodies color data&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Again some non-interesting parsing code, but the entries are like this:&lt;/p&gt;
+&lt;p&gt;1000 K   2deg  0.6499 0.3474  2.472e+06    1.0000 0.0337 0.0000  255  51   0  #ff3300
+1000 K  10deg  0.6472 0.3506  2.525e+06    1.0000 0.0401 0.0000  255  56   0  #ff3800&lt;/p&gt;
+&lt;p&gt;It uses 2 different CIE specifications for colors, and we use the 10deg (the second one) of each entry.&lt;/p&gt;
+&lt;p&gt;We then have a table (hand written from the links above) that links &lt;em&gt;Spectral Types&lt;/em&gt; to temperature:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;struct Range {
+    uint32_t        min;
+    uint32_t        max;
+};
+
+// Morgan-Keenan classification
+// https://starparty.com/topics/astronomy/stars/the-morgan-keenan-system/
+
+// Letters are for star categories.
+// Numbers (0..9) are for further subdivision: 0 hottest, 9 colder.
+
+static const uint32_t           k_max_star_types = &#39;z&#39; - &#39;a&#39;;
+
+// Temperature ranges (in Kelvin) of the different MK spectral types.
+static const Range              k_star_temperature_ranges[ k_max_star_types ] = {
+    // A0-A9            B                   C                 D                 E           F               G
+    { 7300, 10000 }, { 10000, 30000 }, { 2400, 3200 }, { 100000, 1000000 }, { 0, 0 }, { 6000, 7300 }, { 5300, 6000 }, { 0, 0 }, { 0, 0 },
+    //  J          K                    L           M                           O           P           Q        R          S               T
+    { 0, 0 }, { 3800, 5300 }, { 1300, 2100 }, { 2500, 3800 }, { 0, 0 }, { 30000, 40000 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 2400, 3500 }, { 600, 1300 },
+    // U         V          W              X            Y
+    { 0, 0 }, { 0, 0 }, { 25000, 40000 }, { 0, 0 }, { 0, 600 }
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We finally have all conversion from Spectral Types to Color! Ole&#39;!&lt;/p&gt;
+&lt;h2 id=&#34;gregorianjulian-date-conversion&#34;&gt;Gregorian/Julian date conversion&lt;/h2&gt;
+&lt;p&gt;Again some code that is mostly taking formulas from the net!&lt;!-- raw HTML omitted --&gt;
+In the &lt;em&gt;Catalog&lt;/em&gt; we are using the &lt;strong&gt;Right Ascension and Declination&lt;/strong&gt; of each star is expressed relative to the Julian Date 2000.&lt;/p&gt;
+&lt;p&gt;The only really interesting thing here is the fact that you need to use a double - a float will loose the difference for hour and less in the days!&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;//
+// From https://en.wikipedia.org/wiki/Julian_day
+//
+// Gregorian Calendar Date to Julian Day Number conversion
+
+// This is the reference Julian Date used in current astronomy.
+static const int32_t j2000 = 2451545;
+
+//
+// Julian Day Number calculations.
+// https://en.wikipedia.org/wiki/Julian_day
+// https://aa.quae.nl/en/reken/juliaansedag.html
+// https://core2.gsfc.nasa.gov/time/julian.txt
+// http://www.cs.utsa.edu/~cs1063/projects/Spring2011/Project1/jdn-explanation.html
+static int32_t calculate_julian_day_number( int32_t year, int32_t month, int32_t day ) {
+
+    // Formula coming from Wikipedia.
+    int32_t a = ( month - 14 ) / 12;
+    int32_t jdn =  ( 1461 * (year + 4800 + a)) / 4 +
+                    ( 367 * ( month - 2 - 12 *  a ) ) / 12 - 
+                    ( 3 * ( ( year + 4900 + a ) / 100 ) ) / 4 +
+                    day - 32075;
+
+    // Other formula found online:
+    /*int m, y, leap_days;
+    a = ( ( 14 - month ) / 12 );
+    m = ( month - 3 ) + ( 12 * a );
+    y = year + 4800 - a;
+    leap_days = ( y / 4 ) - ( y / 100 ) + ( y / 400 );
+    int32_t jdn2 = day + ( ( ( 153 * m ) + 2 ) / 5 ) + ( 365 * y ) + leap_days - 32045;*/
+
+    return jdn;
+}
+
+//
+// Julian Date
+//
+static double calculate_julian_date( int32_t year, int32_t month, int32_t day, int32_t hour, int32_t minute, int32_t second ) {
+    int32_t jdn = calculate_julian_day_number( year, month, day );
+
+    double jd = jdn + (( hour - 12.0 ) / 24.0) + (minute / 1440.0) + (second / 86400.0);
+    return jd;
+}
+
+//
+// Julian centuries since January 1, 2000, used to rotate the stars.
+//
+static double calculate_julian_century_date( int32_t year, int32_t month, int32_t day, int32_t hour, int32_t minute, int32_t second ) {
+    double jd = calculate_julian_date( year, month, day, hour, minute, second );
+    return ( jd - j2000 ) / 36525.0;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;NOTE!!!&lt;/strong&gt;&lt;!-- raw HTML omitted --&gt;
+The Julian date we are calculating is &lt;strong&gt;RELATIVE TO J2000&lt;/strong&gt;! Super important!&lt;/p&gt;
+&lt;h2 id=&#34;star-placement&#34;&gt;Star Placement&lt;/h2&gt;
+&lt;p&gt;This is the real deal.&lt;!-- raw HTML omitted --&gt;
+I myself used the seminal papers on the subject that express the formulat to calculate the placement of a star in the &lt;em&gt;Celestial Sphere&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;There are two component on this:&lt;/p&gt;
+&lt;h3 id=&#34;conversion-from-right-ascension-and-declination-to-equatorial-coordinates&#34;&gt;Conversion from &lt;em&gt;Right Ascension and Declination&lt;/em&gt; to Equatorial Coordinates.&lt;/h3&gt;
+&lt;p&gt;The most important thing to remember here is that the &lt;strong&gt;data coming from the catalog&lt;/strong&gt; is expressed at &lt;strong&gt;J2000&lt;/strong&gt; date.&lt;!-- raw HTML omitted --&gt;
+Let&amp;rsquo;s convert RA and D:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;//
+// Convert to euclidean coordinates
+//
+static void convert_to_euclidean( float right_ascension, float declination, float radial_distance, float&amp;amp; out_x, float&amp;amp; out_y, float&amp;amp; out_z ) {
+    const float cosd = cosf( declination );
+
+    out_x = radial_distance * sinf( right_ascension ) * cosd;
+    out_y = radial_distance * cosf( right_ascension ) * cosd;
+    out_z = radial_distance * sinf( declination );
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This will put the star in place at the date of &lt;strong&gt;J2000&lt;/strong&gt; or January 1, 2000 at 12:00 Terrestrial Time in the Gregorian Calendar!&lt;!-- raw HTML omitted --&gt;
+We need to calculate the rotation from J2000 to our current time and location.&lt;/p&gt;
+&lt;h3 id=&#34;latitude-longitude-and-date-to-rotation&#34;&gt;Latitude, Longitude and Date to Rotation&lt;/h3&gt;
+&lt;p&gt;This is the missing link.&lt;!-- raw HTML omitted --&gt;
+As already noted above, the data coming from the Catalog is the position of the stars at &lt;strong&gt;J2000&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;There are some conversions to do from latitude and longitude, and these formulas are a mix coming from the papers I mentioned at the beginnig and simple conversion.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;float longitude_radians = glm_rad( longitude );
+float latitude_radians = glm_rad( latitude );
+
+// Calculate rotation matrix based on time, latitude and longitude
+// T is time in julian century, as used in the paper.
+double T = calculate_julian_century_date( year, month, day, hour, minute, second );
+double local_mean_sidereal_time = 4.894961f + 230121.675315f * T + longitude_radians;
+
+// Exploration of different rotations
+versors rotation_y = glms_quatv( latitude_radians - GLM_PI_2f, { 0, 1, 0 } );
+versors rotation_z = glms_quatv( -local_mean_sidereal_time, { 0, 0, 1 } );
+
+static bool rotation_order_invert = false;
+
+versors final_rotation = rotation_order_invert ? glms_quat_mul( rotation_y, rotation_z ) : glms_quat_mul( rotation_z, rotation_y );
+if ( apply_precession ) {
+    versors precession_rotation_z = glms_quatv( 0.01118f, { 0, 0, 1 } );
+    versors precession = glms_quat_mul( glms_quat_mul( precession_rotation_z, glms_quatv( -0.00972, {1, 0, 0} ) ), precession_rotation_z );
+
+    final_rotation = glms_quat_mul( final_rotation, precession );
+}
+
+mat4s star_rotation_matrix = glms_quat_mat4( final_rotation );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The ugliness in this code is that I had some reference system problems somewhere, so I put some variables to understand what was happening.&lt;!-- raw HTML omitted --&gt;
+This is true code, you see everything :)&lt;/p&gt;
+&lt;p&gt;Starting from &lt;strong&gt;latitude and longitude and date&lt;/strong&gt; we arrive at a rotation matrix to apply to the stars!&lt;/p&gt;
+&lt;p&gt;Applying precession is taking in consideration the precession and nutation phenomena, again something that the brillian paper &amp;lsquo;A Physically Based Night Sky&amp;rsquo; gives some formula.&lt;!-- raw HTML omitted --&gt;
+I admit not having still a deep understaning on how they arrived at that conclusion, but for sure I have a good starting point now (and hopefully you do as well!).&lt;/p&gt;
+&lt;p&gt;The final position of the star is &lt;strong&gt;star_rotation_matrix * vec4(position.xyz, 1)&lt;/strong&gt;, with the position calculated as the Equatorial Coordinate at J2000, and the Star Rotation as the additional rotation taking in consideration Latitude, Longitude and date.&lt;/p&gt;
+&lt;h2 id=&#34;star-rendering-hydra-for-the-win&#34;&gt;Star Rendering: Hydra for the win!&lt;/h2&gt;
+&lt;p&gt;We are using the new Hydra framework - this time having a 80% working Vulkan backend.&lt;!-- raw HTML omitted --&gt;
+I am working a bit on having HFX shader language extension as more and more something that I can rely to clearly prototype and explore ideas.&lt;!-- raw HTML omitted --&gt;
+The HFX file that renders everything defines also almost everything, from the shader to the vertex layout to the resource types used.&lt;/p&gt;
+&lt;p&gt;There is a bit of magic as well here - something I found reading the second paper, &amp;lsquo;Single Pass Rendering of Day and Night Sky Phenomena&amp;rsquo; - so the math is coming from there.
+I am missing the scintillation, scattering and the daylight removal when it is day, even though for this demo is not important.&lt;!-- raw HTML omitted --&gt;
+From this you can see the difference between a demo and a feature in a game: when developing this as a feature, you should consider the interaction with all the other rendering systems, the tonemapping, luts, any kind of clouds, sun and moon rendering, and such.&lt;!-- raw HTML omitted --&gt;
+This is crucial!&lt;/p&gt;
+&lt;p&gt;From a top down view of the rendering, we are basically drawing billboards that use the visual magnitude both for size and alpha.&lt;!-- raw HTML omitted --&gt;
+Overdraw fest!!!&lt;/p&gt;
+&lt;p&gt;Here is the shader used. As you can see you can specify &lt;em&gt;vertex layout and render states as well&lt;/em&gt; - something I &lt;strong&gt;LOVE&lt;/strong&gt; to see with shaders. They are an integral part of the rendering!&lt;/p&gt;
+&lt;p&gt;With an HFX file now you can define totally a Vulkan Pipeline, so it is a great tool.&lt;!-- raw HTML omitted --&gt;
+The code has reload of shaders, so you can experiment faster!&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;shader stars {
+
+    layout {
+        list Local {
+            cbuffer ViewConstants ViewConstants;
+        }
+
+        vertex main3D {
+            binding 0 32 instance
+            attribute float4 Position 0 0 0
+            attribute float4 ColorData 0 1 16
+        }
+
+    }
+
+    render_states {
+        state alpha {
+            Cull None
+            ZTest Always
+            ZWrite Off
+            BlendMode Alpha
+        }
+
+    }
+    
+    glsl to_screen {
+
+        #pragma include &amp;quot;Platform.h&amp;quot;
+
+        layout (std140, binding=0) uniform ViewConstants {
+            mat4                    view_projection_matrix;
+            mat4                    star_rotation_matrix;
+
+            vec4                    camera_up;
+            vec4                    camera_right;
+
+            vec4                    data;       // x = min_radius, y = glare scale, z = radius scale, w = distance scale
+        };
+
+        #if defined VERTEX
+        layout (location = 0) in  vec4 position;
+        layout (location = 1) in  vec4 color_data;
+
+        layout (location = 0) out vec4 vTexCoord;
+        layout (location = 1) out vec3 vColor;
+
+        // Per vertex positions and uvs of a quad
+        vec3 positions[6]       = vec3[6]( vec3(-0.5,-0.5,0), vec3(0.5,-0.5,0), vec3(0.5, 0.5, 0), vec3(0.5, 0.5, 0), vec3(-0.5,0.5,0), vec3(-0.5,-0.5,0) );
+        vec2 uvs[6]             = vec2[6]( vec2(0.0, 1.0),    vec2(1.0, 1.0),   vec2(1.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 0.0), vec2(0.0, 1.0) );
+
+        const float _35OVER13PI = 0.85698815511020565414014334123662;
+
+        void main() {
+
+            // Calculate color based on magnitude
+            // Following paper &amp;quot;Single Pass Rendering of Day and Night Sky Phenomena&amp;quot;
+            float m = position.w;
+            float m_a = 7.0f;       // Average apparent magnitude
+
+            float delta_m = pow(2.512, m_a - m);
+
+        	// Magic from the papers. Investigate the WHY of this.
+            float i_t = delta_m * _35OVER13PI;
+            i_t *= 4e-7 / (data.x * data.x);  // resolution correlated 
+            i_t = min(1.167, i_t);  // volume of smoothstep (V_T)
+
+            // Day-Twilight-Night-Intensity Mapping (Butterworth-Filter)
+            //float b = 1.0 / sqrt(1 + pow(sun.z + 1.14, 32));
+            //i_t *= b;
+
+            if ( i_t &amp;lt; 0.01 )
+                return;
+
+            float i_g = pow(2.512, m_a - (m + 0.167)) - 1;
+            vec3 v_t = vec3(i_t);
+
+            // v_k
+            const float glare_scale = data.y;
+            const float v_k = max(data.x, sqrt(i_g) * 2e-2 * glare_scale);
+
+            // TODO: Scattering and Scintillation
+            //v_t -= E_ext;
+            vTexCoord.w = v_k / data.x;
+
+            //
+            vColor = mix( color_data.xyz, vec3( 0.66, 0.78, 1.00 ), 0.66 );
+            vColor *= v_t;
+            vColor = max(vec3(0.0), vColor);
+
+            const uint vertex_index = gl_VertexID % 6;
+
+            vTexCoord.xy = positions[vertex_index].xy * vec2(-1, 1);
+
+            float particle_size = v_k * data.z;
+            vec3 scaled_billboard = vTexCoord.x * particle_size * camera_right.xyz + vTexCoord.y * particle_size * camera_up.xyz;
+    
+            vec4 final_position = star_rotation_matrix * vec4(position.xyz, 1) + vec4(scaled_billboard.xyz, 1);
+
+            gl_Position = view_projection_matrix * vec4(final_position.xyz, 1.0f);
+
+        }
+        #endif // VERTEX
+
+        #if defined FRAGMENT
+
+        layout (location = 0) in vec4 vTexCoord;
+        layout (location = 1) in vec3 vColor;
+
+        layout (location = 0) out vec4 outColor;
+
+        void main() {
+            float x = vTexCoord.x;
+            float y = vTexCoord.y;
+
+            float zz = (1 - x * x - y * y);
+            if ( zz &amp;lt; 0.0 )
+                discard;
+
+            float k = vTexCoord.w;
+            float l = length(vec2(x, y));
+
+            const float radius_scale = data.w;
+            const float glare_scale = data.y;
+            float t = 1 - smoothstep(0.0, 1.0, l * k / radius_scale);
+            float g = 1 - pow(l, glare_scale / 64.0);
+
+            float intensity = max(t, g);
+            outColor = vec4(intensity * vColor, intensity);
+        }
+        #endif // FRAGMENT
+    }
+    pass stars_to_screen {
+        stage = final
+        resources = Local
+        vertex_layout = main3D
+        vertex = to_screen
+        fragment = to_screen
+        render_states = alpha
+    }
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A simplified version of the rendering code is here, but I like how this is becoming. Feedback is really appreciated :)&lt;/p&gt;
+&lt;p&gt;The instance buffer contains the Euclidean positions of each star with the visual magnitude as well.&lt;!-- raw HTML omitted --&gt;
+We are drawing straight into the swapchain, and I use the abstraction of &amp;lsquo;resource list&amp;rsquo; similar to the &amp;lsquo;descriptor sets&amp;rsquo; coming from Vulkan. They are just a &amp;hellip;list of resources.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;CommandBuffer* gpu_commands = update.gpu_commands;
+gpu_commands-&amp;gt;clear( sort_key, 0, 0, 0, 1 );
+gpu_commands-&amp;gt;clear_depth_stencil( sort_key++, 1.0f, 0 );
+
+// Draw the stars! ////////////////////////////
+gpu_commands-&amp;gt;bind_pass( sort_key++, update.gpu_device-&amp;gt;get_swapchain_pass() );
+gpu_commands-&amp;gt;set_scissor( sort_key++, nullptr );	// Default framebuffer/render target sizes
+gpu_commands-&amp;gt;set_viewport( sort_key++, nullptr );
+
+gpu_commands-&amp;gt;bind_vertex_buffer( sort_key++, star_instance_buffer, 0, 0 );
+gpu_commands-&amp;gt;bind_pipeline( sort_key++, star_rendering_pipeline );
+gpu_commands-&amp;gt;bind_resource_list( sort_key++, &amp;amp;star_resource_list, 1, nullptr, 0 );
+gpu_commands-&amp;gt;draw( sort_key++, TopologyType::Triangle, 0, 6, 0, star_count_to_render );
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And that&amp;rsquo;s it for the rendering!
+We basically draw the Celestial Sphere - we miss taking in consideration the night/day transition depending where we are, or the moon and sun.&lt;/p&gt;
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+&lt;p&gt;We had a dive into how to render stars using real-life astronomical data.&lt;!-- raw HTML omitted --&gt;
+The real deal is finding the proper data, and trying to understand how to use it.&lt;!-- raw HTML omitted --&gt;
+There are still some things that I don&amp;rsquo;t understand myself, but at least if you are curious about this topic this could be a good starting point.&lt;/p&gt;
+&lt;p&gt;I hope to have time to understand things deeper soon and correct any error.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Hydra library is also evolving to something more and more usable for demo, I am trying to keep the code relatively small and clear, I&amp;rsquo;ll continue with other demos about this.&lt;!-- raw HTML omitted --&gt;
+I like the idea of something very concise - so you can focus only on the details you need.&lt;/p&gt;
+&lt;p&gt;Next will be the Atmospheric Scattering demo from the amazing &lt;a href=&#34;https://twitter.com/SebHillaire&#34;&gt;Sebastien Hillaire&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Happy new year and may the stars shine upon your path!&lt;/em&gt;&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Improving Productivity in Terminals with Aliases</title>
