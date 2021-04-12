@@ -6,10 +6,42 @@
     <description>Recent content in Posts on Joren&#39;s</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 26 Dec 2020 11:54:39 +0100</lastBuildDate>
+    <lastBuildDate>Mon, 12 Apr 2021 19:56:56 +0200</lastBuildDate>
     
 	    <atom:link href="https://jorenjoestar.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Pixel Art Filtering</title>
+      <link>https://jorenjoestar.github.io/post/pixel_art_filtering/pixel_art_filtering/</link>
+      <pubDate>Mon, 12 Apr 2021 19:56:56 +0200</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/pixel_art_filtering/pixel_art_filtering/</guid>
+      <description>
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;pixel_art_filtering.png&#34; &gt;
+
+&lt;img src=&#34;pixel_art_filtering.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;An example of non integer scaling of pixel art.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.&lt;!-- raw HTML omitted --&gt;
+With that comes also some problems that arise from the use of modern GPUs that are radically different than older consoles, especially for dynamic effects like scaling.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Rendering Astronomic Stars</title>

@@ -1,98 +1,61 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
   <url>
     <loc>https://jorenjoestar.github.io/</loc>
-    <lastmod>2020-12-26T11:54:39+01:00</lastmod>
-  </url>
-  
-  <url>
+    <lastmod>2021-04-12T19:56:56+02:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/post/pixel_art_filtering/pixel_art_filtering/</loc>
+    <lastmod>2021-04-12T19:56:56+02:00</lastmod>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/</loc>
-    <lastmod>2020-12-26T11:54:39+01:00</lastmod>
-  </url>
-  
-  <url>
+    <lastmod>2021-04-12T19:56:56+02:00</lastmod>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/realistic_stars/realistic_stars/</loc>
     <lastmod>2020-12-26T11:54:39+01:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/productivity_terminal/productivity_terminal/</loc>
     <lastmod>2020-04-13T10:43:00-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/shader_augment_for_pipelines/shader_augment_for_pipelines/</loc>
     <lastmod>2020-03-16T12:11:37-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/</loc>
     <lastmod>2020-02-22T10:58:49-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/writing_shader_effect_language_3/</loc>
     <lastmod>2019-12-19T10:58:49-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/writing_shader_effect_language_2/</loc>
     <lastmod>2019-09-11T00:42:13-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/writing_shader_effect_language_1/</loc>
     <lastmod>2019-08-16T23:04:15-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/writing_a_simple_code_generator/</loc>
     <lastmod>2019-08-06T18:46:03-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/emulation_where_to_start/</loc>
     <lastmod>2019-07-27T18:45:35-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/flatbuffers_reflection_data_driven_rendering/</loc>
     <lastmod>2019-07-26T07:37:26-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/releasing_nes_emulator_source/</loc>
     <lastmod>2019-07-23T02:04:50-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/authors/admin/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/authors/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/categories/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/publication_types/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/publication/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/talk/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://jorenjoestar.github.io/tags/</loc>
   </url>
-  
 </urlset>
