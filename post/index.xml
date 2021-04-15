@@ -13,10 +13,10 @@
     
     <item>
       <title>Pixel Art Filtering</title>
-      <link>https://jorenjoestar.github.io/post/pixel_art_filtering/pixel_art_filtering/</link>
+      <link>https://jorenjoestar.github.io/post/pixel_art_filtering/</link>
       <pubDate>Mon, 12 Apr 2021 19:56:56 +0200</pubDate>
       
-      <guid>https://jorenjoestar.github.io/post/pixel_art_filtering/pixel_art_filtering/</guid>
+      <guid>https://jorenjoestar.github.io/post/pixel_art_filtering/</guid>
       <description>
 
 
@@ -38,8 +38,317 @@
 
 &lt;/figure&gt;
 
-&lt;p&gt;Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.&lt;!-- raw HTML omitted --&gt;
-With that comes also some problems that arise from the use of modern GPUs that are radically different than older consoles, especially for dynamic effects like scaling.&lt;/p&gt;
+&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+&lt;p&gt;Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;One of the most annoying problem we are seeing, especially since we don&amp;rsquo;t have all the CRT TVs that &amp;lsquo;apply their filters&amp;rsquo;, is the pixel &amp;lsquo;shimmering&amp;rsquo; happening when scaling or moving a pixel art image with non-integer values.&lt;/p&gt;
+&lt;p&gt;This article aims to be a light introduction to the problem and more a practical testbed to experiment with filtering. I found that just using Shadertoy was not enough, and I would like to give programmers a more advanced testbed that they can modify to improve their games!&lt;/p&gt;
+&lt;h1 id=&#34;summarytldr&#34;&gt;Summary/TLDR&lt;/h1&gt;
+&lt;p&gt;First of all we will state what is the problem we are trying to solve, even though enough posts already talked about that.
+There is an intuition that is at the base of all the filters, so it is important to have that in mind.&lt;/p&gt;
+&lt;p&gt;Then we will go through each filter I found around, with a simple explanation and link to the original article and code. Hopefully it will be easy to follow!&lt;/p&gt;
+&lt;p&gt;Finally some informations about the included source code, so you can experiment with Pixel Art Filtering.&lt;/p&gt;
+&lt;p&gt;Enjoy!&lt;/p&gt;
+&lt;h1 id=&#34;the-problem&#34;&gt;The Problem&lt;/h1&gt;
+&lt;p&gt;What we are trying to fix is to &lt;strong&gt;find the relationship between pixel on the screen and pixel of the texture, or texels, to perceptually preserve the original texture appearance&lt;/strong&gt;.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;One key component here is that we want to apply any kind of transform to the &lt;em&gt;sprite/mesh&lt;/em&gt; that will use this texture and still preserve the texture appearance.&lt;!-- raw HTML omitted --&gt;
+Something that can be done withouth further venturing into this realm is to use both integer-only camera movement increments, and scale to only integer number. This works only for sprite based games, and it can suffice if you don&amp;rsquo;t add any zoom or rotation to the game.&lt;!-- raw HTML omitted --&gt;
+Many indie games, that are beautifully 2D and sprite based, can simply do that if no zoom (thus scaling) or rotation is applied.&lt;/p&gt;
+&lt;p&gt;But if you are wanting to add something more dynamic then it can become a problem!&lt;/p&gt;
+&lt;h2 id=&#34;examples-samurai-showdown-and-children-of-morta&#34;&gt;Examples: Samurai Showdown and Children of Morta&lt;/h2&gt;
+&lt;p&gt;Already back in the day scaling and rotation were a problem, and artifacts were visible.&lt;!-- raw HTML omitted --&gt;
+I can think of Samurai Showdown games when zooming out the camera, and in the quick action of the game, despite the purposely quick zoom, you can see pixel shimmering around.&lt;/p&gt;
+&lt;p&gt;A more recent example, that received a lot of attention from &lt;a href=&#34;https://hero.handmade.network/episode/chat/chat018/&#34;&gt;Handmade Hero&lt;/a&gt;, is &lt;a href=&#34;https://childrenofmorta.com/&#34;&gt;Children of Morta&lt;/a&gt; (very nice game, go and play it if you haven&amp;rsquo;t!).&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Disclaimer: it is not my intention to talk bad about the game, just to show an example that already suffered for this problem, and maybe, at the end of the article, have a testbed to try different solutions!&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;As you can see also from videos of the game, zooming out (especially done with a slow speed) show the pixel shimmering that causes the problem.&lt;/p&gt;
+&lt;p&gt;For some (unknown to me) reason, some shaders use the term &amp;lsquo;Fat Pixel&amp;rsquo; to refer to this problem, and it will help you finding some solutions on Shadertoy as well!&lt;/p&gt;
+&lt;h2 id=&#34;pixels-and-texels-and-fat-pixels&#34;&gt;Pixels and Texels (and Fat Pixels)&lt;/h2&gt;
+&lt;p&gt;To simplify the problem, we will look at sprite based games, so no 3D rotations, but the solution can be generalized to 3D as well.&lt;/p&gt;
+&lt;p&gt;I found &lt;a href=&#34;https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/&#34;&gt;this article&lt;/a&gt; to have the easiest explanation of the problem we are trying to solve, but I will restate it so it is clear visually inside this article as well.&lt;/p&gt;
+&lt;p&gt;The appearance we want to preserve is the one of a Pixel Art texture, so we want pixel of the texture, that we will call &lt;strong&gt;Texels&lt;/strong&gt; to be distinguishable from each other.&lt;!-- raw HTML omitted --&gt;
+We thus need to apply some sort of filtering to the texture when rendering it on the screen.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s see a simple case: an integer scale:&lt;/p&gt;
+&lt;p&gt;And now let&amp;rsquo;s see a non integer scale with some translation applied as well:&lt;/p&gt;
+&lt;p&gt;Finally, some scale and rotation as well:&lt;/p&gt;
+&lt;p&gt;It is clear that with &lt;strong&gt;bilinear&lt;/strong&gt; filter you can&amp;rsquo;t succeed: the fact that each pixel can always take up 4 samples smudges everything, and we lose exactly what we want: sharp pixel art!&lt;/p&gt;
+&lt;p&gt;Same for &lt;strong&gt;neighbour/nearest&lt;/strong&gt;: on fully contained pixels-in-texels it works, but on edges it is straight wrong. This causes non-square texels to fill the image.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;We need a combination of both!&lt;/strong&gt;&lt;/p&gt;
+&lt;h1 id=&#34;the-intuition&#34;&gt;The Intuition&lt;/h1&gt;
+&lt;p&gt;The idea behind the filtering is simple: apply &lt;strong&gt;neighbour/nearest&lt;/strong&gt; filter on pixels that are fully inside a texel, and use &lt;strong&gt;bilinear&lt;/strong&gt; with custom weights at the edges!&lt;/p&gt;
+&lt;p&gt;This is what is all about.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;The tricky part is to come out with some custom weights for the bilinear filter to work out, and that is why there are so many different filters.&lt;/p&gt;
+&lt;p&gt;We will now see the different filters included in the testbed.
+Nothing that I wrote, so I will include links to the original material and you can see the awesomeness of the authors!&lt;/p&gt;
+&lt;h1 id=&#34;the-filters&#34;&gt;The Filters&lt;/h1&gt;
+&lt;p&gt;Here we analyze the different filters proposed and separate their code.
+All the shaders are into the &lt;strong&gt;DataDrivenRendering/data/articles/PixelArtFiltering/pixel_art_filtering.hfx&lt;/strong&gt; file.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE!&lt;/strong&gt;: textures are sampled with Bilinear filtering and Alpha Blending is enabled, so that edges can be smoother. This is very important for the final results!&lt;/p&gt;
+&lt;p&gt;All the filters will give back a modified UV that will leverage the bilinear sampling.&lt;/p&gt;
+&lt;h2 id=&#34;nearest&#34;&gt;Nearest&lt;/h2&gt;
+&lt;p&gt;Even though is not a part of the &amp;lsquo;solution&amp;rsquo;, it is interesting to see how we can obtain manually the nearest filter coordinates, despite having enabled bilinear filtering.&lt;/p&gt;
+&lt;p&gt;Taken directly from the &lt;a href=&#34;https://www.khronos.org/registry/OpenGL/specs/gl/glspec46.core.pdf&#34;&gt;OpenGL Specification&lt;/a&gt; (page 281):&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;opengl_nearest_formula.png&#34; &gt;
+
+&lt;img src=&#34;opengl_nearest_formula.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;OpenGL nearest formula.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;In the footer, the idea we are using is explained:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Implementations may instead round the texture layer using the nearly equivalent computation |value + 1/2|.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;We need to search the Manhattan distance from the texel center, thus using &lt;code&gt;floor(pixel) + 0.5&lt;/code&gt; works perfectly.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;vec2 uv_nearest( vec2 uv, ivec2 texture_size ) {
+    vec2 pixel = uv * texture_size;
+    pixel = floor(pixel) + .5;
+
+    return pixel / texture_size;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;csantos&#34;&gt;CSantos&lt;/h2&gt;
+&lt;p&gt;Claudio Santos (&lt;a href=&#34;https://github.com/csantosbh&#34;&gt;github&lt;/a&gt;) in his blog already in 2014 tackled the problem, as we can see from the following blog posts:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://csantosbh.wordpress.com/2014/01/25/manual-texture-filtering-for-pixelated-games-in-webgl/&#34;&gt;manual-texture-filtering-for-pixelated-games-in-webgl&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://csantosbh.wordpress.com/2014/02/05/automatically-detecting-the-texture-filter-threshold-for-pixelated-magnifications/&#34;&gt;automatically-detecting-the-texture-filter-threshold-for-pixelated-magnifications&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;He was searching for a way to modify the UV closer to the &lt;strong&gt;texel seam&lt;/strong&gt;, and came up with his own way.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;In order to have smooth transitions between texels, this offset should be replaced by a function that increases linearly at the margin of the texel, remains constant at its “blocky” region (with a value of 0.5) and then increases to 1.0 on the opposite margin of the texel.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;He mathematically found the 2 functions to add close to the &amp;lsquo;minimum&amp;rsquo; seam (towards the 0 of the texel) and towards the &amp;lsquo;maximum&amp;rsquo; seam (towards 1):&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;clamp( .5 / alpha * pixels_fract, 0, .5 )&lt;/li&gt;
+&lt;li&gt;clamp( .5 / alpha * (pixels_fract - 1) + .5, 0, .5 )&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In the second blog post, he found also that using &lt;strong&gt;fwidth&lt;/strong&gt; on the texel coordinates give you a resolution independent value that can be used to have a more consistent look:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;vec2 uv_cstantos( vec2 uv, vec2 res ) {
+    vec2 pixels = uv * res;
+
+    // Updated to the final article
+    vec2 alpha = 0.7 * fwidth(pixels);
+    vec2 pixels_fract = fract(pixels);
+    vec2 pixels_diff = clamp( .5 / alpha * pixels_fract, 0, .5 ) +
+                       clamp( .5 / alpha * (pixels_fract - 1) + .5, 0, .5 );
+    pixels = floor(pixels) + pixels_diff;
+    return pixels / res;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We will see in many other filters that the usage of &lt;a href=&#34;https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/fwidth.xhtml&#34;&gt;fwidth&lt;/a&gt; is crucial to work with resolution independent filtering.&lt;/p&gt;
+&lt;p&gt;For more informations on &lt;strong&gt;fwidth&lt;/strong&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/fwidth.xhtml&#34;&gt;https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/fwidth.xhtml&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://computergraphics.stackexchange.com/questions/61/what-is-fwidth-and-how-does-it-work&#34;&gt;https://computergraphics.stackexchange.com/questions/61/what-is-fwidth-and-how-does-it-work&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.ronja-tutorials.com/post/046-fwidth/&#34;&gt;https://www.ronja-tutorials.com/post/046-fwidth/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;cole-cecil&#34;&gt;Cole Cecil&lt;/h2&gt;
+&lt;p&gt;In a similar way, Cole Cecil in &lt;a href=&#34;https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/&#34;&gt;this article&lt;/a&gt; creates two different functions that define the steepness of the function that interpolation amount.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;vec2 uv_colececil( vec2 uv, ivec2 texture_size ) {
+    vec2 pixel = uv * texture_size;
+
+    vec2 locationWithinTexel = fract(pixel);
+    // Calculate the inverse of texels_per_pixel so we multiply here instead of dividing.
+    vec2 interpolationAmount = clamp(locationWithinTexel * locals.texels_per_pixel, 0, .5) +
+                               clamp((locationWithinTexel - 1) * locals.texels_per_pixel + .5, 0, .5);
+
+    return (floor(pixel) + interpolationAmount) / texture_size;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &amp;lsquo;texels_per_pixel&amp;rsquo; variable is calculated on the CPU, and it is basically a ratio between the camera render target size and the screen size, including the possible zoom of it.&lt;/p&gt;
+&lt;p&gt;In the original post from the author it can be found in the comment section.&lt;/p&gt;
+&lt;p&gt;I write it down here as reference:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;static f32 calculate_texels_per_pixel( f32 camera_width, f32 camera_height, f32 camera_zoom, f32 screen_width, f32 screen_height ) {
+    f32 texels_per_pixel = 1.f;
+
+    const f32 camera_aspect_ratio = camera_width / camera_height;
+    const f32 screen_aspect_ratio = screen_width / screen_height;
+
+    if ( screen_aspect_ratio &amp;gt; camera_aspect_ratio ) {
+        texels_per_pixel = camera_height / screen_height;
+    }
+    else {
+        texels_per_pixel = camera_width / screen_width;
+    }
+    // Zoom is inverted compared to ColeCecil post, so we keep same calculation here but in the shader we multiply.
+    return texels_per_pixel / camera_zoom;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;rnavega&#34;&gt;RNavega&lt;/h2&gt;
+&lt;p&gt;The last filter accompained by a blog post of some sort is from Rodrigo Navega, in the &lt;a href=&#34;https://love2d.org/forums/viewtopic.php?t=89442&#34;&gt;Love2D forum&lt;/a&gt; and the &lt;a href=&#34;https://github.com/RNavega/PixelArt-Antialias-Love2D/blob/master/main.lua&#34;&gt;shader code&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;After the previous filters the mindset is similar, so showing the code should be simpler. We are still calculating the weights based on the distance from the edge, the difference here is that it outputs also an alpha value to be used in conjunction with the texture alpha.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// The default size, in pixels, of the antialiasing filter. The default is 1.0 for a mathematically perfect
+// antialias. But if you want, you can increase this to 1.5, 2.0, 3.0 and such to force a bigger antialias zone
+// than normal, using more screen pixels.
+
+float SMOOTH_SIZE = locals.filter_width;
+float _HALF_SMOOTH = SMOOTH_SIZE / 2.0;
+
+vec2 uv_aa_dist( vec2 uv, vec2 res, out float alpha ) {
+
+    vec2 pixels = uv * res;
+
+    const vec2 nearest_edge = floor( pixels + 0.5 );
+    const vec2 edge_distance = (pixels - nearest_edge) * locals.camera_scale;
+    const vec2 factor = clamp( edge_distance / vec2(_HALF_SMOOTH), -1.0, 1.0 );
+
+    pixels = (nearest_edge + 0.5 * factor );
+
+    const vec2 center_offset = abs(uv - vec2(0.5));
+    vec2 alpha_distance = ((center_offset - 0.5) * res * locals.camera_scale + _HALF_SMOOTH) / SMOOTH_SIZE;
+    alpha_distance = clamp( alpha_distance, 0, 1 );
+    alpha = 1.0 - max(alpha_distance.x, alpha_distance.y);
+
+    return pixels / res;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Remembering that we are using alpha blending as well, we can use this value to output a smoother edge.&lt;!-- raw HTML omitted --&gt;
+Also to note that the smooth size can be driven by the filter width in the demo, to experiment with the visuals.&lt;/p&gt;
+&lt;p&gt;Here the factor is calculated based on the edge distance from the center texel and clamped between -1 and 1.&lt;/p&gt;
+&lt;h2 id=&#34;klems&#34;&gt;Klems&lt;/h2&gt;
+&lt;p&gt;Klems decide to use a smoothstep based &lt;a href=&#34;https://www.shadertoy.com/view/MllBWf&#34;&gt;approach&lt;/a&gt; in the shader:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;vec2 uv_klems( vec2 uv, ivec2 texture_size ) {
+            
+    vec2 pixels = uv * texture_size + 0.5;
+    
+    // tweak fractional value of the texture coordinate
+    vec2 fl = floor(pixels);
+    vec2 fr = fract(pixels);
+    vec2 aa = fwidth(pixels) * 0.75;
+
+    fr = smoothstep( vec2(0.5) - aa, vec2(0.5) + aa, fr);
+    
+    return (fl + fr - 0.5) / texture_size;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;It again use &lt;strong&gt;fwidth&lt;/strong&gt; approach to calculate the factor, and use the fractional value to smoothstep between the 2 values that will be used near the edges.&lt;/p&gt;
+&lt;h2 id=&#34;inigo-quilez-3&#34;&gt;Inigo Quilez (&amp;lt;3)&lt;/h2&gt;
+&lt;p&gt;From the comments in the &lt;a href=&#34;https://www.shadertoy.com/view/MllBWf&#34;&gt;Klems filter&lt;/a&gt;, the incredible Inigo comes up with another filter:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;vec2 uv_iq( vec2 uv, ivec2 texture_size ) {
+    vec2 pixel = uv * texture_size;
+
+    vec2 seam = floor(pixel + 0.5);
+    vec2 dudv = fwidth(pixel);
+    pixel = seam + clamp( (pixel - seam) / dudv, -0.5, 0.5);
+    
+    return pixel / texture_size;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The variable names are quite explicit, but the idea is to again start from the seam of the texture and modify the final uv based on the distance from the seam.&lt;/p&gt;
+&lt;h2 id=&#34;blocky&#34;&gt;Blocky&lt;/h2&gt;
+&lt;p&gt;This is very similar to IQ filter, just using different math:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// https://www.shadertoy.com/view/ltfXWS
+// samples from a linearly-interpolated texture to produce an appearance similar to
+// nearest-neighbor interpolation, but with resolution-dependent antialiasing
+// 
+// this function&#39;s interface is exactly the same as texture&#39;s, aside from the &#39;res&#39;
+// parameter, which represents the resolution of the texture &#39;tex&#39;.
+// basically calculates the lengths of (a.x, b.x) and (a.y, b.y) at the same time
+vec2 v2len(in vec2 a, in vec2 b) {
+    return sqrt( a * a + b * b );
+}
+
+vec2 uv_blocky( in vec2 uv, in ivec2 res ) {
+    vec2 pixels = uv * res; // enter texel coordinate space.
+    
+    vec2 seam = floor(pixels + .5); // find the nearest seam between texels.
+    
+    // here&#39;s where the magic happens. scale up the distance to the seam so that all
+    // interpolation happens in a one-pixel-wide space.
+    pixels = (pixels - seam) / v2len(dFdx(pixels), dFdy(pixels)) + seam;
+    
+    pixels = clamp(pixels, seam - .5, seam + .5); // clamp to the center of a texel.
+    
+    return pixels / res;// convert back to 0..1 coordinate space.
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;bgolus-anti-aliasing&#34;&gt;BGolus: Anti-Aliasing&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://twitter.com/bgolus/&#34;&gt;Ben Golus&lt;/a&gt; also wrote his own implementation &lt;a href=&#34;https://www.shadertoy.com/view/ltBfRD&#34;&gt;here&lt;/a&gt; with two variations as well!&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;vec2 uv_aa_linear( vec2 uv, vec2 res, float width ) {
+    vec2 pixels = uv * res;
+    
+    vec2 pixels_floor = floor(pixels + 0.5);
+    vec2 pixels_fract = clamp( (pixels - pixels_floor) / fwidth(pixels) / width, -0.5, 0.5);
+
+    return (pixels_floor + pixel_fract) / res;
+}
+
+vec2 uv_aa_smoothstep( vec2 uv, vec2 res, float width ) {
+    vec2 pixels = uv * res;
+    
+    vec2 pixels_floor = floor(pixels + 0.5);
+    vec2 pixels_fract = fract(pixels + 0.5);
+    vec2 pixels_aa = fwidth(pixels) * width * 0.5;
+    pixels_fract = smoothstep( vec2(0.5) - pixels_aa, vec2(0.5) + pixels_aa, pixels_fract );
+    
+    return (pixels_floor + pixels_fract - 0.5) / res;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;They both use a width to define how big is the area covered by the &lt;em&gt;anti-aliasing&lt;/em&gt; on the edges, and in the demo it is a tweakable value (default to 1.5).&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;The first variation it scales using &lt;strong&gt;fwidth&lt;/strong&gt; but also modifies the value with the width, giving the possibility of a more fine tuned control over the edge appearance &lt;code&gt;(pixels - pixels_floor) / fwidth(pixels) / width&lt;/code&gt;. This is a &lt;strong&gt;unique feature&lt;/strong&gt; of his filters!&lt;/p&gt;
+&lt;p&gt;The second variation has both the smoothstep as a way of filtering the UV based on the distance from the center of the texel, and a fwidth tunable with the width again as value to move the sampling coordinate. Note that if width is 0, pixel_fract is 0.5, thus being the center of the texel, and in the final conversion back it is taken in consideration.&lt;/p&gt;
+&lt;h2 id=&#34;fat-pixel&#34;&gt;Fat Pixel&lt;/h2&gt;
+&lt;p&gt;This is the shader that was mentioned by Casey Muratori in his &lt;a href=&#34;https://hero.handmade.network/episode/chat/chat018/&#34;&gt;video&lt;/a&gt; and for me started all this research culminating in this article!
+The original source code is &lt;a href=&#34;https://www.shadertoy.com/view/ltBGWc&#34;&gt;here&lt;/a&gt; but again I post the code straight away:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;vec2 uv_fat_pixel( vec2 uv, ivec2 texture_size ) {
+    vec2 pixel = uv * texture_size;
+
+    vec2 fat_pixel = floor(pixel) + 0.5;
+    // subpixel aa algorithm (COMMENT OUT TO COMPARE WITH POINT SAMPLING)
+    fat_pixel += 1 - clamp((1.0 - fract(pixel)) * locals.texels_per_pixel, 0, 1);
+        
+    return fat_pixel / texture_size;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Using the same texels_per_pixel number calculated as for the Cole Cecil shader, we basically move the UV based on the distance to the edge. &lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Note that texels_per_pixel if camera and scene have the same size it becomes just the &lt;strong&gt;camera zoom&lt;/strong&gt; - so we are choosing the weight from edge scaled by the zoom factor of the camera.&lt;/p&gt;
+&lt;h2 id=&#34;todo-the-maister&#34;&gt;TODO: The Maister&lt;/h2&gt;
+&lt;p&gt;There is a final filter that I wanted to check, but I will come at it later. I wanted to write about it briefly because there is the most mathematical approach and thus can shed some light also an all the other filters!&lt;/p&gt;
+&lt;p&gt;The most mathematical approach is by &lt;a href=&#34;https://twitter.com/Themaister&#34;&gt;Hans Kristian&lt;/a&gt; in which he does an analysis of the problem from a signal theory point of view. &lt;a href=&#34;https://themaister.net/blog&#34;&gt;His blog&lt;/a&gt; is full of great posts, so go check it out!&lt;/p&gt;
+&lt;p&gt;The posts that we will see are the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://themaister.net/blog/2018/08/25/pseudo-bandlimited-pixel-art-filtering-in-3d-a-mathematical-derivation/&#34;&gt;pseudo-bandlimited-pixel-art-filtering-in-3d-a-mathematical-derivation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://themaister.net/blog/2018/08/29/why-coverage-based-pixel-art-filtering-is-terrible/&#34;&gt;why-coverage-based-pixel-art-filtering-is-terrible&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;They are an in-depth signal based analysis of the problem, even though the author kindly added &lt;a href=&#34;https://github.com/Themaister/Granite/blob/master/assets/shaders/inc/bandlimited_pixel_filter.h&#34;&gt;source code as well&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I will check the shader code in the future, for now the blog post is what really gives a hand at understanding the other filters.&lt;/p&gt;
+&lt;h1 id=&#34;the-testbed&#34;&gt;The Testbed&lt;/h1&gt;
+&lt;p&gt;With the accompanying source code there is included also some graphics to already test the idea presented here.&lt;!-- raw HTML omitted --&gt;
+I&amp;rsquo;ve used two textures, that were free to use made available by the amazing &lt;a href=&#34;https://twitter.com/ansimuz&#34;&gt;Luis Zuno&lt;/a&gt; found through his &lt;a href=&#34;https://ansimuz.itch.io/&#34;&gt;itch.io page&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;It should be pretty straightforward to modify the shaders and test your own ideas, so I hope you will come up with new filters!&lt;/p&gt;
+&lt;p&gt;All the filters are in &lt;strong&gt;DataDrivenRendering/data/articles/PixelArtFiltering/pixel_art_filtering.hfx&lt;/strong&gt; file.&lt;/p&gt;
+&lt;p&gt;The source is in my &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering&#34;&gt;github repository&lt;/a&gt; both in data/articles/PixelArtfiltering and source/articles/PixelArtFiltering where you can find the shaders and the code. There are basically only two files (pixel_art_filtering.hfx and pixel_art_filtering_app.cpp) that you need to modify to experiment with this concepts.&lt;/p&gt;
+&lt;h2 id=&#34;scene-setup&#34;&gt;Scene Setup&lt;/h2&gt;
+&lt;p&gt;The scene is composed of an animated sprite and a background.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;There are different options to zoom in and out and translate, to test all possible scenarios.&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;ve added also a simple CRT filter to be toggled after the scene is rendered.&lt;/p&gt;
+&lt;p&gt;Also, sampling is always bilinear.&lt;/p&gt;
+&lt;p&gt;You can also toggle &lt;strong&gt;premultiplied alpha&lt;/strong&gt;, so you see that not having any alpha blending will result in shimmering edges, another big problem not really mentioned around.&lt;/p&gt;
+&lt;h1 id=&#34;links-and-previous-work&#34;&gt;Links and Previous Work&lt;/h1&gt;
+&lt;p&gt;Here I want to link all the previous posts about the subject for quick reference:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://csantosbh.wordpress.com/2014/01/25/manual-texture-filtering-for-pixelated-games-in-webgl/&#34;&gt;https://csantosbh.wordpress.com/2014/01/25/manual-texture-filtering-for-pixelated-games-in-webgl/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://csantosbh.wordpress.com/2014/02/05/automatically-detecting-the-texture-filter-threshold-for-pixelated-magnifications/&#34;&gt;https://csantosbh.wordpress.com/2014/02/05/automatically-detecting-the-texture-filter-threshold-for-pixelated-magnifications/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/&#34;&gt;https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://themaister.net/blog/2018/08/25/pseudo-bandlimited-pixel-art-filtering-in-3d-a-mathematical-derivation/&#34;&gt;https://themaister.net/blog/2018/08/25/pseudo-bandlimited-pixel-art-filtering-in-3d-a-mathematical-derivation/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://love2d.org/forums/viewtopic.php?t=89442&#34;&gt;https://love2d.org/forums/viewtopic.php?t=89442&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/RNavega/PixelArt-Antialias-Love2D/blob/master/main.lua&#34;&gt;https://github.com/RNavega/PixelArt-Antialias-Love2D/blob/master/main.lua&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Also &lt;a href=&#34;https://www.shadertoy.com/&#34;&gt;ShaderToy&lt;/a&gt; is a source of many other filters included in the demo.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.shadertoy.com/view/MllBWf&#34;&gt;https://www.shadertoy.com/view/MllBWf&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.shadertoy.com/view/ltfXWS&#34;&gt;https://www.shadertoy.com/view/ltfXWS&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.shadertoy.com/view/4dlXzB&#34;&gt;https://www.shadertoy.com/view/4dlXzB&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.shadertoy.com/view/ltcGDX&#34;&gt;https://www.shadertoy.com/view/ltcGDX&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.shadertoy.com/view/ltBGWc&#34;&gt;https://www.shadertoy.com/view/ltBGWc&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.shadertoy.com/view/ltBfRD&#34;&gt;https://www.shadertoy.com/view/ltBfRD&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+&lt;p&gt;We saw different &lt;strong&gt;sampling filters&lt;/strong&gt; that resulted in different ways of leveraging the &lt;em&gt;bilinear filtering&lt;/em&gt; with some custom coordinates to obtain a mix of sharpness for inside pixels and smoothness on the edges.&lt;/p&gt;
+&lt;p&gt;We also have now a easy to modify testbed to try different ideas and hopefully make your pixels (and your eyes) happy!&lt;/p&gt;
+&lt;p&gt;As always, please comment, modify, improve, share the article and the code!&lt;/p&gt;
 </description>
     </item>
     
