@@ -67,9 +67,77 @@ I can think of Samurai Showdown games when zooming out the camera, and in the qu
 &lt;p&gt;The appearance we want to preserve is the one of a Pixel Art texture, so we want pixel of the texture, that we will call &lt;strong&gt;Texels&lt;/strong&gt; to be distinguishable from each other.&lt;!-- raw HTML omitted --&gt;
 We thus need to apply some sort of filtering to the texture when rendering it on the screen.&lt;/p&gt;
 &lt;p&gt;Let&amp;rsquo;s see a simple case: an integer scale:&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;pixel_art_scaling_01.png&#34; &gt;
+
+&lt;img src=&#34;pixel_art_scaling_01.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;2X Scale.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;Here is clear that the pixels will be 1 to 1 with the texels, thus maintaining the pixel art visuals. &lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE&lt;/strong&gt;: using &lt;strong&gt;bilinear&lt;/strong&gt; will add blurriness at the edges though, so normally integer scaling and translation need a &lt;strong&gt;neighbour/nearest&lt;/strong&gt; filter.&lt;/p&gt;
 &lt;p&gt;And now let&amp;rsquo;s see a non integer scale with some translation applied as well:&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;pixel_art_scaling_02.png&#34; &gt;
+
+&lt;img src=&#34;pixel_art_scaling_02.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;1.5X Scale and Translation.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;The situation is worst. Some pixels are &lt;strong&gt;full&lt;/strong&gt; while some others are &lt;strong&gt;edges&lt;/strong&gt;. I tried to highlight the original texture (a simple quad) with grey outline and color the pixels in the fully filled pixels.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;We see that only 4 pixels are fully colored, the others all need some sort of filter for the edges.&lt;/p&gt;
 &lt;p&gt;Finally, some scale and rotation as well:&lt;/p&gt;
-&lt;p&gt;It is clear that with &lt;strong&gt;bilinear&lt;/strong&gt; filter you can&amp;rsquo;t succeed: the fact that each pixel can always take up 4 samples smudges everything, and we lose exactly what we want: sharp pixel art!&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;pixel_art_scaling_03.png&#34; &gt;
+
+&lt;img src=&#34;pixel_art_scaling_03.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;1.5X Scale, Translation and Rotation.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;This is the most difficult situation. Only 3 pixels are full and everything else needs a proper edge management.&lt;/p&gt;
+&lt;p&gt;It is clear (I hope!) that using only &lt;strong&gt;bilinear&lt;/strong&gt; filter is not enough: the fact that each pixel can always take up 4 samples smudges everything, and we lose exactly what we want: sharp pixel art!&lt;/p&gt;
 &lt;p&gt;Same for &lt;strong&gt;neighbour/nearest&lt;/strong&gt;: on fully contained pixels-in-texels it works, but on edges it is straight wrong. This causes non-square texels to fill the image.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;We need a combination of both!&lt;/strong&gt;&lt;/p&gt;
 &lt;h1 id=&#34;the-intuition&#34;&gt;The Intuition&lt;/h1&gt;

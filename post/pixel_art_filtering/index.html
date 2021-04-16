@@ -381,7 +381,7 @@
   
   <span class="middot-divider"></span>
   <span class="article-reading-time">
-    14 min read
+    15 min read
   </span>
   
 
@@ -543,9 +543,77 @@ I can think of Samurai Showdown games when zooming out the camera, and in the qu
 <p>The appearance we want to preserve is the one of a Pixel Art texture, so we want pixel of the texture, that we will call <strong>Texels</strong> to be distinguishable from each other.<!-- raw HTML omitted -->
 We thus need to apply some sort of filtering to the texture when rendering it on the screen.</p>
 <p>Let&rsquo;s see a simple case: an integer scale:</p>
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="pixel_art_scaling_01.png" >
+
+<img src="pixel_art_scaling_01.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" >
+  <h4>2X Scale.</h4>
+  
+</figcaption>
+
+</figure>
+
+<p>Here is clear that the pixels will be 1 to 1 with the texels, thus maintaining the pixel art visuals. <!-- raw HTML omitted --></p>
+<p><strong>NOTE</strong>: using <strong>bilinear</strong> will add blurriness at the edges though, so normally integer scaling and translation need a <strong>neighbour/nearest</strong> filter.</p>
 <p>And now let&rsquo;s see a non integer scale with some translation applied as well:</p>
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="pixel_art_scaling_02.png" >
+
+<img src="pixel_art_scaling_02.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" >
+  <h4>1.5X Scale and Translation.</h4>
+  
+</figcaption>
+
+</figure>
+
+<p>The situation is worst. Some pixels are <strong>full</strong> while some others are <strong>edges</strong>. I tried to highlight the original texture (a simple quad) with grey outline and color the pixels in the fully filled pixels.<!-- raw HTML omitted --></p>
+<p>We see that only 4 pixels are fully colored, the others all need some sort of filter for the edges.</p>
 <p>Finally, some scale and rotation as well:</p>
-<p>It is clear that with <strong>bilinear</strong> filter you can&rsquo;t succeed: the fact that each pixel can always take up 4 samples smudges everything, and we lose exactly what we want: sharp pixel art!</p>
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="pixel_art_scaling_03.png" >
+
+<img src="pixel_art_scaling_03.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" >
+  <h4>1.5X Scale, Translation and Rotation.</h4>
+  
+</figcaption>
+
+</figure>
+
+<p>This is the most difficult situation. Only 3 pixels are full and everything else needs a proper edge management.</p>
+<p>It is clear (I hope!) that using only <strong>bilinear</strong> filter is not enough: the fact that each pixel can always take up 4 samples smudges everything, and we lose exactly what we want: sharp pixel art!</p>
 <p>Same for <strong>neighbour/nearest</strong>: on fully contained pixels-in-texels it works, but on edges it is straight wrong. This causes non-square texels to fill the image.</p>
 <p><strong>We need a combination of both!</strong></p>
 <h1 id="the-intuition">The Intuition</h1>
