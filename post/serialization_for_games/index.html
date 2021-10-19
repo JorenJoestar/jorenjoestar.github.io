@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="generator" content="Source Themes Academic 4.4.0">
+
+  
+
+  
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="Gabriel Sassone">
+
+  
+  
+  
+    
+  
+  <meta name="description" content="Overview We will go through all the logical steps (and the code!) to write a binary serializer that supports versioning and memory mappability. It is not an automatic process, and it will not contain any data definition schema.
+As use cases, we have:
+ Creation and reading of game resources/assets Game world states (&ldquo;savegames&rdquo;) Networking transmission/reception  Not having the schema is a problem, and we will try to go around it in the best way possible.">
+
+  
+  <link rel="alternate" hreflang="en-us" href="https://jorenjoestar.github.io/post/serialization_for_games/">
+
+  
+
+
+  
+
+  
+  
+  
+  <meta name="theme-color" content="hsl(339, 90%, 68%)">
+  
+
+  
+  
+  
+  
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.6/css/academicons.min.css" integrity="sha256-uFVgMKfistnJAfoCUQigIl+JfUaP47GrRKjf6CTPVmw=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.0/css/all.css" integrity="sha384-aOkxzJ5uQz7WBObEZcHvV5JvRW3TUc2rNPA7pe3AwnsUohiw1Vj2Rgx2KSOkF5+h" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" integrity="sha256-ygkqlh3CYSUri3LhQxzdcm0n1EQvH2Y+U5S2idbLtxs=" crossorigin="anonymous">
+
+    
+    
+    
+      
+    
+    
+      
+      
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/ocean.min.css" crossorigin="anonymous" title="hl-light">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/ocean.min.css" crossorigin="anonymous" title="hl-dark" disabled>
+      
+    
+
+    
+
+    
+
+  
+
+  
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inconsolata&display=swap">
+  
+
+  
+  
+  
+  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+
+  
+
+  
+  
+  
+
+  
+
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="icon" type="image/png" href="/img/icon.png">
+  <link rel="apple-touch-icon" type="image/png" href="/img/icon-192.png">
+
+  <link rel="canonical" href="https://jorenjoestar.github.io/post/serialization_for_games/">
+
+  
+  
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary">
+  
+  <meta property="twitter:site" content="@GabrielSassone">
+  <meta property="twitter:creator" content="@GabrielSassone">
+  
+  <meta property="og:site_name" content="Joren&#39;s">
+  <meta property="og:url" content="https://jorenjoestar.github.io/post/serialization_for_games/">
+  <meta property="og:title" content="Serialization For Games | Joren&#39;s">
+  <meta property="og:description" content="Overview We will go through all the logical steps (and the code!) to write a binary serializer that supports versioning and memory mappability. It is not an automatic process, and it will not contain any data definition schema.
+As use cases, we have:
+ Creation and reading of game resources/assets Game world states (&ldquo;savegames&rdquo;) Networking transmission/reception  Not having the schema is a problem, and we will try to go around it in the best way possible."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
+  <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
+  
+  <meta property="article:published_time" content="2021-08-09T10:05:38&#43;02:00">
+  
+  <meta property="article:modified_time" content="2021-08-09T10:05:38&#43;02:00">
+  
+
+  
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.0.3/cookieconsent.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.0.3/cookieconsent.min.js"></script>
+<script>
+  window.addEventListener("load", function(){
+    window.cookieconsent.initialise({
+      "palette": {
+        "popup": {
+          "background": "hsl(339, 90%, 68%)",
+          "text": "#fff"
+        },
+        "button": {
+          "background": "#fff",
+          "text": "hsl(339, 90%, 68%)"
+        }
+      },
+      "theme": "classic",
+      "content": {
+        "message": "This website uses cookies to ensure you get the best experience on our website.",
+        "dismiss": "Got it!",
+        "link": "Learn more",
+        "href": "https://cookies.insites.com"
+      }
+    })});
+</script>
+
+
+
+  
+
+
+
+
+
+  <title>Serialization For Games | Joren&#39;s</title>
+
+</head>
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="dark">
+
+  <aside class="search-results" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>Search</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="Search..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search">
+        
+      </div>
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+  
+<nav class="navbar navbar-light fixed-top navbar-expand-lg py-0 compensate-for-scrollbar" id="navbar-main">
+  <div class="container">
+
+    
+      <a class="navbar-brand" href="/">Joren&#39;s</a>
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+    
+    <div class="collapse navbar-collapse" id="navbar">
+
+      
+      
+      <ul class="navbar-nav mr-auto">
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#about"><span>Home</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#posts"><span>Posts</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#contact"><span>Contact</span></a>
+        </li>
+
+        
+        
+
+      
+      </ul>
+      <ul class="navbar-nav ml-auto">
+      
+
+        
+
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+
+        
+        <li class="nav-item">
+          <a class="nav-link js-dark-toggle" href="#"><i class="fas fa-moon" aria-hidden="true"></i></a>
+        </li>
+        
+
+      </ul>
+
+    </div>
+  </div>
+</nav>
+
+
+  <article class="article" itemscope itemtype="http://schema.org/Article">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1 itemprop="name">Serialization For Games</h1>
+
+  
+
+  
+    
+
+
+
+<meta content="2021-08-09 10:05:38 &#43;0200 CEST" itemprop="datePublished">
+<meta content="2021-08-09 10:05:38 &#43;0200 CEST" itemprop="dateModified">
+
+<div class="article-metadata">
+
+  
+  
+
+  
+  <span class="article-date">
+    
+    
+      
+    
+    <time>2021-08-09</time>
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+    17 min read
+  </span>
+  
+
+  
+  
+  
+
+  
+  
+
+  
+    
+<div class="share-box" aria-hidden="true">
+  <ul class="share">
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://twitter.com/intent/tweet?url=https://jorenjoestar.github.io/post/serialization_for_games/&amp;text=Serialization%20For%20Games" target="_blank" rel="noopener" class="share-btn-twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.facebook.com/sharer.php?u=https://jorenjoestar.github.io/post/serialization_for_games/&amp;t=Serialization%20For%20Games" target="_blank" rel="noopener" class="share-btn-facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="mailto:?subject=Serialization%20For%20Games&amp;body=https://jorenjoestar.github.io/post/serialization_for_games/" target="_blank" rel="noopener" class="share-btn-email">
+          <i class="fas fa-envelope"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.linkedin.com/shareArticle?url=https://jorenjoestar.github.io/post/serialization_for_games/&amp;title=Serialization%20For%20Games" target="_blank" rel="noopener" class="share-btn-linkedin">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://reddit.com/submit?url=https://jorenjoestar.github.io/post/serialization_for_games/&amp;title=Serialization%20For%20Games" target="_blank" rel="noopener" class="share-btn-reddit">
+          <i class="fab fa-reddit-alien"></i>
+        </a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+
+</div>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+</div>
+
+
+
+  <div class="article-container">
+
+    <div class="article-style" itemprop="articleBody">
+      <h1 id="overview">Overview</h1>
+<p>We will go through all the logical steps (and the code!) to write a binary serializer that supports <strong>versioning</strong> and <strong>memory mappability</strong>.
+It is not an automatic process, and it will not contain any data definition schema.</p>
+<p>As use cases, we have:</p>
+<ul>
+<li>Creation and reading of game resources/assets</li>
+<li>Game world states (&ldquo;savegames&rdquo;)</li>
+<li>Networking transmission/reception</li>
+</ul>
+<p>Not having the schema is a problem, and we will try to go around it in the best way possible.</p>
+<p>Following is a simple list of terms used in the article, explained in depth in the following sections but useful to have here:</p>
+<ul>
+<li>Serialization: writing to blob from a data structure, or reading from the blob to fill a data structure</li>
+<li>Blob: contiguous section of memory</li>
+<li>Versioning: data with version to skip parts of the serialization</li>
+<li>Memory mappability: ability to load a blob and use it without any processing</li>
+</ul>
+<h1 id="the-problem">The Problem</h1>
+<p>What is serialization ? Using a simple definition from Wikipedia:</p>
+<blockquote>
+<p>In computing, serialization (US spelling) or serialisation (UK spelling) is the process of translating a data structure or object state into a format that can be stored (for example, in a file or memory data buffer) or transmitted (for example, over a computer network) and reconstructed later (possibly in a different computer environment).</p>
+</blockquote>
+<p>We are about to start a journey of data structure conversion.</p>
+<p>There are also two requirements for this system, one <strong>strong</strong> (versioning) and the other <em>soft</em> (not always possible, the memory mappability).</p>
+<p>When converting two different binaries without a schema, we still need to have some sort of structure.<br>
+We will rely on the binary itself to reconstruct itself.</p>
+<h2 id="blob">Blob</h2>
+<p>The first concept to get acquainted with is the <strong>blob</strong>, and a great article is from our friends at <a href="https://bitsquid.blogspot.com/2010/02/blob-and-i.html">the then BitSquid</a>, now working on <a href="https://ourmachinery.com/">OurMachinery</a>.<br>
+A <em>blob</em> is a contiguous section of memory, that is <em>movable, copiable and self-contained</em>.</p>
+<p>We can pass the blob around, and used to build at runtime data structures that we need, even with some complexity.<br>
+We will see how later on.</p>
+<h2 id="versioning">Versioning</h2>
+<p>Versioning is the <strong>strong</strong> requirement for this system: we always want to support different versions of binaries.<br>
+This makes the other requirement, memory mappability, somewhat not always achievable.<br>
+We will see also that later on.</p>
+<p>The main inspiration is from <a href="https://yave.handmade.network/blog/p/2723-how_media_molecule_does_serialization">Media Molecule Serialization Article</a> (thanks to Oswald Hurlem for this article!), that explains very well how to create a binary versioning serialization system.</p>
+<p>The gist of it is to create a global version and use that to skip or not some parts of the binary generated.</p>
+<p>It seems too good and easy to be true, and actually the devil&rsquo;s in the details, and we will see it!</p>
+<h2 id="memory-mappability">Memory Mappability</h2>
+<p>The <em>soft</em> requirement, something we would like to have but not always possible.<br>
+The &lsquo;why&rsquo; we want this feature is because at runtime, we would like to have data in its <em>final form</em> so we just need to use it, without doing more adjustements.<br>
+The combination of <em>blob</em> and <em>relative data structures</em> can give you a ready to go binary, that can contain <em>pointers, arrays and strings (and more!)</em>.<br>
+It is not all easy, as when binary versions differ we will need still to <em>manually serialize</em> the structures. But more on that later!</p>
+<p>The idea of <strong>memory mappability</strong> for me comes from the incredible implementation done by <a href="https://www.gdcvault.com/play/1026345/The-Future-of-Scene-Description">Sony Santa Monica for God of War</a> - I was exposed to the genius ideas of the original creator of the SMScheme, and was honestly blown away. This should be the gold standard for serialization in my opinion, but I digress!</p>
+<p>The secret weapon here are some data structures called <strong>relative data structures</strong>, which I found <a href="https://steamcdn-a.akamaihd.net/apps/valve/2015/Migdalskiy_Sergiy_Physics_Optimization_Strategies.pdf">here in a little more detail</a> and found them very promising, used also in <strong>SmSchema</strong> as far as I understand, even though in much better way.</p>
+<p>The idea of <em>relative data structures</em> is simple:</p>
+<blockquote>
+<p>Anything that contians a pointer, translates the pointer to be an offset from&hellip;itself.</p>
+</blockquote>
+<p>In C++ lingo, the address of the data pointed is (this) + offset.<br>
+It is genius that you need only to store the offset, as the this is stored for you by the language!<br>
+When the offset is 0, the pointer is considered null.</p>
+<p>Three data structures have been implemented in this way:</p>
+<ul>
+<li>Relative Pointer</li>
+<li>Relative Array</li>
+<li>Relative String</li>
+</ul>
+<p>They work perfectly with the <strong>blob</strong> of memory we will use as main tool to achieve this.</p>
+<p>What is really interesting is that even a normal array can be turned into a Relative Array, and it becomes a really powerful tool.<br>
+We will see how in the code.</p>
+<h2 id="serializing-allocating-reading-writing">Serializing, Allocating, Reading, Writing</h2>
+<p>We need to clear some terms to finally start to see the solution/implementation.<br>
+They are all interwined, and honestly they are what required me to rewrite this serialization code few times before understanding better what I am talking about. I still feel I am not precise enough with words, so any feedback is more than appreciated!</p>
+<p><strong>Reading and Writing</strong> change the process of <strong>Serializing and Allocating</strong> in different ways, so we better be precise.</p>
+<p><strong>Reading</strong>:</p>
+<ul>
+<li>Serializing is from Blob to Runtime Data.</li>
+<li>Allocating is for the Runtime part for dynamic structures, or reading from the Blob for Relative Data Structures.</li>
+</ul>
+<p><strong>Writing</strong>:</p>
+<ul>
+<li>Serializing is from Runtime Data to Blob.</li>
+<li>Allocating is reserving memory into the Blob.</li>
+</ul>
+<h1 id="the-solution">The Solution</h1>
+<p>We can finally start seeing how we implemented this serialization system.<br>
+The process will be particular, a mix <a href="https://en.wikipedia.org/wiki/Depth-first_search">depth first</a> and <a href="https://en.wikipedia.org/wiki/Breadth-first_search">breath first</a> for both allocation and serialization.</p>
+<p>Starting from the root data structure, we will visit each member, serialize it and if needed allocate memory from it.<br>
+Allocating memory can be both in-blob memory or runtime memory, depending on the situation.<br>
+When writing, it will be the in-blob memory. When reading, it could be just moving into the blob memory (for relative structures) or allocating runtime data (for dynamic arrays and such).</p>
+<p>One of the strengths of this approach is that if we use all <em>relative</em> data structures we can allocate once and just memory map everything.<br>
+For this reason when we <em>write</em> the binary data, we need to leave traces to read the proper memory from the blob, when reading.</p>
+<p>Remember, we don&rsquo;t have any schema so we need to rely on the serialization process to <em>guide us</em> through the bytes.</p>
+<h2 id="serialization-write">Serialization: Write</h2>
+<p>We will start with writing the <strong>blob</strong>.<br>
+I&rsquo;ve attempted at some diagrams to show a more step-by-step mechanism, so the algorithm can be a little clearer.</p>
+<p>In figure 1 we see the runtime data we want to write into our <em>blob</em>.<br>
+The data structure contains an array, to show how the algorithm behaves with dynamically allocated memory.</p>
+<p>We always have a <strong>serialization offset</strong> and an <strong>allocation offset</strong>.<br>
+We always allocate from the current end of the blob.<br>
+The <strong>serialization offset</strong> is used to write data into the blob, and can be used to jump around the blob memory, we will see how.</p>
+<p>The <strong>first step</strong> to write into the blob is to <em>allocate</em> from the blob memory the <em>blob header</em>, that contains a version and a <em>mappable</em> flag. We will use that later to decide how we read data.</p>
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="serialization_write_0.png" >
+
+<img src="serialization_write_0.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" class="numbered">
+  <h4>Runtime data and initial blob</h4>
+  
+</figcaption>
+
+</figure>
+
+<p><strong>Serialization offset</strong> is serializing each member of the blob header, like so:</p>
+<pre><code>// Write data into blob memory
+void MemoryBlob::serialize( u32* data ) {
+  memcpy( &amp;blob_memory[ serialized_offset ], data, sizeof( u32 ) );
+  serialized_offset += sizeof( u32 );
+}
+</code></pre><p>After each serialization we <em>move</em> the offset by the correct size.</p>
+<p>Next we allocate the root data structure into the memory blob, and we start serializing its members, as shown in Figure 2:</p>
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="serialization_write_1.png" >
+
+<img src="serialization_write_1.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" class="numbered">
+  <h4>Allocated root data structure, but not serialized</h4>
+  
+</figcaption>
+
+</figure>
+
+<p>After some primitive member types, we arrive at an array.<br>
+In Figure 3, we started serializing the array itself (its struct memory is part of the root data structure), but we miss the array data:</p>
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="serialization_write_2.png" >
+
+<img src="serialization_write_2.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" class="numbered">
+  <h4>Allocated array data, array struct serialization</h4>
+  
+</figcaption>
+
+</figure>
+
+<p>We finally <em>allocate</em> the array data and <strong>jump serialization</strong> to this new location, so we can start serializing each element, as you see from <strong>serialization offset</strong>:</p>
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="serialization_write_3.png" >
+
+<img src="serialization_write_3.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" class="numbered">
+  <h4>Array data serialization</h4>
+  
+</figcaption>
+
+</figure>
+
+<p>Once we finished with the array, we store the <strong>serialization offset</strong> so we can resume the serialization of the other <em>root data structure members</em>:</p>
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="serialization_write_4.png" >
+
+<img src="serialization_write_4.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" class="numbered">
+  <h4>Jump back to serialization of root data structure</h4>
+  
+</figcaption>
+
+</figure>
+
+<p>In a nutshell this is all the algorithm to serialize an arbitrarly complex network of data structures.<br>
+In conjunction with <em>relative data structures</em>, a blob can point to its own memory and enable <em>pointers and arrays</em> to be used without any <strong>patch-up</strong>.</p>
+<h2 id="serializing-read">Serializing Read</h2>
+<p>Not suprisingly <strong>reading</strong> is very similar to writing, but the <em>source and destination</em> of the operations are inverted: we read from the <em>blob</em> and write into the <em>runtime data</em>.</p>
+<p>There is one huge caveat: <strong>mappable blobs</strong>.<br>
+In that case we don&rsquo;t need <strong>any serialization process</strong>, but instead we cast memory to the <em>root data structure</em> and it all works!</p>
+<p>In order for that to work, for each data structure that points to other parts of the blob, we need two things:</p>
+<ul>
+<li>Save an offset to read from the blob</li>
+<li>A runtime conversion mechanism between the offset and the needed type.</li>
+</ul>
+<p>Let&rsquo;s see an example of that, the <strong>Relative Pointer</strong> class.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">//
+</span><span style="color:#75715e">// RelativePointer ////////////////////////////////////////////////////////
+</span><span style="color:#75715e">// 
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">RelativePointer</span> {
+
+    T<span style="color:#f92672">*</span>                  <span style="color:#a6e22e">get</span>() <span style="color:#66d9ef">const</span>;
+
+    <span style="color:#66d9ef">bool</span>                <span style="color:#a6e22e">is_equal</span>( <span style="color:#66d9ef">const</span> RelativePointer<span style="color:#f92672">&amp;</span> other ) <span style="color:#66d9ef">const</span>;
+    <span style="color:#66d9ef">bool</span>                <span style="color:#a6e22e">is_null</span>() <span style="color:#66d9ef">const</span>;
+    <span style="color:#66d9ef">bool</span>                <span style="color:#a6e22e">is_not_null</span>() <span style="color:#66d9ef">const</span>;
+
+    <span style="color:#75715e">// Operator overloading to give a cleaner interface
+</span><span style="color:#75715e"></span>    T<span style="color:#f92672">*</span>                  <span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span>;
+    T<span style="color:#f92672">&amp;</span>                  <span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span>;
+
+    <span style="color:#66d9ef">void</span>                <span style="color:#a6e22e">set</span>( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> raw_pointer );
+    <span style="color:#66d9ef">void</span>                <span style="color:#a6e22e">set_null</span>();
+
+    i32                 offset;
+
+}; <span style="color:#75715e">// struct RelativePointer
+</span><span style="color:#75715e"></span>
+</code></pre></div><p>As we can see we save an offset, but the real power comes from the <strong>operator overload</strong>.<br>
+Let&rsquo;s see the implementation:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">// RelativePointer ////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> T<span style="color:#f92672">*</span> RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span>get() <span style="color:#66d9ef">const</span> {
+    <span style="color:#75715e">// For debugging purposes leave the address variable.
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> address <span style="color:#f92672">=</span> ( ( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> )<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">this</span><span style="color:#f92672">-&gt;</span>offset ) <span style="color:#f92672">+</span> offset;
+    <span style="color:#66d9ef">return</span> offset <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> ( T<span style="color:#f92672">*</span> )address : <span style="color:#66d9ef">nullptr</span>;
+}
+
+<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> T<span style="color:#f92672">*</span> RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span><span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span> {
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">get</span>();
+}
+
+<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> T<span style="color:#f92672">&amp;</span> RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span><span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span> {
+    <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span>( get() );
+}
+</code></pre></div><p>The <strong>genius</strong> idea, coming from <a href="https://steamcdn-a.akamaihd.net/apps/valve/2015/Migdalskiy_Sergiy_Physics_Optimization_Strategies.pdf">the talk</a> I&rsquo;ve written before, comes from using the current memory, the <em>offset</em> member variable, to give a <strong>reference point in memory</strong>, and adding the content of the offset itself to retrieve the memory!</p>
+<p><code>char* address = ( ( char* )&amp;this-&gt;offset ) + offset;</code></p>
+<p>Employing this simple trick, you can now point to any part of the blob in a transparent way.</p>
+<p>Even for a dynamic array implementation, we can add a similar method and reuse its data to use it as <em>memory mappable array</em>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">// Relative data access.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> T<span style="color:#f92672">*</span> Array<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span>get() {
+    <span style="color:#66d9ef">if</span> ( relative ) {
+        <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> address <span style="color:#f92672">=</span> ( ( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> )<span style="color:#f92672">&amp;</span>size ) <span style="color:#f92672">+</span> capacity;
+        <span style="color:#66d9ef">return</span> capacity <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> ( T<span style="color:#f92672">*</span> )address : <span style="color:#66d9ef">nullptr</span>;
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nullptr</span>;
+}
+</code></pre></div><h1 id="writing-serialization-code">Writing Serialization Code</h1>
+<p>In this section we will go through some examples of data structures to explain the read and write code written.</p>
+<p>But first, how do we write our custom serialization code ?</p>
+<h2 id="serializing-user-data-structures">Serializing user data structures</h2>
+<p>Let&rsquo;s see a very simple example, a <strong>vector2 struct</strong>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">// Vec2s //////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">vec2s</span> {
+    f32     x;
+    f32     y;
+};
+
+<span style="color:#75715e">// Serialization
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
+<span style="color:#66d9ef">void</span> MemoryBlob<span style="color:#f92672">::</span>serialize<span style="color:#f92672">&lt;</span>vec2s<span style="color:#f92672">&gt;</span>( vec2s<span style="color:#f92672">*</span> data ) {
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>x );
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>y );
+}
+</code></pre></div><p>In the <strong>MemoryBlob</strong> struct, we have a method that we will use with <em>template specialization</em> to actually specialize the serialization code path.</p>
+<p>Remember, <strong>there is no schema</strong> so we use the <strong>data structure itself</strong> to guide the serialization.</p>
+<p>The method that we use with template specialization is this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">
+<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> MemoryBlob<span style="color:#f92672">::</span>serialize( T<span style="color:#f92672">*</span> data ) {
+    <span style="color:#75715e">// Should not arrive here!
+</span><span style="color:#75715e"></span>    hy_assert( false );
+}
+</code></pre></div><p>Thus we need to implement our own version.</p>
+<h3 id="template-specialization-caveat">Template Specialization Caveat</h3>
+<p>The correct way to use template specialization without template errors, is to define in an <em>header</em> the following method:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
+<span style="color:#66d9ef">void</span> hydra<span style="color:#f92672">::</span>MemoryBlob<span style="color:#f92672">::</span>serialize<span style="color:#f92672">&lt;</span>vec2s<span style="color:#f92672">&gt;</span>( vec2s<span style="color:#f92672">*</span> data );
+</code></pre></div><p>And then in a cpp the specialized version.</p>
+<h3 id="versioning-1">Versioning</h3>
+<p>Let&rsquo;s see the serialization code of a <em>data structure with versioning</em>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">//
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">EntityBlueprint</span> {
+    RelativeString          name;
+    u32                     v1_padding;     <span style="color:#75715e">// Added to test different versions.
+</span><span style="color:#75715e"></span>    RelativePointer<span style="color:#f92672">&lt;</span>RenderingBlueprint<span style="color:#f92672">&gt;</span>  rendering;
+    RelativePointer<span style="color:#f92672">&lt;</span>AnimationBlueprint<span style="color:#f92672">&gt;</span>  animation;
+
+    vec2s                   position;
+    f32                     offset_z;
+
+}; <span style="color:#75715e">// struct EntityBlueprint
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
+<span style="color:#66d9ef">void</span> hydra<span style="color:#f92672">::</span>MemoryBlob<span style="color:#f92672">::</span>serialize<span style="color:#f92672">&lt;</span>EntityBlueprint<span style="color:#f92672">&gt;</span>( EntityBlueprint<span style="color:#f92672">*</span> data ) {
+
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>name );
+
+    <span style="color:#66d9ef">if</span> ( serializer_version <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span> )
+        serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>v1_padding );
+
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>rendering );
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>animation );
+
+    <span style="color:#66d9ef">if</span> ( serializer_version <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span> ) {
+        serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>position );
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// When reading, we should still initialize variables to a &#39;valid&#39; state.
+</span><span style="color:#75715e"></span>        data<span style="color:#f92672">-&gt;</span>position <span style="color:#f92672">=</span> { <span style="color:#ae81ff">0.f</span>, <span style="color:#ae81ff">0.f</span> };
+    }
+
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>offset_z );
+}
+</code></pre></div><p>This is a test data structure I was using to try the serialization system itself.<br>
+It serializes an Entity into a Scene.<br>
+I&rsquo;ve added some padding as test, but then the position as real need for a second version.</p>
+<p>Like the <a href="https://yave.handmade.network/blog/p/2723-how_media_molecule_does_serialization">Little Big Planet serialization system</a>, the data structure will contain all the members of all its <em>history</em>.<br>
+It is the serializer code itself that will jump the members not needed.</p>
+<h2 id="serializing-relative-pointers">Serializing relative pointers</h2>
+<p>Let&rsquo;s see the writing code of the <strong>Relative Pointers</strong>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> MemoryBlob<span style="color:#f92672">::</span>serialize( RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;*</span> data ) {
+  <span style="color:#75715e">//...
+</span><span style="color:#75715e"></span>  {
+      <span style="color:#75715e">// WRITING!
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Data --&gt; Blob
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Calculate offset used by RelativePointer.
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Remember this:
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// char* address = ( ( char* )&amp;this-&gt;offset ) + offset;
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Serialized offset points to what will be the &#34;this-&gt;offset&#34;
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Allocated offset points to the still not allocated memory,
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Where we will allocate from.
+</span><span style="color:#75715e"></span>      i32 data_offset <span style="color:#f92672">=</span> allocated_offset <span style="color:#f92672">-</span> serialized_offset;
+      serialize( <span style="color:#f92672">&amp;</span>data_offset );
+      <span style="color:#75715e">// To jump anywhere and correctly restore the serialization process,
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// cache the current serialization offset
+</span><span style="color:#75715e"></span>      u32 cached_serialized <span style="color:#f92672">=</span> serialized_offset;
+      <span style="color:#75715e">// Move serialization to the newly allocated memory at the end of the blob.
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Serialization is where we WRITE code!
+</span><span style="color:#75715e"></span>      serialized_offset <span style="color:#f92672">=</span> allocated_offset;
+      <span style="color:#75715e">// Allocate memory in the blob
+</span><span style="color:#75715e"></span>      allocate_static<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>();
+      <span style="color:#75715e">// Serialize/visit the pointed data structure
+</span><span style="color:#75715e"></span>      serialize( data<span style="color:#f92672">-&gt;</span>get() );
+      <span style="color:#75715e">// Restore serialized
+</span><span style="color:#75715e"></span>      serialized_offset <span style="color:#f92672">=</span> cached_serialized;
+  }
+}
+</code></pre></div><p>Code is heavily commented to help understanding what is happening.<br>
+The reading code is as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">  <span style="color:#75715e">// READING!
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// Blob --&gt; Data
+</span><span style="color:#75715e"></span>  i32 source_data_offset;
+  serialize( <span style="color:#f92672">&amp;</span>source_data_offset );
+
+  <span style="color:#75715e">// Early out to not follow null pointers.
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> ( source_data_offset <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> ) {
+      data<span style="color:#f92672">-&gt;</span>offset <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+      <span style="color:#66d9ef">return</span>;
+  }
+
+  <span style="color:#75715e">// This is the important bit.
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// Use the offset to the passed member variable to calculate the DESTINATION offset
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// to write to.
+</span><span style="color:#75715e"></span>  data<span style="color:#f92672">-&gt;</span>offset <span style="color:#f92672">=</span> get_relative_data_offset( data );
+
+  <span style="color:#75715e">// Allocate memory and set pointer
+</span><span style="color:#75715e"></span>  allocate_static<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>();
+
+  <span style="color:#75715e">// Cache source serialized offset.
+</span><span style="color:#75715e"></span>  u32 cached_serialized <span style="color:#f92672">=</span> serialized_offset;
+  <span style="color:#75715e">// Move serialization offset.
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// The offset is still &#34;this-&gt;offset&#34;, and the serialized offset
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// points just right AFTER it, thus move back by sizeof(offset).
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// Serialization is where READ from in the blob!
+</span><span style="color:#75715e"></span>  serialized_offset <span style="color:#f92672">=</span> cached_serialized <span style="color:#f92672">+</span> source_data_offset <span style="color:#f92672">-</span> <span style="color:#66d9ef">sizeof</span>(u32);
+  <span style="color:#75715e">// Serialize/visit the pointed data structure, using the offset calculated above.
+</span><span style="color:#75715e"></span>  serialize( data<span style="color:#f92672">-&gt;</span>get() );
+  <span style="color:#75715e">// Restore serialization offset
+</span><span style="color:#75715e"></span>  serialized_offset <span style="color:#f92672">=</span> cached_serialized;
+
+</code></pre></div><p>There is a method here that is very important: <em>get_relative_data_offset</em>.<br>
+This highlights how we can use the struct itself to guide the serialization:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">
+i32 MemoryBlob<span style="color:#f92672">::</span>get_relative_data_offset( <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> data ) {
+    <span style="color:#75715e">// data_memory points to the newly allocated data structure to be used at runtime.
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> i32 data_offset_from_start <span style="color:#f92672">=</span> ( i32 )( ( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> )data <span style="color:#f92672">-</span> data_memory );
+    <span style="color:#66d9ef">const</span> i32 data_offset <span style="color:#f92672">=</span> allocated_offset <span style="color:#f92672">-</span> data_offset_from_start;
+    <span style="color:#66d9ef">return</span> data_offset;
+}
+</code></pre></div><p>When we read, we are writing into some data structure, that can <strong>differ from the binarized data</strong>.<br>
+Let&rsquo;s say the binary has some missing fields (an older version), we need to calculate the <strong>writing offset</strong> based on our code.</p>
+<p>So first we get the offset of the passed variable from the start of the memory, then we calculate the offset to the data memory that will be allocated shortly after.</p>
+<p>With this code, we actually showed the algorithm that, with little modifications, can be adapted to any data structure.</p>
+<p><strong>NOTE</strong>: something that really confused me at the beginning was the usage of <em>data</em>, <em>serialization offset</em> and <em>allocation offset</em>.<br>
+The fact is that they change meaning when we are reading and when we are writing, so we need to mentally picture it to really understand how they are used.<br>
+I tried to add comments to help remembering this.</p>
+<h2 id="serializing-relative-arrays-and-dynamic-arrays">Serializing relative arrays and dynamic arrays</h2>
+<p>Relative Arrays are very similar to Relative Pointers, but they just store more data and contain a <strong>size</strong> member.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">  ...
+
+  allocate_static( data<span style="color:#f92672">-&gt;</span>size <span style="color:#f92672">*</span> <span style="color:#66d9ef">sizeof</span>( T ) );
+
+  <span style="color:#66d9ef">for</span> ( u32 i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> data<span style="color:#f92672">-&gt;</span>size; <span style="color:#f92672">++</span>i ) {
+      T<span style="color:#f92672">*</span> data <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>get()[ i ];
+      serialize( data );
+  }
+
+</code></pre></div><p>The only real difference is that we iterate through all the members by calling their <em>serialize</em> method.</p>
+<h1 id="special-writing-blob-from-a-json-file">Special: writing blob from a json file</h1>
+<p>Something we might need to do, especially in a <em>build step</em>, is to convert from a non-binary format to our blob.<br>
+This is something done a lot in games, so that the final binary format is as fast to use as possible, compared to always parsing a json (or other formats) and doing some work on the loaded data.</p>
+<p>I&rsquo;ve added an example of writing a json file containing <strong>commands for a cutscene system</strong>, and they use a different way of writing the blob.</p>
+<p>So far we&rsquo;ve only seen the passing of an already binary version of data, to be compacted in a blob.<br>
+In this case we are performing a real conversion.</p>
+<p>Let&rsquo;s start with the json (available under data\articles\SerializationDemo\cutscene.json) describing the cutscene:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;new_game&#34;</span>,
+  <span style="color:#f92672">&#34;scene&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+  <span style="color:#f92672">&#34;commands&#34;</span> : [
+    {
+      <span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;fade&#34;</span>,
+      <span style="color:#f92672">&#34;start&#34;</span> : <span style="color:#ae81ff">0.0</span>,
+      <span style="color:#f92672">&#34;end&#34;</span> : <span style="color:#ae81ff">1.0</span>,
+      <span style="color:#f92672">&#34;duration&#34;</span> : <span style="color:#ae81ff">0.0</span>
+    },
+    {
+      <span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;move_entity&#34;</span>,
+      <span style="color:#f92672">&#34;x&#34;</span> : <span style="color:#ae81ff">-16</span>,
+      <span style="color:#f92672">&#34;y&#34;</span> : <span style="color:#ae81ff">-8</span>,
+      <span style="color:#f92672">&#34;instant&#34;</span> : <span style="color:#66d9ef">true</span>,
+      <span style="color:#f92672">&#34;entity_name&#34;</span> : <span style="color:#e6db74">&#34;cronos_mum&#34;</span>
+    },
+    {
+      <span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;dialogue&#34;</span>,
+      <span style="color:#f92672">&#34;text&#34;</span> : <span style="color:#e6db74">&#34;{SPEED=0.025}Crono...{PAGE}Crono!{PAGE}Crono, are you still sleeping?{PAGE} &#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>We have different commands that needs to be parsed and converted in a binary format.<br>
+As you probably spotted, I was using this serialization system with Chrono Trigger in mind as something to clone, and even if I did not cloned the whole game, I could test a cutscene and some gameplay informations to be used.<br>
+Anyway, let&rsquo;s see the <strong>conversion code</strong>.<br>
+First, the main data structures:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">//
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CutsceneEntry</span> {
+    CutsceneCommandType         type;
+
+    RelativeArray<span style="color:#f92672">&lt;</span>u8<span style="color:#f92672">&gt;</span>           data;
+
+}; <span style="color:#75715e">// struct CutsceneEntry
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CutsceneBlueprint</span> {
+
+    RelativeArray<span style="color:#f92672">&lt;</span>CutsceneEntry<span style="color:#f92672">&gt;</span> entries;
+
+    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">constexpr</span> u32        k_version <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+}; <span style="color:#75715e">// struct CutsceneBlueprint
+</span></code></pre></div><p>I should change the names maybe, but the <em>root data structure</em> is the <em>CutsceneBlueprint</em>. It contians just an array of <em>entries</em>, each one with some data associated and a type.</p>
+<p>First, we create the blob and allocate a fixed size (yes, it should be dynamic, I know!):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">MemoryBlob blob;
+blob.write<span style="color:#f92672">&lt;</span>CutsceneBlueprint<span style="color:#f92672">&gt;</span>( allocator, <span style="color:#ae81ff">0</span>, blob_size, <span style="color:#66d9ef">nullptr</span> );
+</code></pre></div><p>Passing a &lsquo;nullptr&rsquo; as last argument means we don&rsquo;t have any <em>root data structure</em> ready to be serialized.<br>
+We instead proceed manually to build the blob.<br>
+In this case we heavily use <strong>allocate</strong> and <strong>allocate and set</strong> methods.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#75715e">// Reserve memory for root data structure
+</span><span style="color:#75715e"></span>CutsceneBlueprint<span style="color:#f92672">*</span> root <span style="color:#f92672">=</span> blob.allocate_static<span style="color:#f92672">&lt;</span>CutsceneBlueprint<span style="color:#f92672">&gt;</span>();
+<span style="color:#75715e">// Allocate array data and set its offset:
+</span><span style="color:#75715e"></span>blob.allocate_and_set( root<span style="color:#f92672">-&gt;</span>entries, num_entries );
+</code></pre></div><p>With this code we can already write into the single entries, like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
+<span style="color:#75715e">// Declare an empty std::string to convert json strings
+</span><span style="color:#75715e"></span>std<span style="color:#f92672">::</span>string name_string;
+<span style="color:#75715e">// Read the json entries
+</span><span style="color:#75715e"></span>json entries <span style="color:#f92672">=</span> parsed_json[ <span style="color:#e6db74">&#34;commands&#34;</span> ];
+
+<span style="color:#66d9ef">for</span> ( u32 i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> entries.size; <span style="color:#f92672">++</span>i ) {
+    json element <span style="color:#f92672">=</span> entries[ i ];
+    <span style="color:#75715e">// Convert field &#39;type&#39; to std::string
+</span><span style="color:#75715e"></span>    element[ <span style="color:#e6db74">&#34;type&#34;</span> ].get_to( name_string );
+    <span style="color:#75715e">// Access the allocated array to write into its entries.
+</span><span style="color:#75715e"></span>    CutsceneEntry<span style="color:#f92672">&amp;</span> entry <span style="color:#f92672">=</span> root<span style="color:#f92672">-&gt;</span>entries[ i ];
+    <span style="color:#75715e">// Yes yes, this can be improved!
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ( name_string.compare( <span style="color:#e6db74">&#34;dialogue&#34;</span> ) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> ) {
+        element[ <span style="color:#e6db74">&#34;text&#34;</span> ].get_to( name_string );
+
+        <span style="color:#75715e">// Allocate memory for the string + null terminator!
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> memory <span style="color:#f92672">=</span> blob.allocate_static( name_string.size() <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> );
+        memcpy( memory, name_string.c_str(), name_string.size() );
+        memory[ name_string.size() ] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+        entry.type <span style="color:#f92672">=</span> CutsceneCommandType<span style="color:#f92672">::</span>Dialogue;
+        <span style="color:#75715e">// Calculate the offset for the data RelativeArray of the CutsceneEntry
+</span><span style="color:#75715e"></span>        entry.data.set( memory, ( u32 )name_string.size() );
+    }
+    ...
+}
+</code></pre></div><p>With this simple code we can see a common pattern when writing into the blob from a non binary input.<br>
+We allocate the root data structure, and we use it to fill the blob.<br>
+Every time we need to allocate memory, we do it and then use the newly allocated memory.</p>
+<p>I will leave more examples in the source code, also with pointers and arrays of arrays, but the mindset is this one!</p>
+<p>For reading this, if we did everything correctly and the data version is the latest, we can simply <strong>memory map</strong> it and use it.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>We saw in depth a <em>serialization system</em> that supports <em>memory mappability</em>.<br>
+We explored the different basic bricks that makes this possible, and presented a couple of examples (and included more in the code) to see different usages.<br>
+While not perfect, I believe this could be a great starting point to serializing anything needed into your code.</p>
+<p>Adding a custom serialized type is a matter of adding a method, both for reading and writing.<br>
+I decided to use templates instead of the <em>Little Big Planet</em> C-style way just to have something more modern, but a C version could be used that is very similar.</p>
+<p>Binary compatibility is not 100% safe, I am sure there are edge cases that breaks (like padding between member variables!), but I feel that this is a good start.</p>
+<p>There are still some things that needs to be solved, like the support for dynamically sized blobs (as reallocating during the serialization invalidates the memory you are using, needing a more careful approach), and the API it&rsquo;s still not very mature - code ergonomy is not high.<br>
+Personally I already converted <strong>hydra fx</strong> to use this system and it works like a charm, and I am planning to use it more and more to refine the system better.</p>
+<p>As always, please send any feedback to my <a href="https://twitter.com/GabrielSassone">twitter</a>.</p>
+<p>Hope you enjoyed!</p>
+
+    </div>
+
+    
+
+
+    
+
+
+
+    
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+  
+  
+    
+  
+  
+  <div class="media author-card" itemscope itemtype="http://schema.org/Person">
+    
+      
+      <img class="portrait mr-3" src="/authors/admin/avatar_hu4ba9915415047fa4e8e4f547c8f3933e_319586_250x250_fill_q90_lanczos_center.jpg" itemprop="image" alt="Avatar">
+    
+
+    <div class="media-body">
+      <h5 class="card-title" itemprop="name"><a href="https://jorenjoestar.github.io/">Gabriel Sassone</a></h5>
+      <h6 class="card-subtitle">Principal Rendering/Engine Programmer</h6>
+      
+      <ul class="network-icon" aria-hidden="true">
+        
+          
+          
+          
+            
+          
+          
+          
+          
+          
+            
+          
+          <li>
+            <a itemprop="sameAs" href="https://twitter.com/GabrielSassone" target="_blank" rel="noopener">
+              <i class="fab fa-twitter"></i>
+            </a>
+          </li>
+        
+          
+          
+          
+            
+          
+          
+          
+          
+          
+            
+          
+          <li>
+            <a itemprop="sameAs" href="https://github.com/JorenJoestar" target="_blank" rel="noopener">
+              <i class="fab fa-github"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+
+
+      
+      
+    
+
+    
+
+    
+
+
+  </div>
+</article>
+
+      
+
+    
+    
+    
+    <script src="/js/mathjax-config.js"></script>
+    
+
+    
+    
+    
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js" integrity="sha256-lqvxZrPLtfffUl2G/e7szqSvPBILGbwmsGE1MKlOi0Q=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js" integrity="sha256-CBrpuqrMhXwcLLUd5tvQ4euBHCdh7wGlDfNz8vbu/iI=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" integrity="sha256-X5PoE3KU5l+JcX+w09p/wHl9AzK333C4hJ2I9S5mD4M=" crossorigin="anonymous"></script>
+
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js" integrity="sha256-0w92bcB21IY5+rGI84MGj52jNfHNbXVeQLrZ0CGdjNY=" crossorigin="anonymous" title="mermaid"></script>
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js" integrity="sha256-aYTdUrn6Ow1DDgh5JTc3aDGnnju48y/1c8s1dgkYPQ8=" crossorigin="anonymous"></script>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/languages/cpp.min.js"></script>
+        
+      
+
+      
+      
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS_CHTML-full" integrity="sha256-GhM+5JHb6QUzOQPXSJLEWP7R73CbkisjzK5Eyij4U9w=" crossorigin="anonymous" async></script>
+      
+    
+
+    
+    
+
+    
+    
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+
+    
+    
+    <script>
+      const search_index_filename = "/index.json";
+      const i18n = {
+        'placeholder': "Search...",
+        'results': "results found",
+        'no_results': "No results found"
+      };
+      const content_type = {
+        'post': "Posts",
+        'project': "Projects",
+        'publication' : "Publications",
+        'talk' : "Talks"
+        };
+    </script>
+    
+
+    
+    
+
+    
+    
+    <script id="search-hit-fuse-template" type="text/x-template">
+      <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <a href="{{relpermalink}}">{{title}}</a>
+          <div class="article-metadata search-hit-type">{{type}}</div>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+      </div>
+    </script>
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha256-VzgmKYmhsGNNN4Ph1kMW+BjoYJM2jV5i4IlFoeZA9XI=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha256-4HLtjeVgH0eIB3aZ9mLYF6E8oU5chNdjU6p6rrXpl9U=" crossorigin="anonymous"></script>
+    
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+    
+    
+    
+    
+    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+
+    
+
+
+
+
+
+
+  
+  <div class="container">
+    <footer class="site-footer">
+  
+
+  <p class="powered-by">
+    
+
+    Powered by the
+    <a href="https://sourcethemes.com/academic/" target="_blank" rel="noopener">Academic theme</a> for
+    <a href="https://gohugo.io" target="_blank" rel="noopener">Hugo</a>.
+
+    
+    <span class="float-right" aria-hidden="true">
+      <a href="#" id="back_to_top">
+        <span class="button_icon">
+          <i class="fas fa-chevron-up fa-2x"></i>
+        </span>
+      </a>
+    </span>
+    
+  </p>
+</footer>
+
+  </div>
+  
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cite</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> Copy
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> Download
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

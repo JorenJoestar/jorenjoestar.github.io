@@ -116,7 +116,7 @@
   <meta property="og:description" content="Principal Rendering/Engine Programmer"><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
-  <meta property="og:updated_time" content="2021-04-12T19:56:56&#43;02:00">
+  <meta property="og:updated_time" content="2021-08-09T10:05:38&#43;02:00">
   
 
   
@@ -363,6 +363,92 @@
   
 
   
+  
+    
+      
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+<div class="card-simple" itemscope itemtype="http://schema.org/BlogPosting">
+
+  
+    
+
+
+
+<meta content="2021-08-09 10:05:38 &#43;0200 CEST" itemprop="datePublished">
+<meta content="2021-08-09 10:05:38 &#43;0200 CEST" itemprop="dateModified">
+
+<div class="article-metadata">
+
+  
+  
+
+  
+  <span class="article-date">
+    
+    
+      
+    
+    <time>2021-08-09</time>
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+    17 min read
+  </span>
+  
+
+  
+  
+  
+
+  
+  
+
+  
+
+</div>
+
+  
+
+  
+  
+  
+
+  <h3 class="article-title mb-1 mt-3" itemprop="name">
+    <a href="/post/serialization_for_games/" itemprop="url">Serialization For Games</a>
+  </h3>
+
+  
+  <div class="article-style" itemprop="articleBody">
+    Overview We will go through all the logical steps (and the code!) to write a binary serializer that supports versioning and memory mappability. It is not an automatic process, and it will not contain any data definition schema.
+As use cases, we have:
+ Creation and reading of game resources/assets Game world states (&ldquo;savegames&rdquo;) Networking transmission/reception  Not having the schema is a problem, and we will try to go around it in the best way possible.
+  </div>
+  
+
+  
+
+</div>
+
+    
   
     
       
@@ -1132,93 +1218,6 @@ We will start by motivation, then will define the language itself (very simple),
     UI using ImGUI, SDL and the code generated with this article.   Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.The code is here:
 https://github.com/JorenJoestar/DataDrivenRendering
 There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written.
-  </div>
-  
-
-  
-
-</div>
-
-    
-  
-    
-      
-
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-
-<div class="card-simple" itemscope itemtype="http://schema.org/BlogPosting">
-
-  
-    
-
-
-
-<meta content="2019-07-27 18:45:35 -0400 -0400" itemprop="datePublished">
-<meta content="2019-07-27 18:45:35 -0400 -0400" itemprop="dateModified">
-
-<div class="article-metadata">
-
-  
-  
-
-  
-  <span class="article-date">
-    
-    
-      
-    
-    <time>2019-07-27</time>
-  </span>
-  
-
-  
-
-  
-  <span class="middot-divider"></span>
-  <span class="article-reading-time">
-    10 min read
-  </span>
-  
-
-  
-  
-  
-
-  
-  
-
-  
-
-</div>
-
-  
-
-  
-  
-  
-
-  <h3 class="article-title mb-1 mt-3" itemprop="name">
-    <a href="/post/emulation_where_to_start/" itemprop="url">Emulation: where to start? A use case.</a>
-  </h3>
-
-  
-  <div class="article-style" itemprop="articleBody">
-    Some of the UI for the Hydra NES emulator, using ImGUI.   Writing an emulator is an incredibly fun learning experience.
-It is an exquisite exercise in reverse-engineering from both documentation and code.
-In this post I want to share some tips on how and where to start based on my experience on the NES emulator I am writing.
-Information The gathering of information is the most important (and hard!
   </div>
   
 
