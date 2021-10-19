@@ -385,7 +385,7 @@ As use cases, we have:
   
   <span class="middot-divider"></span>
   <span class="article-reading-time">
-    17 min read
+    18 min read
   </span>
   
 
@@ -514,6 +514,8 @@ It is not an automatic process, and it will not contain any data definition sche
 <li>Versioning: data with version to skip parts of the serialization</li>
 <li>Memory mappability: ability to load a blob and use it without any processing</li>
 </ul>
+<p>Code can be found at my <a href="https://github.com/JorenJoestar/DataDrivenRendering">github.com/datadrivenrendering repo</a>.<br>
+<a href="https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/Serialization">Source</a> and <a href="https://github.com/JorenJoestar/DataDrivenRendering/tree/master/data/articles/SerializationDemo">Data</a>.</p>
 <h1 id="the-problem">The Problem</h1>
 <p>What is serialization ? Using a simple definition from Wikipedia:</p>
 <blockquote>
@@ -1041,6 +1043,8 @@ I decided to use templates instead of the <em>Little Big Planet</em> C-style way
 <p>Binary compatibility is not 100% safe, I am sure there are edge cases that breaks (like padding between member variables!), but I feel that this is a good start.</p>
 <p>There are still some things that needs to be solved, like the support for dynamically sized blobs (as reallocating during the serialization invalidates the memory you are using, needing a more careful approach), and the API it&rsquo;s still not very mature - code ergonomy is not high.<br>
 Personally I already converted <strong>hydra fx</strong> to use this system and it works like a charm, and I am planning to use it more and more to refine the system better.</p>
+<p>Code can be found at my <a href="https://github.com/JorenJoestar/DataDrivenRendering">github.com/datadrivenrendering repo</a>.<br>
+<a href="https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/Serialization">Source</a> and <a href="https://github.com/JorenJoestar/DataDrivenRendering/tree/master/data/articles/SerializationDemo">Data</a>.</p>
 <p>As always, please send any feedback to my <a href="https://twitter.com/GabrielSassone">twitter</a>.</p>
 <p>Hope you enjoyed!</p>
 
@@ -1078,7 +1082,7 @@ Personally I already converted <strong>hydra fx</strong> to use this system and 
   <div class="media author-card" itemscope itemtype="http://schema.org/Person">
     
       
-      <img class="portrait mr-3" src="/authors/admin/avatar_hu4ba9915415047fa4e8e4f547c8f3933e_319586_250x250_fill_q90_lanczos_center.jpg" itemprop="image" alt="Avatar">
+      <img class="portrait mr-3" src="/authors/admin/avatar_huc171ec33df696f149ec47f21843fdccd_190041_250x250_fill_q90_lanczos_center.jpg" itemprop="image" alt="Avatar">
     
 
     <div class="media-body">

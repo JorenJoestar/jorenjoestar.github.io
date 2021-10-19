@@ -34,6 +34,8 @@ It is not an automatic process, and it will not contain any data definition sche
 &lt;li&gt;Versioning: data with version to skip parts of the serialization&lt;/li&gt;
 &lt;li&gt;Memory mappability: ability to load a blob and use it without any processing&lt;/li&gt;
 &lt;/ul&gt;
+&lt;p&gt;Code can be found at my &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering&#34;&gt;github.com/datadrivenrendering repo&lt;/a&gt;.&lt;br&gt;
+&lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/Serialization&#34;&gt;Source&lt;/a&gt; and &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/data/articles/SerializationDemo&#34;&gt;Data&lt;/a&gt;.&lt;/p&gt;
 &lt;h1 id=&#34;the-problem&#34;&gt;The Problem&lt;/h1&gt;
 &lt;p&gt;What is serialization ? Using a simple definition from Wikipedia:&lt;/p&gt;
 &lt;blockquote&gt;
@@ -561,6 +563,8 @@ I decided to use templates instead of the &lt;em&gt;Little Big Planet&lt;/em&gt;
 &lt;p&gt;Binary compatibility is not 100% safe, I am sure there are edge cases that breaks (like padding between member variables!), but I feel that this is a good start.&lt;/p&gt;
 &lt;p&gt;There are still some things that needs to be solved, like the support for dynamically sized blobs (as reallocating during the serialization invalidates the memory you are using, needing a more careful approach), and the API it&amp;rsquo;s still not very mature - code ergonomy is not high.&lt;br&gt;
 Personally I already converted &lt;strong&gt;hydra fx&lt;/strong&gt; to use this system and it works like a charm, and I am planning to use it more and more to refine the system better.&lt;/p&gt;
+&lt;p&gt;Code can be found at my &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering&#34;&gt;github.com/datadrivenrendering repo&lt;/a&gt;.&lt;br&gt;
+&lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/Serialization&#34;&gt;Source&lt;/a&gt; and &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/data/articles/SerializationDemo&#34;&gt;Data&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;As always, please send any feedback to my &lt;a href=&#34;https://twitter.com/GabrielSassone&#34;&gt;twitter&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Hope you enjoyed!&lt;/p&gt;
 </description>
