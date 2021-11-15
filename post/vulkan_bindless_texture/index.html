@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="generator" content="Source Themes Academic 4.4.0">
+
+  
+
+  
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="Gabriel Sassone">
+
+  
+  
+  
+    
+  
+  <meta name="description" content="Overview Here is a very short article on how to use Vulkan bindless features.
+All the relevant c&#43;&#43; code is into gpu_device_vulkan.cpp and command_buffer.cpp, and you can follow along HYDRA_BINDLESS defines to see what changes.
+THIS IS THE FASTEST ROUTE TO START USING BINDLESS TEXTURES THAT I KNOW OF.
+This means also that is architecturally not optimal but it will serve its purposes!
+There is a great article about the different features used here at arm, check it out first!">
+
+  
+  <link rel="alternate" hreflang="en-us" href="https://jorenjoestar.github.io/post/vulkan_bindless_texture/">
+
+  
+
+
+  
+
+  
+  
+  
+  <meta name="theme-color" content="hsl(339, 90%, 68%)">
+  
+
+  
+  
+  
+  
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.6/css/academicons.min.css" integrity="sha256-uFVgMKfistnJAfoCUQigIl+JfUaP47GrRKjf6CTPVmw=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.0/css/all.css" integrity="sha384-aOkxzJ5uQz7WBObEZcHvV5JvRW3TUc2rNPA7pe3AwnsUohiw1Vj2Rgx2KSOkF5+h" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" integrity="sha256-ygkqlh3CYSUri3LhQxzdcm0n1EQvH2Y+U5S2idbLtxs=" crossorigin="anonymous">
+
+    
+    
+    
+      
+    
+    
+      
+      
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/ocean.min.css" crossorigin="anonymous" title="hl-light">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/ocean.min.css" crossorigin="anonymous" title="hl-dark" disabled>
+      
+    
+
+    
+
+    
+
+  
+
+  
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inconsolata&display=swap">
+  
+
+  
+  
+  
+  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+
+  
+
+  
+  
+  
+
+  
+
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="icon" type="image/png" href="/img/icon.png">
+  <link rel="apple-touch-icon" type="image/png" href="/img/icon-192.png">
+
+  <link rel="canonical" href="https://jorenjoestar.github.io/post/vulkan_bindless_texture/">
+
+  
+  
+  
+  
+    
+    
+  
+  <meta property="twitter:card" content="summary">
+  
+  <meta property="twitter:site" content="@GabrielSassone">
+  <meta property="twitter:creator" content="@GabrielSassone">
+  
+  <meta property="og:site_name" content="Joren&#39;s">
+  <meta property="og:url" content="https://jorenjoestar.github.io/post/vulkan_bindless_texture/">
+  <meta property="og:title" content="Vulkan Pills 1: Bindless Textures | Joren&#39;s">
+  <meta property="og:description" content="Overview Here is a very short article on how to use Vulkan bindless features.
+All the relevant c&#43;&#43; code is into gpu_device_vulkan.cpp and command_buffer.cpp, and you can follow along HYDRA_BINDLESS defines to see what changes.
+THIS IS THE FASTEST ROUTE TO START USING BINDLESS TEXTURES THAT I KNOW OF.
+This means also that is architecturally not optimal but it will serve its purposes!
+There is a great article about the different features used here at arm, check it out first!"><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
+  <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
+  
+  <meta property="article:published_time" content="2021-11-01T18:44:17&#43;01:00">
+  
+  <meta property="article:modified_time" content="2021-11-01T18:44:17&#43;01:00">
+  
+
+  
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.0.3/cookieconsent.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.0.3/cookieconsent.min.js"></script>
+<script>
+  window.addEventListener("load", function(){
+    window.cookieconsent.initialise({
+      "palette": {
+        "popup": {
+          "background": "hsl(339, 90%, 68%)",
+          "text": "#fff"
+        },
+        "button": {
+          "background": "#fff",
+          "text": "hsl(339, 90%, 68%)"
+        }
+      },
+      "theme": "classic",
+      "content": {
+        "message": "This website uses cookies to ensure you get the best experience on our website.",
+        "dismiss": "Got it!",
+        "link": "Learn more",
+        "href": "https://cookies.insites.com"
+      }
+    })});
+</script>
+
+
+
+  
+
+
+
+
+
+  <title>Vulkan Pills 1: Bindless Textures | Joren&#39;s</title>
+
+</head>
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class="dark">
+
+  <aside class="search-results" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>Search</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="Search..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search">
+        
+      </div>
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+  
+<nav class="navbar navbar-light fixed-top navbar-expand-lg py-0 compensate-for-scrollbar" id="navbar-main">
+  <div class="container">
+
+    
+      <a class="navbar-brand" href="/">Joren&#39;s</a>
+      
+      <button type="button" class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span><i class="fas fa-bars"></i></span>
+      </button>
+      
+
+    
+    <div class="collapse navbar-collapse" id="navbar">
+
+      
+      
+      <ul class="navbar-nav mr-auto">
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#about"><span>Home</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#posts"><span>Posts</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#contact"><span>Contact</span></a>
+        </li>
+
+        
+        
+
+      
+      </ul>
+      <ul class="navbar-nav ml-auto">
+      
+
+        
+
+        
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        
+
+        
+
+        
+        <li class="nav-item">
+          <a class="nav-link js-dark-toggle" href="#"><i class="fas fa-moon" aria-hidden="true"></i></a>
+        </li>
+        
+
+      </ul>
+
+    </div>
+  </div>
+</nav>
+
+
+  <article class="article" itemscope itemtype="http://schema.org/Article">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1 itemprop="name">Vulkan Pills 1: Bindless Textures</h1>
+
+  
+
+  
+    
+
+
+
+<meta content="2021-11-01 18:44:17 &#43;0100 CET" itemprop="datePublished">
+<meta content="2021-11-01 18:44:17 &#43;0100 CET" itemprop="dateModified">
+
+<div class="article-metadata">
+
+  
+  
+
+  
+  <span class="article-date">
+    
+    
+      
+    
+    <time>2021-11-01</time>
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+    6 min read
+  </span>
+  
+
+  
+  
+  
+
+  
+  
+
+  
+    
+<div class="share-box" aria-hidden="true">
+  <ul class="share">
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://twitter.com/intent/tweet?url=https://jorenjoestar.github.io/post/vulkan_bindless_texture/&amp;text=Vulkan%20Pills%201:%20Bindless%20Textures" target="_blank" rel="noopener" class="share-btn-twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.facebook.com/sharer.php?u=https://jorenjoestar.github.io/post/vulkan_bindless_texture/&amp;t=Vulkan%20Pills%201:%20Bindless%20Textures" target="_blank" rel="noopener" class="share-btn-facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="mailto:?subject=Vulkan%20Pills%201:%20Bindless%20Textures&amp;body=https://jorenjoestar.github.io/post/vulkan_bindless_texture/" target="_blank" rel="noopener" class="share-btn-email">
+          <i class="fas fa-envelope"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.linkedin.com/shareArticle?url=https://jorenjoestar.github.io/post/vulkan_bindless_texture/&amp;title=Vulkan%20Pills%201:%20Bindless%20Textures" target="_blank" rel="noopener" class="share-btn-linkedin">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://reddit.com/submit?url=https://jorenjoestar.github.io/post/vulkan_bindless_texture/&amp;title=Vulkan%20Pills%201:%20Bindless%20Textures" target="_blank" rel="noopener" class="share-btn-reddit">
+          <i class="fab fa-reddit-alien"></i>
+        </a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+
+</div>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+</div>
+
+
+
+  <div class="article-container">
+
+    <div class="article-style" itemprop="articleBody">
+      <h1 id="overview">Overview</h1>
+<p>Here is a very short article on how to use Vulkan bindless features.</p>
+<p>All the relevant <em>c++</em> code is into <a href="https://github.com/JorenJoestar/DataDrivenRendering/blob/master/source/hydra_next/source/graphics/gpu_device_vulkan.cpp">gpu_device_vulkan.cpp</a> and <a href="https://github.com/JorenJoestar/DataDrivenRendering/blob/master/source/hydra_next/source/graphics/command_buffer.cpp">command_buffer.cpp</a>, and you can follow along <strong>HYDRA_BINDLESS</strong> defines to see what changes.</p>
+<p><strong>THIS IS THE FASTEST ROUTE TO START USING BINDLESS TEXTURES THAT I KNOW OF</strong>.<br>
+This means also that is architecturally not optimal but it will serve its purposes!</p>
+<p>There is a great article about the different features used here at <a href="https://community.arm.com/arm-community-blogs/b/graphics-gaming-and-vr-blog/posts/vulkan-descriptor-indexing">arm</a>, check it out first!</p>
+<h1 id="1-querying-for-gpu-support">1. Querying for GPU support</h1>
+<p>In a pure Vulkan way, we want to query for the support of a couple of features, like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT, <span style="color:#66d9ef">nullptr</span> };
+VkPhysicalDeviceFeatures2 device_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, <span style="color:#f92672">&amp;</span>indexing_features };
+
+vkGetPhysicalDeviceFeatures2( vulkan_physical_device, <span style="color:#f92672">&amp;</span>device_features );
+
+<span style="color:#66d9ef">bool</span> bindless_supported <span style="color:#f92672">=</span> indexing_features.descriptorBindingPartiallyBound <span style="color:#f92672">&amp;&amp;</span> indexing_features.runtimeDescriptorArray;
+</code></pre></div><h1 id="2-enabling-gpu-features">2. Enabling GPU features</h1>
+<p>I will put a little more context here.<br>
+With this code we enable all possible supported features, thus when we create the device we already have pNext used.<br>
+Being a linked list, to add more features to a device we need to add another link to our indexing features created above:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
+    <span style="color:#75715e">// Enable all features: just pass the physical features 2 struct.
+</span><span style="color:#75715e"></span>    VkPhysicalDeviceFeatures2 physical_features2 <span style="color:#f92672">=</span> { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+    vkGetPhysicalDeviceFeatures2( vulkan_physical_device, <span style="color:#f92672">&amp;</span>physical_features2 );
+
+    VkDeviceCreateInfo device_create_info <span style="color:#f92672">=</span> {};
+    device_create_info.sType <span style="color:#f92672">=</span> VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.queueCreateInfoCount <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>( queue_info ) <span style="color:#f92672">/</span> <span style="color:#66d9ef">sizeof</span>( queue_info[ <span style="color:#ae81ff">0</span> ] );
+    device_create_info.pQueueCreateInfos <span style="color:#f92672">=</span> queue_info;
+    device_create_info.enabledExtensionCount <span style="color:#f92672">=</span> device_extension_count;
+    device_create_info.ppEnabledExtensionNames <span style="color:#f92672">=</span> device_extensions;
+    device_create_info.pNext <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>physical_features2;
+
+<span style="color:#75715e">#if defined(HYDRA_BINDLESS)
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ( bindless_supported ) {
+        <span style="color:#75715e">// This should be already set to VK_TRUE, as we queried before.
+</span><span style="color:#75715e"></span>        indexing_features.descriptorBindingPartiallyBound <span style="color:#f92672">=</span> VK_TRUE;
+        indexing_features.runtimeDescriptorArray <span style="color:#f92672">=</span> VK_TRUE;
+
+        physical_features2.pNext <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>indexing_features;
+    }
+<span style="color:#75715e">#endif </span><span style="color:#75715e">// HYDRA_BINDLESS
+</span><span style="color:#75715e"></span>
+    result <span style="color:#f92672">=</span> vkCreateDevice( vulkan_physical_device, <span style="color:#f92672">&amp;</span>device_create_info, vulkan_allocation_callbacks, <span style="color:#f92672">&amp;</span>vulkan_device );
+    check( result );
+</code></pre></div><h1 id="3-descriptor-pool-creation">3. Descriptor Pool Creation</h1>
+<p>When creating the Descriptor Pool, we need to add the <em>flag VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT</em>.<br>
+This is needed so we can update textures in the bindless array without any problem or validation error.<br>
+Still we need to be sure to not change a used resource in command buffers that are running!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">  <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">const</span> u32 k_max_bindless_resources <span style="color:#f92672">=</span> <span style="color:#ae81ff">16536</span>;
+  <span style="color:#75715e">// Create bindless descriptor pool
+</span><span style="color:#75715e"></span>  VkDescriptorPoolSize pool_sizes_bindless[] <span style="color:#f92672">=</span>
+  {
+      { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, k_max_bindless_resources }
+  };
+  
+  <span style="color:#75715e">// Update after bind is needed here, for each binding and in the descriptor set layout creation.
+</span><span style="color:#75715e"></span>  pool_info.flags <span style="color:#f92672">=</span> VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+  pool_info.maxSets <span style="color:#f92672">=</span> k_max_bindless_resources <span style="color:#f92672">*</span> ArraySize( pool_sizes_bindless );
+  pool_info.poolSizeCount <span style="color:#f92672">=</span> ( u32 )ArraySize( pool_sizes_bindless );
+  pool_info.pPoolSizes <span style="color:#f92672">=</span> pool_sizes_bindless;
+  result <span style="color:#f92672">=</span> vkCreateDescriptorPool( vulkan_device, <span style="color:#f92672">&amp;</span>pool_info, vulkan_allocation_callbacks, <span style="color:#f92672">&amp;</span>vulkan_descriptor_pool_bindless );
+</code></pre></div><h1 id="4-global-descriptorsetdescriptor-layout-creation">4. Global DescriptorSet/Descriptor Layout Creation</h1>
+<p>At this point we create a <em>global</em> descriptor layout and a <em>global</em> descriptor set.<br>
+This is just because we want the fastest route to use bindless, but architecturally speaking is not the best.</p>
+<p>First we create the Descriptor Set Layout with at least the flags <em>VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT</em> and <em>VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT</em> .<br>
+These are needed because we will not fill all the array elements of the bindless array (partially bound flag) and we will update when a new texture is added to the device (update after bind).<br>
+Also adding the Variable Descriptor Count in case we want more than one descriptor layout /set with a bindless array:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">    <span style="color:#75715e">// Create bindless global descriptor layout.
+</span><span style="color:#75715e"></span>    {
+        VkDescriptorBindingFlags bindless_flags <span style="color:#f92672">=</span> VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT <span style="color:#f92672">|</span> VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT <span style="color:#f92672">|</span> VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+
+        VkDescriptorSetLayoutBinding vk_binding;
+        vk_binding.descriptorType <span style="color:#f92672">=</span> VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        vk_binding.descriptorCount <span style="color:#f92672">=</span> k_max_bindless_resources;
+        vk_binding.binding <span style="color:#f92672">=</span> k_bindless_texture_binding;
+        
+        vk_binding.stageFlags <span style="color:#f92672">=</span> VK_SHADER_STAGE_ALL;
+        vk_binding.pImmutableSamplers <span style="color:#f92672">=</span> <span style="color:#66d9ef">nullptr</span>;
+
+        VkDescriptorSetLayoutCreateInfo layout_info <span style="color:#f92672">=</span> { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+        layout_info.bindingCount <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        layout_info.pBindings <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>vk_binding;
+        layout_info.flags <span style="color:#f92672">=</span> VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+
+        VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extended_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT, <span style="color:#66d9ef">nullptr</span> };
+        extended_info.bindingCount <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        extended_info.pBindingFlags <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>bindless_flags;
+
+        layout_info.pNext <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>extended_info;
+
+        vkCreateDescriptorSetLayout( vulkan_device, <span style="color:#f92672">&amp;</span>layout_info, vulkan_allocation_callbacks, <span style="color:#f92672">&amp;</span>vulkan_bindless_descriptor_layout );
+</code></pre></div><p>At this point we create the actual descriptor set from the bindless pool:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">        VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        alloc_info.descriptorPool <span style="color:#f92672">=</span> vulkan_descriptor_pool_bindless;
+        alloc_info.descriptorSetCount <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        alloc_info.pSetLayouts <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>vulkan_bindless_descriptor_layout;
+
+        VkDescriptorSetVariableDescriptorCountAllocateInfoEXT count_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT };
+        u32 max_binding <span style="color:#f92672">=</span> k_max_bindless_resources <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>;
+        count_info.descriptorSetCount <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        <span style="color:#75715e">// This number is the max allocatable count
+</span><span style="color:#75715e"></span>        count_info.pDescriptorCounts <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>max_binding;
+        alloc_info.pNext <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>count_info;
+
+        check_result( vkAllocateDescriptorSets( vulkan_device, <span style="color:#f92672">&amp;</span>alloc_info, <span style="color:#f92672">&amp;</span>vulkan_bindless_descriptor_set ) );
+    }
+</code></pre></div><h1 id="5-texture-upload">5. Texture Upload</h1>
+<p>At this point whenever we create a new texture we can update the global bindless descriptor set.<br>
+I prefer to batch this and do it at the end of the frame, here it is:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">if</span> ( num_texture_updates ) {
+    <span style="color:#75715e">// Handle deferred writes to bindless textures.
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// TODO: use dynamic array instead.
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">constexpr</span> u32 k_num_writes_per_frame <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>;
+    VkWriteDescriptorSet bindless_descriptor_writes[ k_num_writes_per_frame ];
+    VkDescriptorImageInfo bindless_image_info[ k_num_writes_per_frame ];
+
+    u32 current_write_index <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">for</span> ( i32 it <span style="color:#f92672">=</span> num_texture_updates <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; it <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; it<span style="color:#f92672">--</span> ) {
+        ResourceUpdate<span style="color:#f92672">&amp;</span> texture_to_update <span style="color:#f92672">=</span> texture_to_update_bindless[ it ];
+
+        <span style="color:#66d9ef">if</span> ( current_write_index <span style="color:#f92672">==</span> k_num_writes_per_frame )
+            <span style="color:#66d9ef">break</span>;
+
+        TextureVulkan<span style="color:#f92672">*</span> texture <span style="color:#f92672">=</span> access_texture( { texture_to_update.handle } );
+        VkWriteDescriptorSet<span style="color:#f92672">&amp;</span> descriptor_write <span style="color:#f92672">=</span> bindless_descriptor_writes[ current_write_index ];
+        descriptor_write <span style="color:#f92672">=</span> { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        descriptor_write.descriptorCount <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        descriptor_write.dstArrayElement <span style="color:#f92672">=</span> texture<span style="color:#f92672">-&gt;</span>handle.index;
+        descriptor_write.descriptorType <span style="color:#f92672">=</span> VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_write.dstSet <span style="color:#f92672">=</span> vulkan_bindless_descriptor_set;
+        descriptor_write.dstBinding <span style="color:#f92672">=</span> k_bindless_texture_binding;
+
+        SamplerVulkan<span style="color:#f92672">*</span> vk_default_sampler <span style="color:#f92672">=</span> access_sampler( default_sampler );
+        VkDescriptorImageInfo<span style="color:#f92672">&amp;</span> descriptor_image_info <span style="color:#f92672">=</span> bindless_image_info[ current_write_index ];
+        descriptor_image_info.sampler <span style="color:#f92672">=</span> vk_default_sampler<span style="color:#f92672">-&gt;</span>vk_sampler;
+        descriptor_image_info.imageView <span style="color:#f92672">=</span> texture<span style="color:#f92672">-&gt;</span>vk_image_view;
+        descriptor_image_info.imageLayout <span style="color:#f92672">=</span> VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        descriptor_write.pImageInfo <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>descriptor_image_info;
+
+        texture_to_update.current_frame <span style="color:#f92672">=</span> u32_max;
+
+        texture_to_update_bindless[ it ] <span style="color:#f92672">=</span> texture_to_update_bindless[ <span style="color:#f92672">--</span>num_texture_updates ];
+
+        <span style="color:#f92672">++</span>current_write_index;
+    }
+
+    <span style="color:#66d9ef">if</span> ( current_write_index ) {
+        vkUpdateDescriptorSets( vulkan_device, current_write_index, bindless_descriptor_writes, <span style="color:#ae81ff">0</span>, <span style="color:#66d9ef">nullptr</span> );
+    }
+}
+</code></pre></div><h1 id="6-adding-the-bindless-descriptor-layout-to-layouts">6. Adding the Bindless Descriptor Layout to layouts</h1>
+<p>Again a quick and dirty example of adding the bindless layout to every layout:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
+u32 bindless_active <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+<span style="color:#75715e">#if defined(HYDRA_BINDLESS)
+</span><span style="color:#75715e"></span>    vk_layouts[ creation.num_active_layouts ] <span style="color:#f92672">=</span> vulkan_bindless_descriptor_layout;
+    bindless_active <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+<span style="color:#75715e">#endif
+</span><span style="color:#75715e"></span>
+    VkPipelineLayoutCreateInfo pipeline_layout_info <span style="color:#f92672">=</span> { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+    pipeline_layout_info.pSetLayouts <span style="color:#f92672">=</span> vk_layouts;
+    pipeline_layout_info.setLayoutCount <span style="color:#f92672">=</span> creation.num_active_layouts <span style="color:#f92672">+</span> bindless_active;
+
+    VkPipelineLayout pipeline_layout;
+    check( vkCreatePipelineLayout( vulkan_device, <span style="color:#f92672">&amp;</span>pipeline_layout_info, vulkan_allocation_callbacks, <span style="color:#f92672">&amp;</span>pipeline_layout ) );
+</code></pre></div><h1 id="7-descriptor-set-binding-at-draw">7. Descriptor Set Binding at Draw</h1>
+<p>The final (c++ wise) step is to bind the bindless set, here in command buffer code:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
+<span style="color:#66d9ef">void</span> CommandBuffer<span style="color:#f92672">::</span>bind_resource_list( <span style="color:#66d9ef">uint64_t</span> sort_key, ResourceListHandle<span style="color:#f92672">*</span> handles, <span style="color:#66d9ef">uint32_t</span> num_lists, <span style="color:#66d9ef">uint32_t</span><span style="color:#f92672">*</span> offsets, <span style="color:#66d9ef">uint32_t</span> num_offsets ) {
+<span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">const</span> u32 k_first_set <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+vkCmdBindDescriptorSets( vk_command_buffer, current_pipeline<span style="color:#f92672">-&gt;</span>vk_bind_point, current_pipeline<span style="color:#f92672">-&gt;</span>vk_pipeline_layout, k_first_set,
+                         num_lists, vk_descriptor_sets, num_offsets, offsets_cache );
+
+<span style="color:#66d9ef">if</span> ( device<span style="color:#f92672">-&gt;</span>bindless_supported ) {
+    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">const</span> u32 k_bindless_set <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+    vkCmdBindDescriptorSets( vk_command_buffer, current_pipeline<span style="color:#f92672">-&gt;</span>vk_bind_point, current_pipeline<span style="color:#f92672">-&gt;</span>vk_pipeline_layout, k_bindless_set,
+                             <span style="color:#ae81ff">1</span>, <span style="color:#f92672">&amp;</span>device<span style="color:#f92672">-&gt;</span>vulkan_bindless_descriptor_set, <span style="color:#ae81ff">0</span>, <span style="color:#66d9ef">nullptr</span> );
+}
+</code></pre></div><h1 id="8-glsl-shader">8. GLSL shader!</h1>
+<p>And here the modified code for the shader.<br>
+Albedo index can come from anywhere, for fullscreen triangle I use the trick of using the instance id for example!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">
+<span style="color:#75715e">#extension GL_EXT_nonuniform_qualifier : enable
+</span><span style="color:#75715e"></span>
+layout (set <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, binding <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>) uniform sampler2D textures[];
+
+
+vec4 color <span style="color:#f92672">=</span> texture( textures[albedo_id], final_uv.xy );
+
+</code></pre></div><h1 id="conclusions">Conclusions</h1>
+<p>We saw the minimal code needed to have a fully working bindless texture implementation in Vulkan.<br>
+API-Wise this is not the best, with hardcoded values, Vulkan only global descriptor and such, but it is a jumpstart to experiment with the feature.<br>
+I will cleanup this code and update the library in the future, but this should already be a way to start bindlessly coding.</p>
+<p>Happy Bindless!</p>
+
+    </div>
+
+    
+
+
+    
+
+
+
+    
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+  
+  
+    
+  
+  
+  <div class="media author-card" itemscope itemtype="http://schema.org/Person">
+    
+      
+      <img class="portrait mr-3" src="/authors/admin/avatar_huc171ec33df696f149ec47f21843fdccd_190041_250x250_fill_q90_lanczos_center.jpg" itemprop="image" alt="Avatar">
+    
+
+    <div class="media-body">
+      <h5 class="card-title" itemprop="name"><a href="https://jorenjoestar.github.io/">Gabriel Sassone</a></h5>
+      <h6 class="card-subtitle">Principal Rendering/Engine Programmer</h6>
+      
+      <ul class="network-icon" aria-hidden="true">
+        
+          
+          
+          
+            
+          
+          
+          
+          
+          
+            
+          
+          <li>
+            <a itemprop="sameAs" href="https://twitter.com/GabrielSassone" target="_blank" rel="noopener">
+              <i class="fab fa-twitter"></i>
+            </a>
+          </li>
+        
+          
+          
+          
+            
+          
+          
+          
+          
+          
+            
+          
+          <li>
+            <a itemprop="sameAs" href="https://github.com/JorenJoestar" target="_blank" rel="noopener">
+              <i class="fab fa-github"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+
+
+      
+      
+    
+
+    
+
+    
+
+
+  </div>
+</article>
+
+      
+
+    
+    
+    
+    <script src="/js/mathjax-config.js"></script>
+    
+
+    
+    
+    
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js" integrity="sha256-lqvxZrPLtfffUl2G/e7szqSvPBILGbwmsGE1MKlOi0Q=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js" integrity="sha256-CBrpuqrMhXwcLLUd5tvQ4euBHCdh7wGlDfNz8vbu/iI=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" integrity="sha256-X5PoE3KU5l+JcX+w09p/wHl9AzK333C4hJ2I9S5mD4M=" crossorigin="anonymous"></script>
+
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js" integrity="sha256-0w92bcB21IY5+rGI84MGj52jNfHNbXVeQLrZ0CGdjNY=" crossorigin="anonymous" title="mermaid"></script>
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js" integrity="sha256-aYTdUrn6Ow1DDgh5JTc3aDGnnju48y/1c8s1dgkYPQ8=" crossorigin="anonymous"></script>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/languages/cpp.min.js"></script>
+        
+      
+
+      
+      
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS_CHTML-full" integrity="sha256-GhM+5JHb6QUzOQPXSJLEWP7R73CbkisjzK5Eyij4U9w=" crossorigin="anonymous" async></script>
+      
+    
+
+    
+    
+
+    
+    
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+
+    
+    
+    <script>
+      const search_index_filename = "/index.json";
+      const i18n = {
+        'placeholder': "Search...",
+        'results': "results found",
+        'no_results': "No results found"
+      };
+      const content_type = {
+        'post': "Posts",
+        'project': "Projects",
+        'publication' : "Publications",
+        'talk' : "Talks"
+        };
+    </script>
+    
+
+    
+    
+
+    
+    
+    <script id="search-hit-fuse-template" type="text/x-template">
+      <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <a href="{{relpermalink}}">{{title}}</a>
+          <div class="article-metadata search-hit-type">{{type}}</div>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+      </div>
+    </script>
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha256-VzgmKYmhsGNNN4Ph1kMW+BjoYJM2jV5i4IlFoeZA9XI=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha256-4HLtjeVgH0eIB3aZ9mLYF6E8oU5chNdjU6p6rrXpl9U=" crossorigin="anonymous"></script>
+    
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+    
+    
+    
+    
+    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+
+    
+
+
+
+
+
+
+  
+  <div class="container">
+    <footer class="site-footer">
+  
+
+  <p class="powered-by">
+    
+
+    Powered by the
+    <a href="https://sourcethemes.com/academic/" target="_blank" rel="noopener">Academic theme</a> for
+    <a href="https://gohugo.io" target="_blank" rel="noopener">Hugo</a>.
+
+    
+    <span class="float-right" aria-hidden="true">
+      <a href="#" id="back_to_top">
+        <span class="button_icon">
+          <i class="fas fa-chevron-up fa-2x"></i>
+        </span>
+      </a>
+    </span>
+    
+  </p>
+</footer>
+
+  </div>
+  
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cite</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> Copy
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> Download
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

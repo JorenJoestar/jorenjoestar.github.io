@@ -116,7 +116,7 @@
   <meta property="og:description" content="Principal Rendering/Engine Programmer"><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
-  <meta property="og:updated_time" content="2021-10-26T19:34:19&#43;02:00">
+  <meta property="og:updated_time" content="2021-11-01T18:44:17&#43;01:00">
   
 
   
@@ -388,6 +388,94 @@
 
 
 
+<meta content="2021-11-01 18:44:17 &#43;0100 CET" itemprop="datePublished">
+<meta content="2021-11-01 18:44:17 &#43;0100 CET" itemprop="dateModified">
+
+<div class="article-metadata">
+
+  
+  
+
+  
+  <span class="article-date">
+    
+    
+      
+    
+    <time>2021-11-01</time>
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+    6 min read
+  </span>
+  
+
+  
+  
+  
+
+  
+  
+
+  
+
+</div>
+
+  
+
+  
+  
+  
+
+  <h3 class="article-title mb-1 mt-3" itemprop="name">
+    <a href="/post/vulkan_bindless_texture/" itemprop="url">Vulkan Pills 1: Bindless Textures</a>
+  </h3>
+
+  
+  <div class="article-style" itemprop="articleBody">
+    Overview Here is a very short article on how to use Vulkan bindless features.
+All the relevant c++ code is into gpu_device_vulkan.cpp and command_buffer.cpp, and you can follow along HYDRA_BINDLESS defines to see what changes.
+THIS IS THE FASTEST ROUTE TO START USING BINDLESS TEXTURES THAT I KNOW OF.
+This means also that is architecturally not optimal but it will serve its purposes!
+There is a great article about the different features used here at arm, check it out first!
+  </div>
+  
+
+  
+
+</div>
+
+    
+  
+    
+      
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+<div class="card-simple" itemscope itemtype="http://schema.org/BlogPosting">
+
+  
+    
+
+
+
 <meta content="2021-10-26 19:34:19 &#43;0200 CEST" itemprop="datePublished">
 <meta content="2021-10-26 19:34:19 &#43;0200 CEST" itemprop="dateModified">
 
@@ -433,7 +521,7 @@
   
 
   <h3 class="article-title mb-1 mt-3" itemprop="name">
-    <a href="/post/gpu_driven_text/gpu_driven_text/" itemprop="url">Gpu_driven_text</a>
+    <a href="/post/gpu_driven_text/gpu_driven_text/" itemprop="url">Gpu Driven Text</a>
   </h3>
 
   
@@ -1128,94 +1216,6 @@ After we built a basic Material System in the previous article (https://jorenjoe
   <div class="article-style" itemprop="articleBody">
     Overview Data Driven Rendering Series:
  https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  In Part 1 of this series we created a simple language to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features.The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.
-  </div>
-  
-
-  
-
-</div>
-
-    
-  
-    
-      
-
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-
-<div class="card-simple" itemscope itemtype="http://schema.org/BlogPosting">
-
-  
-    
-
-
-
-<meta content="2019-08-06 13:04:15 -0400 -0400" itemprop="datePublished">
-<meta content="2019-08-16 23:04:15 -0400 -0400" itemprop="dateModified">
-
-<div class="article-metadata">
-
-  
-  
-
-  
-  <span class="article-date">
-    
-    
-      
-          Last updated on
-      
-    
-    <time>2019-08-16</time>
-  </span>
-  
-
-  
-
-  
-  <span class="middot-divider"></span>
-  <span class="article-reading-time">
-    21 min read
-  </span>
-  
-
-  
-  
-  
-
-  
-  
-
-  
-
-</div>
-
-  
-
-  
-  
-  
-
-  <h3 class="article-title mb-1 mt-3" itemprop="name">
-    <a href="/post/writing_shader_effect_language_1/" itemprop="url">Writing a Shader Effect Language Part 1</a>
-  </h3>
-
-  
-  <div class="article-style" itemprop="articleBody">
-    Overview Data Driven Rendering Series:
- https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  In this article we will create a simple language that can encapsulate shader code (called code fragments) and output different files for each fragment.This is the initial step to switch from an engine that loads single files for each shader stage (vertex, fragment, compute, &hellip;) to one that uses an effect file that contains more than one shader.
-We will start by motivation, then will define the language itself (very simple), then we will look at the Parser and last the Code Generator.
   </div>
   
 
