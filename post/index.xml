@@ -13,10 +13,10 @@
     
     <item>
       <title>Modern (Bindless) Sprite Batch for Vulkan (and more!)</title>
-      <link>https://jorenjoestar.github.io/post/modern_sprite_batch/modern_sprite_batch/</link>
+      <link>https://jorenjoestar.github.io/post/modern_sprite_batch/</link>
       <pubDate>Sun, 19 Dec 2021 21:36:41 +0100</pubDate>
       
-      <guid>https://jorenjoestar.github.io/post/modern_sprite_batch/modern_sprite_batch/</guid>
+      <guid>https://jorenjoestar.github.io/post/modern_sprite_batch/</guid>
       <description>
 
 
@@ -71,6 +71,24 @@ They are in used in &lt;em&gt;descriptor sets&lt;/em&gt;, but with bindless we c
 &lt;li&gt;Descriptor Set&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;We still need to differentiate shaders that use different constant/structured buffers, but otherwise we can share a common shader!&lt;/p&gt;
+&lt;p&gt;The core of the caching is in &lt;strong&gt;sprite_batch.cpp&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void SpriteBatch::set( hydra::gfx::PipelineHandle pipeline, hydra::gfx::ResourceListHandle resource_list ) {
+    using namespace hydra::gfx;
+
+    if ( current_pipeline.index != k_invalid_pipeline.index &amp;amp;&amp;amp; current_resource_list.index != k_invalid_list.index &amp;amp;&amp;amp;
+         ( current_pipeline.index != pipeline.index )) {
+        // Add a batch
+        DrawBatch batch { current_pipeline, current_resource_list, previous_offset, num_sprites - previous_offset };
+        draw_batches.push( batch );
+    }
+
+    previous_offset = num_sprites;
+
+    current_pipeline = pipeline;
+    current_resource_list = resource_list;
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We use the &lt;em&gt;pipeline&lt;/em&gt; and the &lt;em&gt;resource list&lt;/em&gt; as informations to know when a batch should be changed.&lt;/p&gt;
 &lt;h2 id=&#34;passing-texture-index-to-the-gpu&#34;&gt;Passing texture index to the GPU&lt;/h2&gt;
 &lt;p&gt;As we saw in the previous article, with bindless we define a global array of textures and we simply index into it using shader constants or other tricks (more on that later).&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// (glsl code), Platform.h:
@@ -79,7 +97,6 @@ They are in used in &lt;em&gt;descriptor sets&lt;/em&gt;, but with bindless we c
 #extension GL_EXT_nonuniform_qualifier : enable
 
 layout ( set = 1, binding = 10 ) uniform sampler2D textures[];
-
 // Use aliasing to sample any kind of texture using one single bindless texture array:
 layout ( set = 1, binding = 10 ) uniform sampler3D textures_3d[];
 
@@ -169,6 +186,7 @@ void main() {
 
 &lt;p&gt;As we can see from this RenderDoc capture we are using an instanced draw call with bindless to render all the sprites on the screen in this demo, even though they are coming from 5 different files!&lt;br&gt;
 If we can have similar shaders (and many times for pixel art games we CAN), then it is guaranteed that draw calls will be kept at minimum.&lt;/p&gt;
+&lt;p&gt;We can use SSBO/StructuredBuffer with more per instance data to further specialize the shader without changing the sprites (like &lt;a href=&#34;https://wickedengine.net/2017/06/05/should-we-get-rid-of-vertex-buffers/&#34;&gt;manual vertex pulling&lt;/a&gt;) but as always, numbers will tell what is better for your application, and finding a balance between draw calls, permutations and shader complexity is paramount!&lt;/p&gt;
 &lt;h1 id=&#34;bonus-post-process-bindless-trick&#34;&gt;Bonus: post-process bindless trick&lt;/h1&gt;
 &lt;p&gt;A trick I started using with bindless for post-process shaders is to use the &lt;strong&gt;instance id&lt;/strong&gt; as texture index to be retrieved into the shader!&lt;br&gt;
 You can use &lt;em&gt;push constants&lt;/em&gt; as well, but I figured something even simpler would work.&lt;/p&gt;
@@ -205,6 +223,12 @@ void main() {
   commands.draw_indexed( sort_key++, hydra::gfx::TopologyType::Triangle, pcmd-&amp;gt;ElemCount, 1, index_buffer_offset + pcmd-&amp;gt;IdxOffset, vtx_buffer_offset + pcmd-&amp;gt;VtxOffset, new_texture.index );
 
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With bindless there is no need to create different descriptor sets based on the texture used by the ImGUI window, and with the instance index we can again draw every texture in a simple way!&lt;/p&gt;
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+&lt;p&gt;In this article we saw a simple way to evolve a sprite batch to group sprites without the need to worry about texture changes.&lt;br&gt;
+For ages this was the main parameter to separate batches, but with bindless active is not anymore.&lt;br&gt;
+Furthermore, &lt;em&gt;Pipeline State Objects&lt;/em&gt; contains most of the informations needed to know if something has changed from a render state/layout perspective, and we can balance out dynamic parts of the pipeline to cache even more.&lt;/p&gt;
+&lt;p&gt;As awlays if you enjoyed this article please comment, share, send feedback!
+Gabriel&lt;/p&gt;
 </description>
     </item>
     
