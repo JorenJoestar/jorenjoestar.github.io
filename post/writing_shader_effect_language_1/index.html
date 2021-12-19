@@ -82,7 +82,7 @@ We will start by motivation, then will define the language itself (very simple),
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -558,7 +558,7 @@ Possibly the most intense part from an automation possibility (and thus code-gen
 We will define this in part 2 of this article.</p>
 <h1 id="high-level-workflow">High level workflow</h1>
 <p>From a high level perspective what will happen in all this code is enclosed in this code:</p>
-<pre><code>text = ReadEntireFileIntoMemory( &quot;..\\data\\SimpleFullscreen.hfx&quot;, nullptr );
+<pre tabindex="0"><code>text = ReadEntireFileIntoMemory( &quot;..\\data\\SimpleFullscreen.hfx&quot;, nullptr );
 initLexer( &amp;lexer, (char*)text );
 
 hfx::Parser effect_parser;
@@ -577,20 +577,20 @@ Finally we will get the parsing informations and give them to the <em>code gener
 <p>As first step of this shader language, single shader files will be created by the <em>shader generation</em> method in our code.</p>
 <p>We will define a simple fullscreen HFX with <em>code fragments</em> and <em>passes</em>.</p>
 <p>First, we define the root shader (SimpleFullscreen.hfx, under folder &lsquo;data&rsquo;):</p>
-<pre><code>shader SimpleFullscreen {
+<pre tabindex="0"><code>shader SimpleFullscreen {
 </code></pre><p>This is simply the container for all the code and passes that will define the shader effect.</p>
 <p>Now we need some actual code, so we can define a shader fragment.<!-- raw HTML omitted -->
 The keyword used in our language is <strong>glsl</strong> followed by a name and an open brace:</p>
-<pre><code>glsl ToScreen {
+<pre tabindex="0"><code>glsl ToScreen {
 </code></pre><p>This will define a <strong>code fragment</strong> named <em>ToScreen</em>, that can be referenced from the passes.<!-- raw HTML omitted -->
 Next we use a glsl trick to <em>signal our parser to use includes</em>:</p>
-<pre><code>#pragma include &quot;Platform.h&quot;
+<pre tabindex="0"><code>#pragma include &quot;Platform.h&quot;
 </code></pre><p>This #pragma is actually ignored by the compiler, but will be used by the parser to actually add the include!<!-- raw HTML omitted -->
 BEWARE: this code will be included in BOTH <em>vertex</em> and <em>fragment</em> program!<!-- raw HTML omitted -->
 Anything outside of the VERTEX/FRAGMENT/COMPUTE macros will be, and this is done on purpose, like defining an interpolator struct only once or for common includes.</p>
 <p>Next we define the vertex program.<!-- raw HTML omitted -->
 BEWARE: vertex only code must be enclosed in <strong>VERTEX</strong> define!</p>
-<pre><code>#if defined VERTEX
+<pre tabindex="0"><code>#if defined VERTEX
 
 out vec4 vTexCoord;
 
@@ -604,7 +604,7 @@ void main() {
 #endif // VERTEX
 </code></pre><p>This code is a simple fullscreen triangle that does not require any vertex buffer, but uses the vertex id to draw. Nothing fancy.</p>
 <p>Next is the fragment program, and again enclosed in <strong>FRAGMENT</strong> define:</p>
-<pre><code>#if defined FRAGMENT
+<pre tabindex="0"><code>#if defined FRAGMENT
 
 in vec4 vTexCoord;
 
@@ -625,7 +625,7 @@ void main() {
 </code></pre><p>This code simply reads a texture and outputs it to the screen.</p>
 <p>We defined the code fragment ToScreen, containing both a vertex and a fragment program, and now we can actually generate the permutation that we need.<!-- raw HTML omitted -->
 The code for this in our effect file is:</p>
-<pre><code>pass ToScreen {
+<pre tabindex="0"><code>pass ToScreen {
    vertex = ToScreen
    fragment = ToScreen
 }
@@ -636,7 +636,7 @@ The code for this in our effect file is:</p>
 <p>Now that we have defined the effect and we know what is the outcome of generating code from the effect file, let&rsquo;s look into the different component of the parser and code generator needed.</p>
 <p>By design, we chose the Lexer to know nothing about the language, so that we can use it between different languages.
 The entry point to parse the effect is the method generateAST:</p>
-<pre><code>void generateAST( Parser* parser ) {
+<pre tabindex="0"><code>void generateAST( Parser* parser ) {
 
     // Read source text until the end.
     // The main body can be a list of declarations.
@@ -672,7 +672,7 @@ We will have 3 different set of identifiers, usable in different parts of the HF
 <li>Directive identifiers, &lsquo;if defined&rsquo;, &lsquo;pragma include&rsquo;, &lsquo;endif&rsquo;</li>
 </ol>
 <p>Let&rsquo;s have a look at the code for parsing the main identifiers:</p>
-<pre><code>inline void identifier( Parser* parser, const Token&amp; token ) {
+<pre tabindex="0"><code>inline void identifier( Parser* parser, const Token&amp; token ) {
 
     // Scan the name to know which 
     for ( uint32_t i = 0; i &lt; token.text.length; ++i ) {
@@ -714,7 +714,7 @@ We will have 3 different set of identifiers, usable in different parts of the HF
 We will look into detail on each method.</p>
 <h3 id="parsing-shader">Parsing &lsquo;shader&rsquo;</h3>
 <p>We are parsing now the following part from the HFX file:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 
 shader SimpleFullscreen {
 </code></pre><p>This is the entry point of the effect itself.<!-- raw HTML omitted -->
@@ -722,7 +722,7 @@ What should the parser do here ?<!-- raw HTML omitted -->
 Simply iterate through the main identifiers, &lsquo;glsl&rsquo; and &lsquo;pass&rsquo;.<!-- raw HTML omitted -->
 Technically I could have separated the methods to have one with parsing shader only and the others parsing &lsquo;glsl&rsquo; and &lsquo;pass&rsquo;, but did not want to complicate the code further.</p>
 <p>Let&rsquo;s look at how we parse the identifier &lsquo;shader&rsquo;:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 
 inline void declarationShader( Parser* parser ) {
     // Parse name
@@ -750,7 +750,7 @@ When we enter the method the Lexer will be just at the beginning of the name (Si
 <p>This is the most complex parsing in the code.<!-- raw HTML omitted -->
 I will put both the HFX part and C++ code so hopefully it will be clearer what the parser is doing and why.</p>
 <p>As a refresh and reference, this is the <strong>code fragment</strong> ToScreen defined in SimpleFullscreen.hfx:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 
 glsl ToScreen {
 
@@ -785,7 +785,7 @@ glsl ToScreen {
 }
 </code></pre><p>Let&rsquo;s start from the beginning.<!-- raw HTML omitted -->
 When the parser finds the &lsquo;glsl&rsquo; keyword in the identifier method:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 
 case 'g':
 {
@@ -797,12 +797,12 @@ case 'g':
 }
 </code></pre><p>It calls the method <em><em>void declarationGlsl( Parser</em> parser )</em>*.</p>
 <p>The lexer reading the HFX is after the glsl keyword when entering the method, just before the ToScreen identifier:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 
 glsl (Here!)ToScreen {
 </code></pre><p>Let&rsquo;s see the C++ code step by step.<!-- raw HTML omitted -->
 First parsing the name &lsquo;ToScreen&rsquo;:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 
 inline void declarationGlsl( Parser* parser ) {
 
@@ -813,7 +813,7 @@ inline void declarationGlsl( Parser* parser ) {
     }
 </code></pre><p>as seen in other methods as well.<!-- raw HTML omitted -->
 We are defining a new <strong>code fragment</strong>, thus we need to initialize it. There is tracking of the #ifdef depths to manage when some code must be included in a code fragment and when not:</p>
-<pre><code>    CodeFragment code_fragment = {};
+<pre tabindex="0"><code>    CodeFragment code_fragment = {};
     // Cache name string
     code_fragment.name = token.text;
 
@@ -825,13 +825,13 @@ We are defining a new <strong>code fragment</strong>, thus we need to initialize
         return;
     }
 </code></pre><p>Next is simply arriving at the first token that contains all the glsl code:</p>
-<pre><code>    // Advance token and cache the starting point of the code.
+<pre tabindex="0"><code>    // Advance token and cache the starting point of the code.
     nextToken( parser-&gt;lexer, token );
     code_fragment.code = token.text;
 </code></pre><p>And now some more parsing craftmanship.<!-- raw HTML omitted -->
 We cannot use anymore the simple check to end parsing when encountering a closed brace, because there can be different structs defined that will break that mechanism.<!-- raw HTML omitted -->
 Instead we track the number of open braces and when we close the last one, we consider finished the parsing of the <strong>code fragment</strong>!</p>
-<pre><code>    uint32_t open_braces = 1;
+<pre tabindex="0"><code>    uint32_t open_braces = 1;
 
     // Scan until close brace token
     while ( open_braces ) {
@@ -843,7 +843,7 @@ Instead we track the number of open braces and when we close the last one, we co
 
 </code></pre><p>The only token that we care inside the code fragment is the <strong>hash</strong>, signalling either an include or a define, used for separating <em>per-stage code</em>.<!-- raw HTML omitted -->
 The parsing of the <em>hash</em> token will be done inside the <strong>directiveIdentifier</strong> method:</p>
-<pre><code>        // Parse hash for includes and defines
+<pre tabindex="0"><code>        // Parse hash for includes and defines
         if ( token.type == Token::Token_Hash ) {
             // Get next token and check which directive is
             nextToken( parser-&gt;lexer, token );
@@ -853,14 +853,14 @@ The parsing of the <em>hash</em> token will be done inside the <strong>directive
 
 </code></pre><p>Before diving deep into the <strong>directive identifiers</strong>, let&rsquo;s finish the main parsing routine.<!-- raw HTML omitted -->
 We advance to the next token until we close all the braces, and then save the text length of all the code fragment:</p>
-<pre><code>        nextToken( parser-&gt;lexer, token );
+<pre tabindex="0"><code>        nextToken( parser-&gt;lexer, token );
     }
     
     // Calculate code string length
     code_fragment.code.length = token.text.text - code_fragment.code.text;
 
 </code></pre><p>Final step is to save the newly parsed code fragment into the parser data:</p>
-<pre><code>    parser-&gt;code_fragments.emplace_back( code_fragment );
+<pre tabindex="0"><code>    parser-&gt;code_fragments.emplace_back( code_fragment );
 }
 </code></pre><p>We can now dive deep into the parsing of directives, namely #if defined, #pragma include and #endif.</p>
 <h4 id="parsing-if-defined">Parsing &lsquo;#if defined&rsquo;</h4>
@@ -868,12 +868,12 @@ We advance to the next token until we close all the braces, and then save the te
 <strong>#if defined</strong> is the most important directive for us, because it will tell the parser which <strong>shader stage</strong> we are parsing currently and thus where to direct the text!<!-- raw HTML omitted -->
 It starts from a common/shared stage, for shared code, and when encounters a #if defined it can signal a stage specific code.<!-- raw HTML omitted --></p>
 <p>Namely when parsing the following line in HFX:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 
 #(Here!)if defined VERTEX
 </code></pre><p>The parser needs to check 2 other identifiers. Remember that the parser is currently AFTER the <strong>Hash</strong> token, as beautifully written in the previous snippet!<!-- raw HTML omitted -->
 Let&rsquo;s look at the code:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 
 inline void directiveIdentifier( Parser* parser, const Token&amp; token, CodeFragment&amp; code_fragment ) {
     
@@ -919,16 +919,16 @@ inline void directiveIdentifier( Parser* parser, const Token&amp; token, CodeFra
 </code></pre><p>Let&rsquo;s dissect this code!</p>
 <p>Starting from the current token, just after the <strong>#(Hash)</strong>, we need to check the correct composition of the keywords.<!-- raw HTML omitted -->
 We expect &lsquo;if&rsquo;, and then if found we go to the next token:</p>
-<pre><code>if ( expectKeyword( token.text, 2, &quot;if&quot; ) ) {
+<pre tabindex="0"><code>if ( expectKeyword( token.text, 2, &quot;if&quot; ) ) {
     nextToken( parser-&gt;lexer, new_token );
 </code></pre><p>We search for the &lsquo;defined&rsquo; identifier and if found we go to the next identifier:</p>
-<pre><code>if ( expectKeyword( new_token.text, 7, &quot;defined&quot; ) ) {
+<pre tabindex="0"><code>if ( expectKeyword( new_token.text, 7, &quot;defined&quot; ) ) {
     nextToken( parser-&gt;lexer, new_token );
 </code></pre><p>The parser is currently here:</p>
-<pre><code>#if defined (Here!)VERTEX
+<pre tabindex="0"><code>#if defined (Here!)VERTEX
 </code></pre><p>And thus the last step is to check which <strong>shader stage</strong> is currently starting.
 This is done here:</p>
-<pre><code>if ( expectKeyword( new_token.text, 6, &quot;VERTEX&quot; ) ) {
+<pre tabindex="0"><code>if ( expectKeyword( new_token.text, 6, &quot;VERTEX&quot; ) ) {
 
     code_fragment.stage_ifdef_depth[CodeFragment::Vertex] = code_fragment.ifdef_depth;
     code_fragment.current_stage = CodeFragment::Vertex;
@@ -939,7 +939,7 @@ Why that ? <!-- raw HTML omitted -->
 Because when we will parse #endif, we will do the same for the open/close braces depth in the main glsl parser: we want to be sure that the defines are paired correctly and we are saving the per-stage code in the correct way!<!-- raw HTML omitted -->
 This will be more clear when we see the #endif parsing.</p>
 <p>Moving on, we will do the same for all the other keywords (&lsquo;FRAGMENT&rsquo; and &lsquo;COMPUTE&rsquo; for now):</p>
-<pre><code>else if ( expectKeyword( new_token.text, 8, &quot;FRAGMENT&quot; ) ) {
+<pre tabindex="0"><code>else if ( expectKeyword( new_token.text, 8, &quot;FRAGMENT&quot; ) ) {
 
     code_fragment.stage_ifdef_depth[CodeFragment::Fragment] = code_fragment.ifdef_depth;
     code_fragment.current_stage = CodeFragment::Fragment;
@@ -952,11 +952,11 @@ else if ( expectKeyword( new_token.text, 7, &quot;COMPUTE&quot; ) ) {
 </code></pre><p>And the parsing of <strong>#if defined</strong> is over!<!-- raw HTML omitted --></p>
 <h4 id="parsing-pragma-include">Parsing &lsquo;#pragma include&rsquo;</h4>
 <p>In HFX we are parsing the following:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 
 #pragma include &quot;Platform.h&quot;
 </code></pre><p>With the following code (inside <em>directiveIdentifier</em> method):</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 
 case 'p':
 {
@@ -977,7 +977,7 @@ case 'p':
 </code></pre><p>This is simply saving the filename after the include, that being surrounded by &quot;&quot; is classified as string, and is using the current stage to know which stage should include that file!<!-- raw HTML omitted --></p>
 <h4 id="parsing-endif">Parsing &lsquo;#endif&rsquo;</h4>
 <p>Final part is the <strong>#endif</strong> identifier:</p>
-<pre><code>case 'e':
+<pre tabindex="0"><code>case 'e':
 {
     if ( expectKeyword( token.text, 5, &quot;endif&quot; ) ) {
 
@@ -1008,7 +1008,7 @@ case 'p':
 This is the glue to generate the different files from the code fragments.</p>
 <h3 id="parsing-pass">Parsing &lsquo;pass&rsquo;</h3>
 <p>Reading the HFX file, we are now in the final part of the file:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 
 pass ToScreen {
    vertex = ToScreen
@@ -1017,7 +1017,7 @@ pass ToScreen {
 </code></pre><p>A pass is simply a collection of <strong>code fragments</strong> associated with each shader stage (vertex, fragment, compute).<!-- raw HTML omitted -->
 When we parsed the fragments, we saved them in the parser to be retrieved.</p>
 <p>To refresh our memory, this is the actual <strong>Pass struct</strong> in C++:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 
 struct Pass {
 
@@ -1030,11 +1030,11 @@ struct Pass {
 }; // struct Pass
 </code></pre><p>Going back to the main directive method, we call the <strong>declarationPass</strong> method when we encounter the &lsquo;pass&rsquo; identifier.<!-- raw HTML omitted -->
 We will parse the following line:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 
 pass ToScreen {
 </code></pre><p>With the following code (similar to everything else, it should be easier to read now):</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 
 inline void declarationPass( Parser* parser ) {
 
@@ -1052,15 +1052,15 @@ inline void declarationPass( Parser* parser ) {
     }
 
 </code></pre><p>After we saved the pass name we can start reading the individual stages using the <strong>passIdentifier</strong> method:</p>
-<pre><code>    while ( !equalToken( parser-&gt;lexer, token, Token::Token_CloseBrace ) ) {
+<pre tabindex="0"><code>    while ( !equalToken( parser-&gt;lexer, token, Token::Token_CloseBrace ) ) {
         passIdentifier( parser, token, pass );
     }
 </code></pre><p>And then save the newly parsed pass.</p>
-<pre><code>    parser-&gt;passes.emplace_back( pass );
+<pre tabindex="0"><code>    parser-&gt;passes.emplace_back( pass );
 }
 </code></pre><p>For each identifier now, we will check which stage we are parsing.<!-- raw HTML omitted -->
 Currently we are here, after the open brace and all the whitespace:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 
 pass ToScreen {
    (Here!)vertex = ToScreen
@@ -1068,7 +1068,7 @@ pass ToScreen {
 }
 </code></pre><p>What is next is thus checking the identifier and filling the corresponding <strong>shader stage</strong> of the <strong>pass</strong>.<!-- raw HTML omitted -->
 I will post all the code of the method, because is similar to most code we seen and should be straightforward:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 
 inline void passIdentifier( Parser* parser, const Token&amp; token, Pass&amp; pass ) {
     // Scan the name to know which stage we are parsing    
@@ -1108,7 +1108,7 @@ inline void passIdentifier( Parser* parser, const Token&amp; token, Pass&amp; pa
 }
 </code></pre><p>The real &lsquo;magic&rsquo; here is the &lsquo;declarationShaderStage&rsquo; method.<!-- raw HTML omitted -->
 This method parses the couple &lsquo;identifier&rsquo; &lsquo;=&rsquo; &lsquo;identifier&rsquo;, and searches the <strong>code fragment</strong> with the same name:</p>
-<pre><code>inline void declarationShaderStage( Parser* parser, const CodeFragment** out_fragment ) {
+<pre tabindex="0"><code>inline void declarationShaderStage( Parser* parser, const CodeFragment** out_fragment ) {
 
     Token token;
     if ( !expectToken( parser-&gt;lexer, token, Token::Token_Equals ) ) {
@@ -1126,7 +1126,7 @@ This method parses the couple &lsquo;identifier&rsquo; &lsquo;=&rsquo; &lsquo;id
 <p>The final step of this amazing journey is the simplest, and it is actually to generate the single files we need.<!-- raw HTML omitted -->
 In our case another specific class, <strong>CodeGenerator</strong>, will generate the different files from the parsed HFX file.</p>
 <p>After we&rsquo;ve done with the parsing, we can call the <strong>generateShaderPermutations</strong> method that will generate files for each shader stage in each pass:</p>
-<pre><code>void generateShaderPermutations( CodeGenerator* code_generator, const char* path ) {
+<pre tabindex="0"><code>void generateShaderPermutations( CodeGenerator* code_generator, const char* path ) {
 
     code_generator-&gt;string_buffer_0.clear();
     code_generator-&gt;string_buffer_1.clear();
@@ -1155,12 +1155,12 @@ In our case another specific class, <strong>CodeGenerator</strong>, will generat
 </code></pre><p>The code should be straightforward, and the real action happens into the <strong>outputCodeFragment</strong> method.<!-- raw HTML omitted -->
 Let&rsquo;s have a look at the code.<!-- raw HTML omitted --></p>
 <p>First we define some data, like the file extensions for each shader stage or the defines to compile the code:</p>
-<pre><code>// Additional data to be added to output shaders.
+<pre tabindex="0"><code>// Additional data to be added to output shaders.
 static const char*              s_shader_file_extension[CodeFragment::Count] = { &quot;.vert&quot;, &quot;.frag&quot;, &quot;.compute&quot;, &quot;.h&quot; };
 static const char*              s_shader_stage_defines[CodeFragment::Count] = { &quot;#define VERTEX\r\n&quot;, &quot;#define FRAGMENT\r\n&quot;, &quot;#define COMPUTE\r\n&quot;, &quot;&quot; };
 </code></pre><p>Then we start to write the file.<!-- raw HTML omitted -->
 We will use the <em>string_buffer_0</em> to dynamically generate the path of the file without allocating memory:</p>
-<pre><code>void outputCodeFragment( CodeGenerator* code_generator, const char* path, CodeFragment::Stage stage, const CodeFragment* code_fragment ) {
+<pre tabindex="0"><code>void outputCodeFragment( CodeGenerator* code_generator, const char* path, CodeFragment::Stage stage, const CodeFragment* code_fragment ) {
     // Create file
     FILE* output_file;
 
@@ -1178,7 +1178,7 @@ We will use the <em>string_buffer_0</em> to dynamically generate the path of the
 </code></pre><p>And then use <em>string_buffer_1</em> to instead generate the actual code into the file.<!-- raw HTML omitted -->
 First, and most important, we will add all the includes for this particular stage by opening the file, reading it into memory and adding it into the final code buffer.</p>
 <p>We will still use <em>string_buffer_0</em> to generate the path of the file:</p>
-<pre><code>    code_generator-&gt;string_buffer_1.clear();
+<pre tabindex="0"><code>    code_generator-&gt;string_buffer_1.clear();
 
     // Append includes for the current stage.
     for ( size_t i = 0; i &lt; code_fragment-&gt;includes.size(); i++ ) {
@@ -1197,15 +1197,15 @@ First, and most important, we will add all the includes for this particular stag
     }
 
 </code></pre><p>After that is done we can copy the define needed for the current shader stage:</p>
-<pre><code>    code_generator-&gt;string_buffer_1.append( &quot;\t\t&quot; );
+<pre tabindex="0"><code>    code_generator-&gt;string_buffer_1.append( &quot;\t\t&quot; );
     code_generator-&gt;string_buffer_1.append( s_shader_stage_defines[stage] );
 
 </code></pre><p>And finally the actual code:</p>
-<pre><code>    code_generator-&gt;string_buffer_1.append( &quot;\r\n\t\t&quot; );
+<pre tabindex="0"><code>    code_generator-&gt;string_buffer_1.append( &quot;\r\n\t\t&quot; );
     code_generator-&gt;string_buffer_1.append( code_fragment-&gt;code );
 
 </code></pre><p>Write to file and close it and we are done!</p>
-<pre><code>    fprintf( output_file, &quot;%s&quot;, code_generator-&gt;string_buffer_1.data );
+<pre tabindex="0"><code>    fprintf( output_file, &quot;%s&quot;, code_generator-&gt;string_buffer_1.data );
 
     fclose( output_file );
 }
@@ -1415,7 +1415,7 @@ Gabriel</p>
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

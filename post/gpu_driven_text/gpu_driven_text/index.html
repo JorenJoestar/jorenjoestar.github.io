@@ -82,7 +82,7 @@ Normally these values can be mapped and read back into the GPU, but sometimes ca
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -505,7 +505,7 @@ This reminded me of a system that I use to render values that live only on the G
 Here we are rendering&hellip;text straight from a shader ? WHAT ?</p>
 <p>The idea comes from <a href="https://glslsandbox.com/e#35231.0">this article</a> as far as I understood, but the idea is the following: <strong>compress each character data into an array of 4 floats (vec4/float4), with each component being the packed bits of one quadrant</strong>, and given an UV reconstruct the shape of the character.</p>
 <p>Taken straight from that website as deeper explanation:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">/*
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">/*
 </span><span style="color:#75715e">--------
 </span><span style="color:#75715e">-███----
 </span><span style="color:#75715e">██-██---
@@ -567,7 +567,7 @@ Here we are rendering&hellip;text straight from a shader ? WHAT ?</p>
 <p>We will use 4 different buffers to have this working. It can be improved honestly, but this is good enough for a debug only feature!</p>
 <h3 id="data-and-atomics-buffer">Data and atomics buffer</h3>
 <p>This buffer will contain the atomics and the data to be filled with each character of each string.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">// Common buffers used to render gpu driven font
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">// Common buffers used to render gpu driven font
 </span><span style="color:#75715e"></span>layout (std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>) buffer DebugGpuFontBuffer {
     uint        current_data_index;
     uint        current_entry_index;
@@ -578,7 +578,7 @@ Here we are rendering&hellip;text straight from a shader ? WHAT ?</p>
 };
 </code></pre></div><h3 id="entry-buffer">Entry buffer</h3>
 <p>For each string we want to render, we need a position and where in the global data memory we need to read, thus offset and count.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#66d9ef">struct</span> DebugGPUStringEntry {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#66d9ef">struct</span> DebugGPUStringEntry {
     <span style="color:#66d9ef">float</span>       x;
     <span style="color:#66d9ef">float</span>       y;
     uint        offset;
@@ -591,12 +591,12 @@ layout (std430, binding<span style="color:#f92672">=</span><span style="color:#a
 </code></pre></div><h3 id="dispatch-buffer">Dispatch buffer</h3>
 <p>This buffer is used to generate draw for each character in the global data.<br>
 We need this so that each character knows where it belongs in a string.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">layout(std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>) buffer DebugGPUFontDispatch {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">layout(std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>) buffer DebugGPUFontDispatch {
     uvec4               dispatches[];
 };
 </code></pre></div><h3 id="indirect-buffer">Indirect buffer</h3>
 <p>Final buffer is the one driving how many total characters we will draw.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">layout(std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>) buffer DebugGPUIndirect {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">layout(std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>) buffer DebugGPUIndirect {
     uint            vertex_count;
     uint            instance_count;
     uint            first_vertex;
@@ -612,7 +612,7 @@ We need this so that each character knows where it belongs in a string.</p>
 <p>The main ingredient for this solution is the possibility to write to StructuredBuffers/SSBOs (depending on the API of your choice) PLUS the usage of <em>atomic operations</em>.</p>
 <p>These operations are possible since OpenGL 4+ (actually my initial implementation is on an OpenGL-backed engine), so all newer APIs are supported.</p>
 <p>Let&rsquo;s have a look at some code, from the <strong>vertex shader of a sprite</strong>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">// 1. Reserve memory
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">// 1. Reserve memory
 </span><span style="color:#75715e">// Reserve 1 entry, that will include position and where in the data buffer we will write our text.
 </span><span style="color:#75715e"></span>uint entry_index <span style="color:#f92672">=</span> atomicAdd(current_entry_index, <span style="color:#ae81ff">1</span>);
 <span style="color:#75715e">// Reserve 16 characters
@@ -651,7 +651,7 @@ data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff"
 <p>Once we collected all the characters around, we need to generate the per-character dispatches and the indirect draw.<br>
 I wrote a compute shader for that, optimizable, but good for the purpose here.<br>
 It also writes another string with GPU data about the system itself:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">layout (local_size_x <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_y <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_z <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) in;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">layout (local_size_x <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_y <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_z <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) in;
 <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>() {
     <span style="color:#75715e">// Write global label with gpu font system data
 </span><span style="color:#75715e"></span>    uint entry_index <span style="color:#f92672">=</span> atomicAdd(current_entry_index, <span style="color:#ae81ff">1</span>);
@@ -679,7 +679,7 @@ It also writes another string with GPU data about the system itself:</p>
     entries[entry_index].offset <span style="color:#f92672">=</span> data_index;
     entries[entry_index].count <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>;
 </code></pre></div><p>Here we are &ldquo;simply&rdquo; writing a string containing the indices used by the system, just to keep track of them.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">    <span style="color:#75715e">// Write single character dispatch informations
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">    <span style="color:#75715e">// Write single character dispatch informations
 </span><span style="color:#75715e"></span>    uint global_index <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
     <span style="color:#66d9ef">for</span> (uint e <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; e <span style="color:#f92672">&lt;</span> current_entry_index; <span style="color:#f92672">++</span>e) {
       uint entry_data_index <span style="color:#f92672">=</span> entries[<span style="color:#ae81ff">0</span>].offset;
@@ -692,7 +692,7 @@ It also writes another string with GPU data about the system itself:</p>
     }
 </code></pre></div><p>This is where we create the per character data.<br>
 We can optimize this, probably using one uint instead of 4.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">    <span style="color:#75715e">// Write indirect draw values
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">    <span style="color:#75715e">// Write indirect draw values
 </span><span style="color:#75715e"></span>    vertex_count <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>;
     instance_count <span style="color:#f92672">=</span> global_index;
     first_vertex <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
@@ -703,7 +703,7 @@ We can optimize this, probably using one uint instead of 4.</p>
 <h2 id="indirect-rendering-of-the-gpu-driven-text">(Indirect) Rendering of the GPU Driven Text</h2>
 <p>We are now ready to write the actual text on the screen!</p>
 <p>Here is the final shader:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">#if defined VERTEX
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">#if defined VERTEX
 </span><span style="color:#75715e"></span>
   layout (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>) out vec2 uv;
   layout (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) flat out uint global_data_index;
@@ -774,7 +774,7 @@ We can optimize this, probably using one uint instead of 4.</p>
 <li>Color the pixel!</li>
 </ul>
 <p>The real magic happens in the &lsquo;print_char&rsquo; method, and here I will post all the code that comes from the shadertoy example I wrote before!</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">float</span> DOWN_SCALE <span style="color:#f92672">=</span> <span style="color:#ae81ff">1.0f</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">float</span> DOWN_SCALE <span style="color:#f92672">=</span> <span style="color:#ae81ff">1.0f</span>;
 
 <span style="color:#75715e">#define MAX_INT_DIGITS 4
 </span><span style="color:#75715e"></span><span style="color:#75715e">//#define FLIP_Y
@@ -1211,7 +1211,7 @@ Maybe this is the start of a GPU-Driven ImGui system ? :p</p>
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

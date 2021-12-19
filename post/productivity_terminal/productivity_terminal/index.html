@@ -81,7 +81,7 @@ For Windows I started using Cmder few years ago, but I should check also the rev
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -505,7 +505,7 @@ And with that it comes also an &lsquo;alias&rsquo; file, in the path <em>%CMDER_
 <h1 id="knowing-your-aliases">Knowing your aliases</h1>
 <p>First of all some commands to know and edit your aliases.</p>
 <p>I tend to write aliases with acronyms for faster typing.</p>
-<pre><code>ma=cat %CMDER_ROOT%\config\user_aliases.cmd
+<pre tabindex="0"><code>ma=cat %CMDER_ROOT%\config\user_aliases.cmd
 
 ea=vim %CMDER_ROOT%\config\user_aliases.cmd
 </code></pre><p>M.A. stands for <em>My Aliases</em>, while E.A. <em>Edit Aliases</em>.</p>
@@ -513,14 +513,14 @@ ea=vim %CMDER_ROOT%\config\user_aliases.cmd
 <h1 id="jumping-around">Jumping around</h1>
 <p>Navigation is the first type of enhancement I recommend.<!-- raw HTML omitted -->
 This is HUGE for me and incredibly simple:</p>
-<pre><code>..=cd ..
+<pre tabindex="0"><code>..=cd ..
 ..2=cd ../..
 ..3=cd ../../..
 ..4=cd ../../../..
 </code></pre><p>Navigate to parent folders in a much faster way!</p>
 <p>The second one is actually&hellip;<em>jumps</em> (thinking of ASM instructions)!<!-- raw HTML omitted -->
 When I identify some folders that I access often, I add these kind of lines:</p>
-<pre><code>jc= cd /D C:\Coding
+<pre tabindex="0"><code>jc= cd /D C:\Coding
 jp= cd /D C:\Users\Gabriel\Documents\Visual Studio 2017\Projects
 </code></pre><p>Again aliases.
 <em>Jump Coding</em> and <em>Jump Projects</em>.</p>
@@ -528,7 +528,7 @@ jp= cd /D C:\Users\Gabriel\Documents\Visual Studio 2017\Projects
 <h1 id="file-listing">File listing</h1>
 <p>Again another simple trick, and you can add more variations to your needs.<!-- raw HTML omitted -->
 <em>ls</em> is the <em>dir</em> command of Linux/Unix, and is another foundation.<!-- raw HTML omitted --></p>
-<pre><code>ls=ls --show-control-chars -F --color $*
+<pre tabindex="0"><code>ls=ls --show-control-chars -F --color $*
 ll=ls --show-control-chars -F -l --color $*
 lr=ls --show-control-chars -F -lrt --color $*
 la=ls --show-control-chars -F -a --color $*
@@ -536,7 +536,7 @@ la=ls --show-control-chars -F -a --color $*
 Also notice the &lsquo;$*&rsquo; at the end - it means to append all the argument that you want to pass <em>after</em> the alias!</p>
 <h1 id="text-editing">Text editing</h1>
 <p>I mainly use Sublime Text and occasionally VIM, so here are some <em>aliases</em> as well:</p>
-<pre><code>vi=vim $*
+<pre tabindex="0"><code>vi=vim $*
 vimrc=vim %CMDER_ROOT%\vendor\msysgit\share\vim\vimrc
 
 subl=&quot;C:\Program Files\Sublime Text 3\sublime_text.exe&quot; $*
@@ -545,7 +545,7 @@ subl=&quot;C:\Program Files\Sublime Text 3\sublime_text.exe&quot; $*
 <h1 id="grepping">Grepping</h1>
 <p>I honestly completely forgot to add the <em>color</em> option&hellip;learning through sharing. Thank you <a href="https://twitter.com/sarah_edo">Sarah</a> :)</p>
 <p>Added the color option, these are the two variations of grep I use the most:</p>
-<pre><code>grep=grep --color $*
+<pre tabindex="0"><code>grep=grep --color $*
 
 gric=grep --color -Iir $*
 gril=grep --color -Iirl $*
@@ -562,7 +562,7 @@ gril=grep --color -Iirl $*
 <p>Let&rsquo;s search for <em>&lsquo;blipbuffer&rsquo;</em> into my HydraNes/src folder:</p>
 <p><code>grep --color -Iir blipbuffer *</code></p>
 <p>We&rsquo;ll loose color in the post, but this is the result:</p>
-<pre><code>src/main.cpp:            if (nes-&gt;apu.blipBuffer-&gt;samples_avail()) {
+<pre tabindex="0"><code>src/main.cpp:            if (nes-&gt;apu.blipBuffer-&gt;samples_avail()) {
 src/main.cpp:                int32 readSamples = nes-&gt;apu.blipBuffer-&gt;read_samples(sampleBuffer, kBufferSize, false);
 src/main.cpp:            const int32 availableSamples = nes-&gt;apu.blipBuffer-&gt;samples_avail();
 src/main.cpp:                const int32 readSamples = nes-&gt;apu.blipBuffer-&gt;read_samples( bufferAddress, kBufferSize, false );
@@ -580,14 +580,14 @@ src/Nes.h:            Blip_Buffer*            blipBuffer = nullptr;
 </code></pre><p>Instead using the list only option:</p>
 <p><code>grep --color -Iirl blipbuffer *</code></p>
 <p>Gives you this result:</p>
-<pre><code>src/main.cpp
+<pre tabindex="0"><code>src/main.cpp
 src/Nes.cpp
 src/Nes.h
 </code></pre><h1 id="git">Git</h1>
 <p>This is another big one.
 Git can have very verbose commands, so aliases save a lot of typing!<!-- raw HTML omitted -->
 Again I add generic and very specific version of commands:</p>
-<pre><code>gs=git status
+<pre tabindex="0"><code>gs=git status
 gl=git log --oneline --all --graph --decorate $*
 
 ga=git add &quot;$*&quot;
@@ -623,7 +623,7 @@ In this case - and this is more a git concept - when working with subtree I use 
 <em>ga</em> adds the files and folders you write after the command.</p>
 <h1 id="visual-studio-compiler">Visual Studio Compiler</h1>
 <p>Some different aliases I use for Visual Studio:</p>
-<pre><code>vs=&quot;%VS140COMNTOOLS%..\IDE\devenv.exe&quot; /edit &quot;$*&quot;
+<pre tabindex="0"><code>vs=&quot;%VS140COMNTOOLS%..\IDE\devenv.exe&quot; /edit &quot;$*&quot;
 
 ;= Needed to find MSBuild executable.
 vcvars=&quot;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat&quot;
@@ -835,7 +835,7 @@ Gabriel</p>
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

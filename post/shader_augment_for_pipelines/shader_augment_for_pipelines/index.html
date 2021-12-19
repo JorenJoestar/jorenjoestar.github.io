@@ -83,7 +83,7 @@ There are few reasons:
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -571,7 +571,7 @@ But the question is: <strong>when</strong> is necessary ?</p>
 <h1 id="shader-augmentations">Shader Augmentations</h1>
 <p>We will take a HFX shader and will see all the augmentations.<!-- raw HTML omitted -->
 This is used in the <a href="https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/">Render Pipeline Article</a> and renders the GLTF assets:</p>
-<pre><code>shader PBR {
+<pre tabindex="0"><code>shader PBR {
 
     properties {
         albedo_texture(&quot;Albedo&quot;, 2D) = &quot;&quot;
@@ -866,13 +866,13 @@ This is used in the <a href="https://jorenjoestar.github.io/post/data_driven_ren
 <p>In D3D12, you have the <a href="https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">ShaderBytecode</a> used in the pipelines, but not as arrays (just member of the various creation structs).</p>
 <p>From a functionality perspective, they are EQUAL. It makes sense - a <strong>Pipeline</strong> is the description of all the static part of a GPU pipeline, and shaders are amongst the most important part of it.</p>
 <p>You can see it in the &lsquo;pass&rsquo; section of the HFX file:</p>
-<pre><code>pass PositionOnly {
+<pre tabindex="0"><code>pass PositionOnly {
     vertex = PositionOnly
     fragment = PositionOnly
     ...
 }
 </code></pre><p>For a compute pipeline is even simpler, and dispatch size can be added as well:</p>
-<pre><code>pass DeferredCompute {
+<pre tabindex="0"><code>pass DeferredCompute {
     compute = DeferredCompute
     dispatch = 32, 32, 1
     ...
@@ -883,7 +883,7 @@ This is used in the <a href="https://jorenjoestar.github.io/post/data_driven_ren
 This was one of the main features of CGFX and Microsoft&rsquo;s FX - and still now is incredibly useful.<!-- raw HTML omitted -->
 Unity&rsquo;s ShaderLab also incorporates render states.</p>
 <p>I decided to separate render states on their own group:</p>
-<pre><code>render_states {
+<pre tabindex="0"><code>render_states {
     state main {
         Cull Back
         ZTest LEqual
@@ -902,7 +902,7 @@ In this case a render states defines depth/stencil, blend and rasterization.</p>
 <p>A great addition to that is to add the possibility of inherit/override render states.<!-- raw HTML omitted -->
 For example in a Transparent pass, the blend state could be defined in the Render Pass data, and be inherited explicitly here.</p>
 <p>Also very important is the definition of <strong>input assembly</strong> - how the vertices are fed into the <em>vertex program</em>:</p>
-<pre><code>layout {
+<pre tabindex="0"><code>layout {
     vertex main3D {
         binding 0 16 vertex
         attribute float3 Position 0 0 0
@@ -950,7 +950,7 @@ Would it be great to fix those special cases by writing platform specific shader
 <p>The choise here is to use a keyword to identify the type of language and then simply write the code in that language.<!-- raw HTML omitted -->
 This is <em>ideal</em> to also incorporate code from previous codebases with a small amount of work.</p>
 <p>Let&rsquo;s look at the GBuffer Vertex GLSL code:</p>
-<pre><code>glsl GBuffer_V {
+<pre tabindex="0"><code>glsl GBuffer_V {
 
     #pragma include &quot;Platform.h&quot;
 
@@ -984,7 +984,7 @@ This is <em>ideal</em> to also incorporate code from previous codebases with a s
 <p>A new addition of the new APIs, resource layouts are another great factor to take care of.<!-- raw HTML omitted -->
 Architecturally they can be implemented in different ways, but I like the idea of having them &lsquo;in your face&rsquo; since the beginning!</p>
 <p>In the <em>layout</em> section, you can define resources like this:</p>
-<pre><code>list gbuffer {
+<pre tabindex="0"><code>list gbuffer {
     cbuffer ViewConstants ViewConstants;
 
     texture2D albedo;
@@ -998,7 +998,7 @@ Architecturally they can be implemented in different ways, but I like the idea o
 </code></pre><p>The name will be used in the pass section to define which resource list is used.<!-- raw HTML omitted -->
 There can be multiple resource lists, normally they should be grouped per frequency (most frequent changes to least frequent ones) and can be separated by a comma for example.<!-- raw HTML omitted --></p>
 <p>A small addition is to use externally specified resource list and code, like for <strong>starnest.hfx</strong>:</p>
-<pre><code>pass main {
+<pre tabindex="0"><code>pass main {
 	...
 	resources = &quot;ShaderToy.Main&quot;	
 }
@@ -1222,7 +1222,7 @@ Gabriel</p>
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

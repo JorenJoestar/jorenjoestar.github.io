@@ -28,7 +28,7 @@
   
     
   
-  <meta name="description" content="Overview   Model used in the demo.   Data Driven Rendering Series:
+  <meta name="description" content="Overview Model used in the demo.Data Driven Rendering Series:
  https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  We finally arrived in the Rendering Pipeline realm.Some can write that it is useless, some can hate it.Many have some sort of abstraction for it since ages, and others have to now that new APIs like Vulkan and DX12 have it as an explicit part of their design (finally!).
 After we built a basic Material System in the previous article (https://jorenjoestar.">
 
@@ -82,7 +82,7 @@ After we built a basic Material System in the previous article (https://jorenjoe
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -113,7 +113,7 @@ After we built a basic Material System in the previous article (https://jorenjoe
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/">
   <meta property="og:title" content="Data Driven Rendering: Pipelines | Joren&#39;s">
-  <meta property="og:description" content="Overview   Model used in the demo.   Data Driven Rendering Series:
+  <meta property="og:description" content="Overview Model used in the demo.Data Driven Rendering Series:
  https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  We finally arrived in the Rendering Pipeline realm.Some can write that it is useless, some can hate it.Many have some sort of abstraction for it since ages, and others have to now that new APIs like Vulkan and DX12 have it as an explicit part of their design (finally!).
 After we built a basic Material System in the previous article (https://jorenjoestar."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
@@ -611,7 +611,7 @@ We will see the code of each component and arrive at the actual data definition 
 <p>The code has changed a bit since last article, with the inclusion of CGLM as math library and other high-level rendering code, included in hydra_rendering.h/.cpp.</p>
 <h2 id="render-view-1">Render View</h2>
 <p>First element is the Render View:</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // Render view is a 'contextualized' camera - a way of using the camera in the render pipeline.
 //
 struct RenderView {
@@ -626,7 +626,7 @@ struct RenderView {
 It should be pretty straighforward.</p>
 <h2 id="render-manager-1">Render Manager</h2>
 <p>Next is Render Manager:</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 struct RenderManager {
 
     struct RenderContext {
@@ -655,7 +655,7 @@ Here the RenderContext is interesting, and it gives access to all you need to re
 </ol>
 <p>In this very simple demo, we have just 2 <em>render managers</em>: <em>Line Renderer</em> and <em>Scene Renderer</em>.<!-- raw HTML omitted -->
 The most interesting one is the second: Line Renderer has commands to draw lines that will be mapped into a GPU buffer and uses instancing to draw them.</p>
-<pre><code>
+<pre tabindex="0"><code>
 void LineRenderer::render( RenderContext&amp; render_context ) {
 
     Device&amp; device = *render_context.device;
@@ -717,7 +717,7 @@ void LineRenderer::render( RenderContext&amp; render_context ) {
 <p>This is another personal preference - but not necessary at all.<!-- raw HTML omitted -->
 Two concepts are really useful to me to be explicit and centralized: <em>resources and bindings</em>.</p>
 <p>Resources are all referenced in a <em>&lsquo;Shader Resource Database&rsquo;</em>:</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // Struct used to retrieve textures, buffers and samplers.
 //
 struct ShaderResourcesDatabase {
@@ -757,7 +757,7 @@ struct ShaderResourcesDatabase {
 </code></pre><p>Simply put, any resource used by rendering is here.<!-- raw HTML omitted -->
 Both Materials, Pipelines and Render Managers register and use the database to create the <em>resource lists</em> used in rendering.</p>
 <p>Next and more convoluted is the <em>shader resources lookup</em> class:</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // Struct to link between a Shader Binding Name and a Resource. Used both in Pipelines and Materials.
 //
 struct ShaderResourcesLookup {
@@ -799,7 +799,7 @@ As a simple example to clarify, a shader could have an <em>&lsquo;albedo&rsquo;<
 Or for a Render Stage, like a Post-Processing one, its input could be defined in the shader code as <em>&lsquo;input 0, input 1&hellip;'</em> and the render pipeline creates the binding.</p>
 <p>With those in place, we can finalize any resource used by any shader/material/pipeline.</p>
 <p>The actual usage is into the Shader Instance class. Let&rsquo;s have a quick look.</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 struct ShaderInstance {
 
     void                            load_resources( const PipelineCreation&amp; pipeline, PipelineHandle pipeline_handle, ShaderResourcesDatabase&amp; database, ShaderResourcesLookup&amp; lookup, Device&amp; device );
@@ -814,7 +814,7 @@ Not very happy with the name - any suggestion welcome.<!-- raw HTML omitted -->
 A material contains a list of those - one for each pass - and is used to draw.<!-- raw HTML omitted -->
 Again with the new Vulkan/DX12 mentality, Pipeline + Resource Lists + Geometry is all you need to render almost.</p>
 <p>The magic happens when creating the resource lists:</p>
-<pre><code>void ShaderInstance::load_resources( const PipelineCreation&amp; pipeline_creation, PipelineHandle pipeline_handle, ShaderResourcesDatabase&amp; database, ShaderResourcesLookup&amp; lookup, Device&amp; device ) {
+<pre tabindex="0"><code>void ShaderInstance::load_resources( const PipelineCreation&amp; pipeline_creation, PipelineHandle pipeline_handle, ShaderResourcesDatabase&amp; database, ShaderResourcesLookup&amp; lookup, Device&amp; device ) {
     
     using namespace hydra::graphics;
     ResourceListCreation::Resource resources_handles[k_max_resources_per_list];
@@ -826,7 +826,7 @@ Again with the new Vulkan/DX12 mentality, Pipeline + Resource Lists + Geometry i
 
 </code></pre><p>We know that a pipeline can have 1 or more resource lists, thus we just iterate through them.<!-- raw HTML omitted -->
 Next we look into each resource of the current list:</p>
-<pre><code>
+<pre tabindex="0"><code>
         // For each resource
         for ( uint32_t r = 0; r &lt; layout.num_active_bindings; r++ ) {
             const ResourceBinding&amp; binding = layout.bindings[r];
@@ -848,7 +848,7 @@ Next we look into each resource of the current list:</p>
                 ... same for textures
 </code></pre><p>For each binding coming from the shader (think &lsquo;albedo&rsquo; for a PBR shader) we search for the actual resource name (&lsquo;WoodBeamAlbedo&rsquo;) and query the database to find it.<!-- raw HTML omitted -->
 After we did that, we can create the list:</p>
-<pre><code>            }
+<pre tabindex="0"><code>            }
         }
 
         ResourceListCreation creation = { pipeline_creation.resource_list_layout[l], resources_handles, layout.num_active_bindings };
@@ -864,7 +864,7 @@ After we did that, we can create the list:</p>
 <p>This is the <em>CORE</em> of everything, and it must work with all both <strong>geometrical</strong> stages and <strong>post-process</strong> ones.<!-- raw HTML omitted -->
 You can either create a base virtual class or doing something like here.<!-- raw HTML omitted -->
 Important is understanding the concept!</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // Encapsulate the rendering of anything that writes to one or more Render Targets.
 //
 struct RenderStage {
@@ -882,27 +882,27 @@ struct RenderStage {
 <li>Swapchain - special case of binding the window framebuffer and render the last time.</li>
 </ol>
 <p>Next is the most important part: dependencies!</p>
-<pre><code>    array( TextureHandle )          input_textures                      = nullptr;
+<pre tabindex="0"><code>    array( TextureHandle )          input_textures                      = nullptr;
     array( TextureHandle )          output_textures                     = nullptr;
 
     TextureHandle                   depth_texture;
 
 </code></pre><p>When we create the pipeline, we save all inputs and outputs textures.<!-- raw HTML omitted -->
 Depth/Stencil is a put in its own part.</p>
-<pre><code>    float                           scale_x                             = 1.0f;
+<pre tabindex="0"><code>    float                           scale_x                             = 1.0f;
     float                           scale_y                             = 1.0f;
     uint16_t                        current_width                       = 1;
     uint16_t                        current_height                      = 1;
 </code></pre><p>Here we handle scaling. When using scale, we use the framebuffer&rsquo;s window width/height to calculate the Render Target size of the output ones. When using the current width/height we instead define a specific size (like for a shadow map).</p>
-<pre><code>    RenderPassHandle                render_pass;
+<pre tabindex="0"><code>    RenderPassHandle                render_pass;
 </code></pre><p>hydra::graphics low level rendering needs this handle to actually handle the drawing.</p>
-<pre><code>    Material*                       material                            = nullptr;
+<pre tabindex="0"><code>    Material*                       material                            = nullptr;
     uint8_t                         pass_index                          = 0;
 </code></pre><p>This is for PostProcesses : material and pass index to retrieve the &lsquo;shader instance&rsquo; containing the <em>pipeline</em> and the <em>resource lists</em>.</p>
-<pre><code>    RenderView*                     render_view                         = nullptr;
+<pre tabindex="0"><code>    RenderView*                     render_view                         = nullptr;
 </code></pre><p>RenderView used by this stage.<!-- raw HTML omitted -->
 For example the &lsquo;Sun Shadow Render Stage&rsquo; will use the &lsquo;Shadow Render View&rsquo; to dispatch all its objects to each render manager.</p>
-<pre><code>    float                           clear_color[4];
+<pre tabindex="0"><code>    float                           clear_color[4];
     float                           clear_depth_value;
     uint8_t                         clear_stencil_value;
 
@@ -912,7 +912,7 @@ For example the &lsquo;Sun Shadow Render Stage&rsquo; will use the &lsquo;Shadow
     uint8_t                         resize_output                       : 1;
     uint8_t                         pad                                 : 4;
 </code></pre><p>If the stage needs to clear its output(s), these will tell what to do.</p>
-<pre><code>    uint64_t                        geometry_stage_mask;                // Used to send render objects to the proper stage. Not used by compute or postprocess stages.
+<pre tabindex="0"><code>    uint64_t                        geometry_stage_mask;                // Used to send render objects to the proper stage. Not used by compute or postprocess stages.
 </code></pre><p>This creates a link between render managers and stages.<!-- raw HTML omitted -->
 An object is rendered only if its <em>stage mask</em> equals at least one stage.<!-- raw HTML omitted -->
 Why that ? <!-- raw HTML omitted -->
@@ -921,9 +921,9 @@ Because when defining a <em>render view</em>, we have a list of objects visible 
 <p>This ideas comes from the <em>AMAZING</em> talk by Bungie:</p>
 <p><a href="http://advances.realtimerendering.com/destiny/gdc_2015/Tatarchuk_GDC_2015__Destiny_Renderer_web.pdf">http://advances.realtimerendering.com/destiny/gdc_2015/Tatarchuk_GDC_2015__Destiny_Renderer_web.pdf</a></p>
 <p>A <em>render manager</em> is what they call a <em>feature renderer</em> - named differently because this version is much more basic!</p>
-<pre><code>    array( RenderManager* )         render_managers;
+<pre tabindex="0"><code>    array( RenderManager* )         render_managers;
 </code></pre><p>Render Managers can register to stages even if they don&rsquo;t have objects, for example a <em>&lsquo;Lighting Manager&rsquo;</em> would want to submit a list of visible light in a certain pass.</p>
-<pre><code>    // Interface
+<pre tabindex="0"><code>    // Interface
     virtual void                    init();
     virtual void                    terminate();
 
@@ -941,7 +941,7 @@ Because when defining a <em>render view</em>, we have a list of objects visible 
 Load resources is used for PostProcesses - they have a material and need to load its resources.</p>
 <h2 id="render-pipeline">Render Pipeline</h2>
 <p>We arrived at the last piece of the puzzle!</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // A full frame of rendering using RenderStages.
 //
 struct RenderPipeline {
@@ -982,7 +982,7 @@ Let&rsquo;s look at the data defining the pipeline.<!-- raw HTML omitted -->
 We will define a simple-silly-non-effective PBR deferred rendering.<!-- raw HTML omitted -->
 Probably the worst shaders you saw, but it will still work.</p>
 <p>First we define the Render Targets:</p>
-<pre><code>{
+<pre tabindex="0"><code>{
     &quot;name&quot;: &quot;PBR_Deferred&quot;,
     &quot;RenderTargets&quot;: [
         {
@@ -1009,7 +1009,7 @@ Probably the worst shaders you saw, but it will still work.</p>
 </code></pre><p>by default they will have the same size as the window framebuffer, unless otherwise written (scale_x/y, width/height).</p>
 <p>Next are the actual render stages.<!-- raw HTML omitted -->
 The first is the GBufferOpaque one:</p>
-<pre><code>    &quot;RenderStages&quot;: [
+<pre tabindex="0"><code>    &quot;RenderStages&quot;: [
         {
             &quot;name&quot;: &quot;GBufferOpaque&quot;,
             &quot;type&quot;: &quot;Geometry&quot;,
@@ -1030,7 +1030,7 @@ The first is the GBufferOpaque one:</p>
 </code></pre><p>As you see it outputs to 3 Render Targets + Depth.<!-- raw HTML omitted -->
 It also specify clear color, depth and stencil.</p>
 <p>Next is the silliest compute shader to calculate light:</p>
-<pre><code>        {
+<pre tabindex="0"><code>        {
             &quot;name&quot;: &quot;DeferredLights&quot;,
             &quot;type&quot;: &quot;PostCompute&quot;,
             &quot;material_name&quot;: &quot;SimpleFullscreen&quot;,
@@ -1073,7 +1073,7 @@ Worth noting &lsquo;material&rsquo; and &lsquo;material pass index&rsquo; - to r
 <p>Next is an example of reusing a Render Target to add informations (like transparent objects).<!-- raw HTML omitted -->
 It will add debug rendering on top of the other objects and write in the BackBufferColor render target.<!-- raw HTML omitted -->
 The absence of clear parameters dictates that we don&rsquo;t want to clear.</p>
-<pre><code>        {
+<pre tabindex="0"><code>        {
             &quot;name&quot;: &quot;DebugRendering&quot;,
             &quot;type&quot;: &quot;Geometry&quot;,
             &quot;render_view&quot;: &quot;main&quot;,
@@ -1088,7 +1088,7 @@ The absence of clear parameters dictates that we don&rsquo;t want to clear.</p>
         },
 </code></pre><p>Last step is the swapchain.<!-- raw HTML omitted -->
 It is simply using a simple shader to write to the window framebuffer as the last step of the frame.</p>
-<pre><code>        {
+<pre tabindex="0"><code>        {
             &quot;name&quot;: &quot;Swapchain&quot;,
             &quot;type&quot;: &quot;Swapchain&quot;,
             &quot;mask&quot;: &quot;FRAMEBUFFER&quot;,
@@ -1364,7 +1364,7 @@ Thanks for reading!</p>
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

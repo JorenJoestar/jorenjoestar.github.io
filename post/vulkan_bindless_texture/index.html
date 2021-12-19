@@ -84,7 +84,7 @@ There is a great article about the different features used here at arm, check it
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -509,7 +509,7 @@ This means also that is architecturally not optimal but it will serve its purpos
 <p>There is a great article about the different features used here at <a href="https://community.arm.com/arm-community-blogs/b/graphics-gaming-and-vr-blog/posts/vulkan-descriptor-indexing">arm</a>, check it out first!</p>
 <h1 id="1-querying-for-gpu-support">1. Querying for GPU support</h1>
 <p>In a pure Vulkan way, we want to query for the support of a couple of features, like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT, <span style="color:#66d9ef">nullptr</span> };
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT, <span style="color:#66d9ef">nullptr</span> };
 VkPhysicalDeviceFeatures2 device_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, <span style="color:#f92672">&amp;</span>indexing_features };
 
 vkGetPhysicalDeviceFeatures2( vulkan_physical_device, <span style="color:#f92672">&amp;</span>device_features );
@@ -519,7 +519,7 @@ vkGetPhysicalDeviceFeatures2( vulkan_physical_device, <span style="color:#f92672
 <p>I will put a little more context here.<br>
 With this code we enable all possible supported features, thus when we create the device we already have pNext used.<br>
 Being a linked list, to add more features to a device we need to add another link to our indexing features created above:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
     <span style="color:#75715e">// Enable all features: just pass the physical features 2 struct.
 </span><span style="color:#75715e"></span>    VkPhysicalDeviceFeatures2 physical_features2 <span style="color:#f92672">=</span> { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
     vkGetPhysicalDeviceFeatures2( vulkan_physical_device, <span style="color:#f92672">&amp;</span>physical_features2 );
@@ -548,7 +548,7 @@ Being a linked list, to add more features to a device we need to add another lin
 <p>When creating the Descriptor Pool, we need to add the <em>flag VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT</em>.<br>
 This is needed so we can update textures in the bindless array without any problem or validation error.<br>
 Still we need to be sure to not change a used resource in command buffers that are running!</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">  <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">const</span> u32 k_max_bindless_resources <span style="color:#f92672">=</span> <span style="color:#ae81ff">16536</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">  <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">const</span> u32 k_max_bindless_resources <span style="color:#f92672">=</span> <span style="color:#ae81ff">16536</span>;
   <span style="color:#75715e">// Create bindless descriptor pool
 </span><span style="color:#75715e"></span>  VkDescriptorPoolSize pool_sizes_bindless[] <span style="color:#f92672">=</span>
   {
@@ -567,7 +567,7 @@ This is just because we want the fastest route to use bindless, but architectura
 <p>First we create the Descriptor Set Layout with at least the flags <em>VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT</em> and <em>VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT</em> .<br>
 These are needed because we will not fill all the array elements of the bindless array (partially bound flag) and we will update when a new texture is added to the device (update after bind).<br>
 Also adding the Variable Descriptor Count in case we want more than one descriptor layout /set with a bindless array:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">    <span style="color:#75715e">// Create bindless global descriptor layout.
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">    <span style="color:#75715e">// Create bindless global descriptor layout.
 </span><span style="color:#75715e"></span>    {
         VkDescriptorBindingFlags bindless_flags <span style="color:#f92672">=</span> VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT <span style="color:#f92672">|</span> VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT <span style="color:#f92672">|</span> VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
 
@@ -592,7 +592,7 @@ Also adding the Variable Descriptor Count in case we want more than one descript
 
         vkCreateDescriptorSetLayout( vulkan_device, <span style="color:#f92672">&amp;</span>layout_info, vulkan_allocation_callbacks, <span style="color:#f92672">&amp;</span>vulkan_bindless_descriptor_layout );
 </code></pre></div><p>At this point we create the actual descriptor set from the bindless pool:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">        VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">        VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
         alloc_info.descriptorPool <span style="color:#f92672">=</span> vulkan_descriptor_pool_bindless;
         alloc_info.descriptorSetCount <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
         alloc_info.pSetLayouts <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>vulkan_bindless_descriptor_layout;
@@ -609,7 +609,7 @@ Also adding the Variable Descriptor Count in case we want more than one descript
 </code></pre></div><h1 id="5-texture-upload">5. Texture Upload</h1>
 <p>At this point whenever we create a new texture we can update the global bindless descriptor set.<br>
 I prefer to batch this and do it at the end of the frame, here it is:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">if</span> ( num_texture_updates ) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">if</span> ( num_texture_updates ) {
     <span style="color:#75715e">// Handle deferred writes to bindless textures.
 </span><span style="color:#75715e"></span>    <span style="color:#75715e">// TODO: use dynamic array instead.
 </span><span style="color:#75715e"></span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">constexpr</span> u32 k_num_writes_per_frame <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>;
@@ -652,7 +652,7 @@ I prefer to batch this and do it at the end of the frame, here it is:</p>
 }
 </code></pre></div><h1 id="6-adding-the-bindless-descriptor-layout-to-layouts">6. Adding the Bindless Descriptor Layout to layouts</h1>
 <p>Again a quick and dirty example of adding the bindless layout to every layout:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
 u32 bindless_active <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
 <span style="color:#75715e">#if defined(HYDRA_BINDLESS)
 </span><span style="color:#75715e"></span>    vk_layouts[ creation.num_active_layouts ] <span style="color:#f92672">=</span> vulkan_bindless_descriptor_layout;
@@ -667,7 +667,7 @@ u32 bindless_active <span style="color:#f92672">=</span> <span style="color:#ae8
     check( vkCreatePipelineLayout( vulkan_device, <span style="color:#f92672">&amp;</span>pipeline_layout_info, vulkan_allocation_callbacks, <span style="color:#f92672">&amp;</span>pipeline_layout ) );
 </code></pre></div><h1 id="7-descriptor-set-binding-at-draw">7. Descriptor Set Binding at Draw</h1>
 <p>The final (c++ wise) step is to bind the bindless set, here in command buffer code:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
 <span style="color:#66d9ef">void</span> CommandBuffer<span style="color:#f92672">::</span>bind_resource_list( <span style="color:#66d9ef">uint64_t</span> sort_key, ResourceListHandle<span style="color:#f92672">*</span> handles, <span style="color:#66d9ef">uint32_t</span> num_lists, <span style="color:#66d9ef">uint32_t</span><span style="color:#f92672">*</span> offsets, <span style="color:#66d9ef">uint32_t</span> num_offsets ) {
 <span style="color:#75715e">// ...
 </span><span style="color:#75715e"></span>
@@ -683,7 +683,7 @@ vkCmdBindDescriptorSets( vk_command_buffer, current_pipeline<span style="color:#
 </code></pre></div><h1 id="8-glsl-shader">8. GLSL shader!</h1>
 <p>And here the modified code for the shader.<br>
 Albedo index can come from anywhere, for fullscreen triangle I use the trick of using the instance id for example!</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">
 <span style="color:#75715e">#extension GL_EXT_nonuniform_qualifier : enable
 </span><span style="color:#75715e"></span>
 layout (set <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, binding <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>) uniform sampler2D textures[];
@@ -893,7 +893,7 @@ I will cleanup this code and update the library in the future, but this should a
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

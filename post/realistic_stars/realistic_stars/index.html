@@ -81,7 +81,7 @@ Then few years ago, while researching for rendering un Just Cause 4 I stumbled u
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -623,7 +623,7 @@ I am working on improving my framework so I can experiment faster and faster.</p
 <p>Source: <a href="https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/StarRendering">https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/StarRendering</a></p>
 <p>All the relevant code is in star_map_application.h/.cpp.<!-- raw HTML omitted --></p>
 <h2 id="star-data-parsing">Star Data Parsing</h2>
-<p>We chose the <strong>Yale Bright Star Catalog</strong>, and there are two versions here (<a href="http://tdc-www.harvard.edu/software/catalogs/bsc5.html):">http://tdc-www.harvard.edu/software/catalogs/bsc5.html):</a> one binary and one text.<!-- raw HTML omitted -->
+<p>We chose the <strong>Yale Bright Star Catalog</strong>, and there are two versions here (<a href="http://tdc-www.harvard.edu/software/catalogs/bsc5.html)">http://tdc-www.harvard.edu/software/catalogs/bsc5.html)</a>: one binary and one text.<!-- raw HTML omitted -->
 I chose to use the binary one, even though I could change idea and revise this code and article.</p>
 <p>The binary is pretty easy to parse, with a caveat: you need an alignment of 1 to correctly parse the data!<!-- raw HTML omitted -->
 The parsing structures are just 2, one for the header and one for each star entry:</p>
@@ -646,7 +646,7 @@ I decided to convert this in a list of segments, so I have to parse the text fil
 </ul>
 <p>This is also an interesting use of the hydra_lexer - backbone of the HFX language.<!-- raw HTML omitted -->
 In this demo it is already used but in following ones I&rsquo;ll update it more and more.<!-- raw HTML omitted --></p>
-<pre><code>    // Read constellation file
+<pre tabindex="0"><code>    // Read constellation file
     char* constellation_data = hydra::file_read_into_memory( &quot;..\\data\\articles\\StarRendering\\constellations_lines.txt&quot;, nullptr, false, *allocator );
     // Allocate raw memory and entries for the data parsed.
     // Not elegant, but functioning.
@@ -733,7 +733,7 @@ To properly calculate the color of a star we need to do the following:</p>
 1000 K  10deg  0.6472 0.3506  2.525e+06    1.0000 0.0401 0.0000  255  56   0  #ff3800</p>
 <p>It uses 2 different CIE specifications for colors, and we use the 10deg (the second one) of each entry.</p>
 <p>We then have a table (hand written from the links above) that links <em>Spectral Types</em> to temperature:</p>
-<pre><code>struct Range {
+<pre tabindex="0"><code>struct Range {
     uint32_t        min;
     uint32_t        max;
 };
@@ -760,7 +760,7 @@ static const Range              k_star_temperature_ranges[ k_max_star_types ] = 
 <p>Again some code that is mostly taking formulas from the net!<!-- raw HTML omitted -->
 In the <em>Catalog</em> we are using the <strong>Right Ascension and Declination</strong> of each star is expressed relative to the Julian Date 2000.</p>
 <p>The only really interesting thing here is the fact that you need to use a double - a float will loose the difference for hour and less in the days!</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // From https://en.wikipedia.org/wiki/Julian_day
 //
 // Gregorian Calendar Date to Julian Day Number conversion
@@ -820,7 +820,7 @@ I myself used the seminal papers on the subject that express the formulat to cal
 <h3 id="conversion-from-right-ascension-and-declination-to-equatorial-coordinates">Conversion from <em>Right Ascension and Declination</em> to Equatorial Coordinates.</h3>
 <p>The most important thing to remember here is that the <strong>data coming from the catalog</strong> is expressed at <strong>J2000</strong> date.<!-- raw HTML omitted -->
 Let&rsquo;s convert RA and D:</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // Convert to euclidean coordinates
 //
 static void convert_to_euclidean( float right_ascension, float declination, float radial_distance, float&amp; out_x, float&amp; out_y, float&amp; out_z ) {
@@ -836,7 +836,7 @@ We need to calculate the rotation from J2000 to our current time and location.</
 <p>This is the missing link.<!-- raw HTML omitted -->
 As already noted above, the data coming from the Catalog is the position of the stars at <strong>J2000</strong>.</p>
 <p>There are some conversions to do from latitude and longitude, and these formulas are a mix coming from the papers I mentioned at the beginnig and simple conversion.</p>
-<pre><code>float longitude_radians = glm_rad( longitude );
+<pre tabindex="0"><code>float longitude_radians = glm_rad( longitude );
 float latitude_radians = glm_rad( latitude );
 
 // Calculate rotation matrix based on time, latitude and longitude
@@ -879,7 +879,7 @@ Overdraw fest!!!</p>
 <p>Here is the shader used. As you can see you can specify <em>vertex layout and render states as well</em> - something I <strong>LOVE</strong> to see with shaders. They are an integral part of the rendering!</p>
 <p>With an HFX file now you can define totally a Vulkan Pipeline, so it is a great tool.<!-- raw HTML omitted -->
 The code has reload of shaders, so you can experiment faster!</p>
-<pre><code>shader stars {
+<pre tabindex="0"><code>shader stars {
 
     layout {
         list Local {
@@ -1023,7 +1023,7 @@ The code has reload of shaders, so you can experiment faster!</p>
 </code></pre><p>A simplified version of the rendering code is here, but I like how this is becoming. Feedback is really appreciated :)</p>
 <p>The instance buffer contains the Euclidean positions of each star with the visual magnitude as well.<!-- raw HTML omitted -->
 We are drawing straight into the swapchain, and I use the abstraction of &lsquo;resource list&rsquo; similar to the &lsquo;descriptor sets&rsquo; coming from Vulkan. They are just a &hellip;list of resources.</p>
-<pre><code>CommandBuffer* gpu_commands = update.gpu_commands;
+<pre tabindex="0"><code>CommandBuffer* gpu_commands = update.gpu_commands;
 gpu_commands-&gt;clear( sort_key, 0, 0, 0, 1 );
 gpu_commands-&gt;clear_depth_stencil( sort_key++, 1.0f, 0 );
 
@@ -1244,7 +1244,7 @@ I like the idea of something very concise - so you can focus only on the details
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

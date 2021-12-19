@@ -28,7 +28,7 @@
   
     
   
-  <meta name="description" content="Some of the UI for the Hydra NES emulator, using ImGUI.   Writing an emulator is an incredibly fun learning experience.
+  <meta name="description" content="Some of the UI for the Hydra NES emulator, using ImGUI.Writing an emulator is an incredibly fun learning experience.
 It is an exquisite exercise in reverse-engineering from both documentation and code.
 In this post I want to share some tips on how and where to start based on my experience on the NES emulator I am writing.
 Information The gathering of information is the most important (and hard!">
@@ -83,7 +83,7 @@ Information The gathering of information is the most important (and hard!">
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -114,7 +114,7 @@ Information The gathering of information is the most important (and hard!">
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/emulation_where_to_start/">
   <meta property="og:title" content="Emulation: where to start? A use case. | Joren&#39;s">
-  <meta property="og:description" content="Some of the UI for the Hydra NES emulator, using ImGUI.   Writing an emulator is an incredibly fun learning experience.
+  <meta property="og:description" content="Some of the UI for the Hydra NES emulator, using ImGUI.Writing an emulator is an incredibly fun learning experience.
 It is an exquisite exercise in reverse-engineering from both documentation and code.
 In this post I want to share some tips on how and where to start based on my experience on the NES emulator I am writing.
 Information The gathering of information is the most important (and hard!"><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
@@ -588,7 +588,7 @@ There can be internal batteries and working RAMs too, but they are very rare.</p
 Through <strong>PPU</strong> registers it can instruct the <strong>PPU</strong> to read graphical informations from the <strong>CHR</strong> part of the cartridge.<!-- raw HTML omitted -->
 It can upload sprites on the <strong>PPU Sprite Memory</strong> through <strong>DMA</strong>, upload data to the <strong>APU</strong>, or manage its internal RAM.</p>
 <p>From the source code, this is a working example of CPU Reading method:</p>
-<pre><code>uint8 Nes::MemoryController::CpuRead( uint16 address ) {
+<pre tabindex="0"><code>uint8 Nes::MemoryController::CpuRead( uint16 address ) {
 
     if ( address &lt; 0x2000 ) {
         return cpu-&gt;ram[address &amp; 0x7FF];
@@ -623,7 +623,7 @@ It can upload sprites on the <strong>PPU Sprite Memory</strong> through <strong>
     return 0;
 }
 </code></pre><p>And CPU Write:</p>
-<pre><code>void Nes::MemoryController::CpuWrite( uint16 address, uint8 data ) {
+<pre tabindex="0"><code>void Nes::MemoryController::CpuWrite( uint16 address, uint8 data ) {
 
     if ( address &lt; 0x2000 ) {
         cpu-&gt;ram[address &amp; 0x7FF] = data;
@@ -684,7 +684,7 @@ Let&rsquo;s have a look at the PPU too.</p>
 <p>Similar to the <strong>CPU</strong>, reading and writing on the <strong>PPU</strong> access different components, even though they are far less.<!-- raw HTML omitted -->
 The <strong>PPU</strong> either accesses its 2 rams (<strong>palette</strong> and <strong>nametable</strong>, normally from the <strong>CPU</strong>) or reads the <strong>CHR</strong> (that is the graphical data stored in the cartridge) memory.</p>
 <p>Reading:</p>
-<pre><code>uint8 Nes::MemoryController::PpuRead( uint16 address ) {
+<pre tabindex="0"><code>uint8 Nes::MemoryController::PpuRead( uint16 address ) {
     
     address &amp;= 0X3FFF;
 
@@ -704,7 +704,7 @@ The <strong>PPU</strong> either accesses its 2 rams (<strong>palette</strong> an
 </code></pre><p>On the writing side, there the code shows the intricancy of emulation.
 When writing to the paletter ram, there is a mirroring mechanism happening in the hardware that is emulated with a lookup table.
 Something to look out to: <strong>writing to CHR is 99% of the time useless, unless there is an additional RAM in the cartdige</strong>.</p>
-<pre><code>void Nes::MemoryController::PpuWrite( uint16 address, uint8 data ) {
+<pre tabindex="0"><code>void Nes::MemoryController::PpuWrite( uint16 address, uint8 data ) {
 
     address &amp;= 0X3FFF;
 
@@ -765,7 +765,7 @@ No surprises (not really true, still some happened!).</p>
 </ol>
 <p>It is already a lot, and it will require to read multiple times the different wiki pages and forum posts.</p>
 <p>For a typical console, the main loop (simplified) can be something like this:</p>
-<pre><code>void CpuTick() {
+<pre tabindex="0"><code>void CpuTick() {
     uint8_t opcode = Read(program_counter++);
     uint8_t operand = FetchOperand(opcode);
     ExecuteOpcode(opcode, operand);
@@ -782,7 +782,7 @@ void ExecuteFrame() {
 <p>Also it does not require any PPU rendering: compare the status of your CPU with the text file line by line and its done!</p>
 <p>You can see some ugly but useful code in <a href="https://github.com/JorenJoestar/HydraNes/blob/68d705ef400c1ab930dce0fa51c5353aa8b32396/src/main.cpp#L607">MainState::ExecuteCpuTest</a> in my emulator for an idea.</p>
 <p>A line from the nestest.log file looks like this:</p>
-<pre><code>// C000 4C F5 C5 JMP $C5F5 A:00 X:00 Y:00 P:24 SP:FD PPU: 0, 0 CYC:7
+<pre tabindex="0"><code>// C000 4C F5 C5 JMP $C5F5 A:00 X:00 Y:00 P:24 SP:FD PPU: 0, 0 CYC:7
 </code></pre><p>it gives you the ProgramCounter (C000), byte code (1, 2 or 3 bytes depending on the instructions), human-readable-instruction (JMP) , the CPU register contents (A, X, Y, P, SP) and the theorethical PPU scanline, pixel and clock cycle.</p>
 <p>There are two interesting points:</p>
 <ol>
@@ -790,7 +790,7 @@ void ExecuteFrame() {
 <li>The CPU cycles STARTS at 7. In a power-up/reset method there is some work done BEFORE executing any code. This is needed only if you want to have a precise cycle-to-cycle comparison.</li>
 </ol>
 <p>You can create a simple test method like this:</p>
-<pre><code>void TestEmulatorCPU() {
+<pre tabindex="0"><code>void TestEmulatorCPU() {
     Reset();
  
     while(true) {
@@ -1005,7 +1005,7 @@ Please leave a comment/feedback on the article, the source code, anything!</p>
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

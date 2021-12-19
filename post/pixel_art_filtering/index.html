@@ -28,7 +28,7 @@
   
     
   
-  <meta name="description" content="An example of non integer scaling of pixel art.   Overview Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.One of the most annoying problem we are seeing, especially since we don&rsquo;t have all the CRT TVs that &lsquo;apply their filters&rsquo;, is the pixel &lsquo;shimmering&rsquo; happening when scaling or moving a pixel art image with non-integer values.">
+  <meta name="description" content="An example of non integer scaling of pixel art.Overview Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.One of the most annoying problem we are seeing, especially since we don&rsquo;t have all the CRT TVs that &lsquo;apply their filters&rsquo;, is the pixel &lsquo;shimmering&rsquo; happening when scaling or moving a pixel art image with non-integer values.">
 
   
   <link rel="alternate" hreflang="en-us" href="https://jorenjoestar.github.io/post/pixel_art_filtering/">
@@ -80,7 +80,7 @@
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -111,7 +111,7 @@
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/pixel_art_filtering/">
   <meta property="og:title" content="Pixel Art Filtering | Joren&#39;s">
-  <meta property="og:description" content="An example of non integer scaling of pixel art.   Overview Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.One of the most annoying problem we are seeing, especially since we don&rsquo;t have all the CRT TVs that &lsquo;apply their filters&rsquo;, is the pixel &lsquo;shimmering&rsquo; happening when scaling or moving a pixel art image with non-integer values."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
+  <meta property="og:description" content="An example of non integer scaling of pixel art.Overview Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.One of the most annoying problem we are seeing, especially since we don&rsquo;t have all the CRT TVs that &lsquo;apply their filters&rsquo;, is the pixel &lsquo;shimmering&rsquo; happening when scaling or moving a pixel art image with non-integer values."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
   <meta property="article:published_time" content="2021-04-12T19:56:56&#43;02:00">
@@ -656,7 +656,7 @@ All the shaders are into the <strong>DataDrivenRendering/data/articles/PixelArtF
 <p>Implementations may instead round the texture layer using the nearly equivalent computation |value + 1/2|.</p>
 </blockquote>
 <p>We need to search the Manhattan distance from the texel center, thus using <code>floor(pixel) + 0.5</code> works perfectly.</p>
-<pre><code>vec2 uv_nearest( vec2 uv, ivec2 texture_size ) {
+<pre tabindex="0"><code>vec2 uv_nearest( vec2 uv, ivec2 texture_size ) {
     vec2 pixel = uv * texture_size;
     pixel = floor(pixel) + .5;
 
@@ -678,7 +678,7 @@ All the shaders are into the <strong>DataDrivenRendering/data/articles/PixelArtF
 <li>clamp( .5 / alpha * (pixels_fract - 1) + .5, 0, .5 )</li>
 </ul>
 <p>In the second blog post, he found also that using <strong>fwidth</strong> on the texel coordinates give you a resolution independent value that can be used to have a more consistent look:</p>
-<pre><code>vec2 uv_cstantos( vec2 uv, vec2 res ) {
+<pre tabindex="0"><code>vec2 uv_cstantos( vec2 uv, vec2 res ) {
     vec2 pixels = uv * res;
 
     // Updated to the final article
@@ -698,7 +698,7 @@ All the shaders are into the <strong>DataDrivenRendering/data/articles/PixelArtF
 </ul>
 <h2 id="cole-cecil">Cole Cecil</h2>
 <p>In a similar way, Cole Cecil in <a href="https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/">this article</a> creates two different functions that define the steepness of the function that interpolation amount.</p>
-<pre><code>vec2 uv_colececil( vec2 uv, ivec2 texture_size ) {
+<pre tabindex="0"><code>vec2 uv_colececil( vec2 uv, ivec2 texture_size ) {
     vec2 pixel = uv * texture_size;
 
     vec2 locationWithinTexel = fract(pixel);
@@ -711,7 +711,7 @@ All the shaders are into the <strong>DataDrivenRendering/data/articles/PixelArtF
 </code></pre><p>The &lsquo;texels_per_pixel&rsquo; variable is calculated on the CPU, and it is basically a ratio between the camera render target size and the screen size, including the possible zoom of it.</p>
 <p>In the original post from the author it can be found in the comment section.</p>
 <p>I write it down here as reference:</p>
-<pre><code>static f32 calculate_texels_per_pixel( f32 camera_width, f32 camera_height, f32 camera_zoom, f32 screen_width, f32 screen_height ) {
+<pre tabindex="0"><code>static f32 calculate_texels_per_pixel( f32 camera_width, f32 camera_height, f32 camera_zoom, f32 screen_width, f32 screen_height ) {
     f32 texels_per_pixel = 1.f;
 
     const f32 camera_aspect_ratio = camera_width / camera_height;
@@ -729,7 +729,7 @@ All the shaders are into the <strong>DataDrivenRendering/data/articles/PixelArtF
 </code></pre><h2 id="rnavega">RNavega</h2>
 <p>The last filter accompained by a blog post of some sort is from Rodrigo Navega, in the <a href="https://love2d.org/forums/viewtopic.php?t=89442">Love2D forum</a> and the <a href="https://github.com/RNavega/PixelArt-Antialias-Love2D/blob/master/main.lua">shader code</a>.</p>
 <p>After the previous filters the mindset is similar, so showing the code should be simpler. We are still calculating the weights based on the distance from the edge, the difference here is that it outputs also an alpha value to be used in conjunction with the texture alpha.</p>
-<pre><code>// The default size, in pixels, of the antialiasing filter. The default is 1.0 for a mathematically perfect
+<pre tabindex="0"><code>// The default size, in pixels, of the antialiasing filter. The default is 1.0 for a mathematically perfect
 // antialias. But if you want, you can increase this to 1.5, 2.0, 3.0 and such to force a bigger antialias zone
 // than normal, using more screen pixels.
 
@@ -758,7 +758,7 @@ Also to note that the smooth size can be driven by the filter width in the demo,
 <p>Here the factor is calculated based on the edge distance from the center texel and clamped between -1 and 1.</p>
 <h2 id="klems">Klems</h2>
 <p>Klems decide to use a smoothstep based <a href="https://www.shadertoy.com/view/MllBWf">approach</a> in the shader:</p>
-<pre><code>vec2 uv_klems( vec2 uv, ivec2 texture_size ) {
+<pre tabindex="0"><code>vec2 uv_klems( vec2 uv, ivec2 texture_size ) {
             
     vec2 pixels = uv * texture_size + 0.5;
     
@@ -774,7 +774,7 @@ Also to note that the smooth size can be driven by the filter width in the demo,
 </code></pre><p>It again use <strong>fwidth</strong> approach to calculate the factor, and use the fractional value to smoothstep between the 2 values that will be used near the edges.</p>
 <h2 id="inigo-quilez-3">Inigo Quilez (&lt;3)</h2>
 <p>From the comments in the <a href="https://www.shadertoy.com/view/MllBWf">Klems filter</a>, the incredible Inigo comes up with another filter:</p>
-<pre><code>vec2 uv_iq( vec2 uv, ivec2 texture_size ) {
+<pre tabindex="0"><code>vec2 uv_iq( vec2 uv, ivec2 texture_size ) {
     vec2 pixel = uv * texture_size;
 
     vec2 seam = floor(pixel + 0.5);
@@ -786,7 +786,7 @@ Also to note that the smooth size can be driven by the filter width in the demo,
 </code></pre><p>The variable names are quite explicit, but the idea is to again start from the seam of the texture and modify the final uv based on the distance from the seam.</p>
 <h2 id="blocky">Blocky</h2>
 <p>This is very similar to IQ filter, just using different math:</p>
-<pre><code>// https://www.shadertoy.com/view/ltfXWS
+<pre tabindex="0"><code>// https://www.shadertoy.com/view/ltfXWS
 // samples from a linearly-interpolated texture to produce an appearance similar to
 // nearest-neighbor interpolation, but with resolution-dependent antialiasing
 // 
@@ -812,7 +812,7 @@ vec2 uv_blocky( in vec2 uv, in ivec2 res ) {
 }
 </code></pre><h2 id="bgolus-anti-aliasing">BGolus: Anti-Aliasing</h2>
 <p><a href="https://twitter.com/bgolus/">Ben Golus</a> also wrote his own implementation <a href="https://www.shadertoy.com/view/ltBfRD">here</a> with two variations as well!</p>
-<pre><code>vec2 uv_aa_linear( vec2 uv, vec2 res, float width ) {
+<pre tabindex="0"><code>vec2 uv_aa_linear( vec2 uv, vec2 res, float width ) {
     vec2 pixels = uv * res;
     
     vec2 pixels_floor = floor(pixels + 0.5);
@@ -837,7 +837,7 @@ vec2 uv_aa_smoothstep( vec2 uv, vec2 res, float width ) {
 <h2 id="fat-pixel">Fat Pixel</h2>
 <p>This is the shader that was mentioned by Casey Muratori in his <a href="https://hero.handmade.network/episode/chat/chat018/">video</a> and for me started all this research culminating in this article!
 The original source code is <a href="https://www.shadertoy.com/view/ltBGWc">here</a> but again I post the code straight away:</p>
-<pre><code>vec2 uv_fat_pixel( vec2 uv, ivec2 texture_size ) {
+<pre tabindex="0"><code>vec2 uv_fat_pixel( vec2 uv, ivec2 texture_size ) {
     vec2 pixel = uv * texture_size;
 
     vec2 fat_pixel = floor(pixel) + 0.5;
@@ -1090,7 +1090,7 @@ I&rsquo;ve used two textures, that were free to use made available by the amazin
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

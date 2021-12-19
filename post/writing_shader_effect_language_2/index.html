@@ -81,7 +81,7 @@
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -571,7 +571,7 @@ A <strong>resource</strong> is handled externally through handles, can be create
 <p><strong>Buffers</strong> are specialized in vertex/index/constant/&hellip; depending on their creation parameters.</p>
 <p>This is a small example on creation/usage/destruction of a resource.<!-- raw HTML omitted -->
 First, we can create a texture:</p>
-<pre><code>graphics::TextureCreation first_rt = {};
+<pre tabindex="0"><code>graphics::TextureCreation first_rt = {};
 first_rt.width = 512;
 first_rt.height = 512;
 first_rt.render_target = 1;
@@ -579,16 +579,16 @@ first_rt.format = graphics::TextureFormat::R8G8B8A8_UNORM;
 
 TextureHandle render_target = gfx_device.create_texture( first_rt );
 </code></pre><p>Next we can create a command buffer:</p>
-<pre><code>CommandBuffer* commands = gfx_device.get_command_buffer( graphics::QueueType::Graphics, 1024 );
+<pre tabindex="0"><code>CommandBuffer* commands = gfx_device.get_command_buffer( graphics::QueueType::Graphics, 1024 );
 </code></pre><p>Skipping other creations, we bind resources and add the commands:</p>
-<pre><code>commands-&gt;bind_pipeline( first_graphics_pipeline );
+<pre tabindex="0"><code>commands-&gt;bind_pipeline( first_graphics_pipeline );
 commands-&gt;bind_resource_set( gfx_resources );
 commands-&gt;bind_vertex_buffer( gfx_device.get_fullscreen_vertex_buffer() );
 commands-&gt;draw( graphics::TopologyType::Triangle, 0, 3 );
 </code></pre><p>At this point we can execute the command buffer to draw.</p>
-<pre><code>gfx_device.execute_command_buffer( commands );
+<pre tabindex="0"><code>gfx_device.execute_command_buffer( commands );
 </code></pre><p>Updating a resource can be done like that:</p>
-<pre><code>hydra::graphics::MapBufferParameters map_parameters = { buffer.handle, 0, 0 };
+<pre tabindex="0"><code>hydra::graphics::MapBufferParameters map_parameters = { buffer.handle, 0, 0 };
 LocalConstants* buffer_data = (LocalConstants*)device.map_buffer( map_parameters );
 </code></pre><p>Everything uses structs to perform creation/updates.<!-- raw HTML omitted -->
 Nothing new, but I always loved this design.</p>
@@ -698,7 +698,7 @@ For the shader UI, we can do both: generate code or create data. We will see the
 <h3 id="embedded-hfx">Embedded HFX</h3>
 <p>As a Recap, when <em>parsing</em> HFX we store some informations.</p>
 <p>First is the CodeFragment, including also (spoiler!) the addition of resources for the sake of this article:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 //
 struct CodeFragment {
 
@@ -724,7 +724,7 @@ struct CodeFragment {
 We have basically code and includes to bake the final shader.<!-- raw HTML omitted -->
 Remember, we are handling GLSL in these examples!</p>
 <p>Next is the Pass:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 //
 struct Pass {
 
@@ -745,7 +745,7 @@ A pass is a container of one of more shaders.<!-- raw HTML omitted -->
 In general we will use the term <em>shader state</em> to describe the shaders that needs to be bound to the pipeline.<!-- raw HTML omitted -->
 Most common are the couple Vertex and Fragment shaders, or the Compute by itself.</p>
 <p>Last is the Shader itself:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 //
 struct Shader {
 
@@ -798,7 +798,7 @@ The overall layout is as follows:</p>
 <h3 id="writing-the-bhfx-file">Writing the BHFX file</h3>
 <p>To write our file, we need to parse the HFX file.<!-- raw HTML omitted -->
 A quick code could be something like this:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 //
 
 ...
@@ -814,7 +814,7 @@ hfx::initCodeGenerator( &amp;hfx_code_generator, &amp;effect_parser, 4096, 5 );
 
 hfx::compileShaderEffectFile( &amp;hfx_code_generator, &quot;..\\data\\&quot;, &quot;SimpleFullscreen.bhfx&quot; );
 </code></pre><p>Here we are parsing the file (generateAST) and then using that to <em>compile</em> our shader effect file. This is where the magic happens.</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 //
 void compileShaderEffectFile( CodeGenerator* code_generator, const char* path, const char* filename ) {
     // Create the output file
@@ -842,7 +842,7 @@ Concatenate the file using the StringBuffer, and try to create it.</p>
 <li>Pass sections</li>
 </ol>
 <p>Let&rsquo;s start with the file header:</p>
-<pre><code>    const uint32_t pass_count = (uint32_t)code_generator-&gt;parser-&gt;passes.size();
+<pre tabindex="0"><code>    const uint32_t pass_count = (uint32_t)code_generator-&gt;parser-&gt;passes.size();
     
     ShaderEffectFile shader_effect_file;
     shader_effect_file.num_passes = pass_count;    
@@ -852,19 +852,19 @@ Concatenate the file using the StringBuffer, and try to create it.</p>
 For the rest of the file writing we will need to use String Buffers to accumulate data out-of-order and then write the file in the correct order.<!-- raw HTML omitted -->
 Think of the <em>Pass Offset List</em>: to calculate the offsets we need to know the size of the passes. To know the size we need to finalize the pass data. To finalize the pass data we need to finalize shaders, and that means adding the includes.</p>
 <p>Again for code clarity I use aliases like this:</p>
-<pre><code>    StringBuffer&amp; code_buffer = code_generator-&gt;string_buffers[1];
+<pre tabindex="0"><code>    StringBuffer&amp; code_buffer = code_generator-&gt;string_buffers[1];
     StringBuffer&amp; pass_offset_buffer = code_generator-&gt;string_buffers[2];
     StringBuffer&amp; shader_offset_buffer = code_generator-&gt;string_buffers[3];
     StringBuffer&amp; pass_buffer = code_generator-&gt;string_buffers[4];
 </code></pre><p>Let&rsquo;s continue.<!-- raw HTML omitted -->
 We start tracking the pass section memory offset knowing that it will be after the <em>header</em> and the pass offset list:</p>
-<pre><code>    pass_offset_buffer.clear();
+<pre tabindex="0"><code>    pass_offset_buffer.clear();
     pass_buffer.clear();
 
     // Pass memory offset starts after header and list of passes offsets.
     uint32_t pass_offset = sizeof( ShaderEffectFile ) + sizeof(uint32_t) * pass_count;
 </code></pre><p>Now into the most interesting part. We will avoid talking about the resource layout part, that will be added later.<!-- raw HTML omitted --></p>
-<pre><code>    // Pass Section:
+<pre tabindex="0"><code>    // Pass Section:
     // ----------------------------------------------------------------------------------------
     // Shaders count | Name | Shader Offset+Count List | Shader Code 0, Shader Code 1
     // ----------------------------------------------------------------------------------------
@@ -883,7 +883,7 @@ We start tracking the pass section memory offset knowing that it will be after t
 </code></pre><p>We start iterating the passes and calculate the shader offset.<!-- raw HTML omitted -->
 Shader Chunks (the actual shader code) are written after the Pass Header and the dynamic list of shader chunk offset and size.<!-- raw HTML omitted -->
 Next we will calculate the offsets of the single shaders AFTER we finalize the code - that means after the includes are added!</p>
-<pre><code>        shader_offset_buffer.clear();
+<pre tabindex="0"><code>        shader_offset_buffer.clear();
         code_buffer.clear();
 
         for ( size_t s = 0; s &lt; pass.shader_stages.size(); ++s ) {
@@ -898,25 +898,25 @@ Next we will calculate the offsets of the single shaders AFTER we finalize the c
 </code></pre><p>At this point we have code_buffer containing all the shaders of the pass one after another (null terminated) and we can update the pass offset for the next pass.<!-- raw HTML omitted -->
 We also calculated the single shader offsets with the <em>updateOffsetTable</em> method in shader_offset_buffer.<!-- raw HTML omitted -->
 We need to finalize the Pass Header and then we can merge the pass memory in one block and proceed to the next pass:</p>
-<pre><code>        // Fill Pass Header
+<pre tabindex="0"><code>        // Fill Pass Header
         copy( pass.name, pass_header.name, 32 );
         pass_header.num_shader_chunks = pass.num_shaders;
 </code></pre><p>This is a very IMPORTANT part.<!-- raw HTML omitted -->
 Merge in the pass_buffer all the pass section currently calculated: pass header, the single shader code offsets and the shader code itself.</p>
-<pre><code>        pass_buffer.append( (void*)&amp;pass_header, sizeof( ShaderEffectFile::PassHeader ) );
+<pre tabindex="0"><code>        pass_buffer.append( (void*)&amp;pass_header, sizeof( ShaderEffectFile::PassHeader ) );
         pass_buffer.append( shader_offset_buffer );
         pass_buffer.append( code_buffer );
     }
 </code></pre><p>After we finished with all the passes, we have 2 buffers: one containing the pass offset list, the other the pass sections.<!-- raw HTML omitted -->
 We can write them off in the correct order finally and close the file:</p>
-<pre><code>    fwrite( pass_offset_buffer.data, pass_offset_buffer.current_size, 1, output_file );
+<pre tabindex="0"><code>    fwrite( pass_offset_buffer.data, pass_offset_buffer.current_size, 1, output_file );
     fwrite( pass_buffer.data, pass_buffer.current_size, 1, output_file );
     
     fclose( output_file );
 }
 </code></pre><p>We can see <em>why</em> we chose this format when looking at the code to actually create a <em>shader state</em>.<!-- raw HTML omitted -->
 First of all this is the struct to create a shader state:</p>
-<pre><code>// hydra_graphics.h
+<pre tabindex="0"><code>// hydra_graphics.h
 //
 struct ShaderCreation {
 
@@ -937,7 +937,7 @@ struct ShaderCreation {
 A shader state can have one or more stages.<!-- raw HTML omitted -->
 This was already the case in OpenGL - compiling shaders and linking them - so the interface is similar - but it maps well to Vulkan/D3D12 as well, in which the <em>Pipeline State</em>, that describe almost everything the GPU needs to draw, needs an unique set of vertex/fragment/compute shaders.<!-- raw HTML omitted -->
 Anyway, we embed this data already in the <em>binary HFX file</em>, and thus we can easily create a shader state like this:</p>
-<pre><code>static void compile_shader_effect_pass( hydra::graphics::Device&amp; device, char* hfx_memory, 
+<pre tabindex="0"><code>static void compile_shader_effect_pass( hydra::graphics::Device&amp; device, char* hfx_memory, 
                                         uint16_t pass_index, hydra::graphics::ShaderHandle&amp; out_shader ) {
     using namespace hydra;
 
@@ -965,7 +965,7 @@ Anyway, we embed this data already in the <em>binary HFX file</em>, and thus we 
 </code></pre><p>Nothing really interesting here, but we read the file in memory and use the offsets we store to access the different sections of the file.<!-- raw HTML omitted --></p>
 <p>To access the <em>Pass Section</em> we first need to read its memory offset and then read from there.<!-- raw HTML omitted -->
 Remember from before that the offset is in the list AFTER the ShaderEffectFile header, and it is a single uint32:</p>
-<pre><code>char* getPassMemory( char* hfx_memory, uint32_t index ) {
+<pre tabindex="0"><code>char* getPassMemory( char* hfx_memory, uint32_t index ) {
     
     // Read offset form list after the ShaderEffectFile header.
     const uint32_t pass_offset = *(uint32_t*)(hfx_memory + sizeof( ShaderEffectFile ) + (index * sizeof( uint32_t )));
@@ -973,15 +973,15 @@ Remember from before that the offset is in the list AFTER the ShaderEffectFile h
     return hfx_memory + pass_offset;
 }
 </code></pre><p>From the <em>pass offset</em>, the list of shader chunks (that are defined as code offset and size) is right after the <em>pass header</em></p>
-<pre><code>void getShaderCreation( uint32_t shader_count, char* pass_memory, uint32_t index,
+<pre tabindex="0"><code>void getShaderCreation( uint32_t shader_count, char* pass_memory, uint32_t index,
                         hydra::graphics::ShaderCreation::Stage* shader_creation ) {
 
     char* shader_offset_list_start = pass_memory + sizeof( ShaderEffectFile::PassHeader );
 </code></pre><p>Read the single shader offset and access the memory there:</p>
-<pre><code>    const uint32_t shader_offset = *(uint32_t*)(shader_offset_list_start + (index * sizeof( ShaderEffectFile::Chunk )));
+<pre tabindex="0"><code>    const uint32_t shader_offset = *(uint32_t*)(shader_offset_list_start + (index * sizeof( ShaderEffectFile::Chunk )));
     char* shader_chunk_start = pass_memory + shader_offset;
 </code></pre><p>The baked informations are first the type (as a single char, but called hfx::ShaderEffectFile::ChunkHeader in case we change it) and the actual shader code is right after!</p>
-<pre><code>    shader_creation-&gt;type = (hydra::graphics::ShaderStage::Enum)(*shader_chunk_start);
+<pre tabindex="0"><code>    shader_creation-&gt;type = (hydra::graphics::ShaderStage::Enum)(*shader_chunk_start);
     shader_creation-&gt;code = (const char*)(shader_chunk_start + sizeof( hfx::ShaderEffectFile::ChunkHeader ));
 }
 </code></pre><p>In this case I chose to bake the file instead of generating a header file - just cause I can reuse this code for every shader effect. I could have generated an header instead of the binary BHFX file, but then including it would mean that you need to recompile at every change.<!-- raw HTML omitted -->
@@ -1008,7 +1008,7 @@ How to make them both happy ?</p>
 One thought that came to me is that artists want to create a <em>material interface</em>, something they can tweak and change easily, and when you want to quickly prototype something, create and such, you don&rsquo;t want to deal with low-level resource management and such.<!-- raw HTML omitted -->
 Let&rsquo;s solve this first: <strong>give artists a simple way of creating a material interface</strong>!</p>
 <p>After searching for a bit, I chose to use a syntax very similar to Unity ShaderLab. Let&rsquo;s see the HFX (finally!):</p>
-<pre><code>// .HFX
+<pre tabindex="0"><code>// .HFX
 //
 // For the artist: create a material interface.
 properties {
@@ -1031,7 +1031,7 @@ I will dwelve into the code-generation one and talk about the data-driven one in
 <li>API-dependant buffer</li>
 </ol>
 <p>For the Properties UI, we want to generate something like this:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 struct LocalConstantsUI {
 
     float                    scale                = 32.000000f;
@@ -1050,7 +1050,7 @@ struct LocalConstantsUI {
 
 }; // struct LocalConstantsUI
 </code></pre><p>For the GPU-ready constants, we want to have a both a GPU and a CPU representation like this:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 //
 struct LocalConstants {
 
@@ -1071,7 +1071,7 @@ layout (std140, binding=7) uniform LocalConstants {
 
 } local_constants;
 </code></pre><p>And for the API-dependant buffer, we want to create code that takes care of everything for us. This is the real deal here - and something we will revisit in next articles to show some advanced features.</p>
-<pre><code>void create( hydra::graphics::Device&amp; device ) {
+<pre tabindex="0"><code>void create( hydra::graphics::Device&amp; device ) {
 
     using namespace hydra;
 
@@ -1116,18 +1116,18 @@ Let&rsquo;s quickly check parsing and code-generation.</p>
 <h3 id="constants-parsing">Constants Parsing</h3>
 <p>To parse the new <strong>property</strong> section, there is the new method <code>void declarationProperties( Parser* parser )</code> that iterates through all properties, and inside that the <code>void declarationProperty( Parser* parser, const StringRef&amp; name )</code> one.</p>
 <p>We are parsing the following HFX syntax:</p>
-<pre><code>// Syntax
+<pre tabindex="0"><code>// Syntax
 //
 identifier(string, identifier[(arguments)]) [= default_value]
 </code></pre><p>With this is an example:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 //
 properties {
     scale(&quot;Scale&quot;, Float) = 32.0
 }
 </code></pre><p>We will add a simple backtracking to the parsing because of the optional parameters.<!-- raw HTML omitted -->
 Let&rsquo;s check the code!</p>
-<pre><code>inline void declarationProperty( Parser* parser, const StringRef&amp; name ) {
+<pre tabindex="0"><code>inline void declarationProperty( Parser* parser, const StringRef&amp; name ) {
     Property* property = new Property();
 
     // Cache name
@@ -1139,7 +1139,7 @@ Let&rsquo;s check the code!</p>
         return;
     }
 </code></pre><p>We just parsed the property name and the &lsquo;(&rsquo;. Next is the string containing the UI name:</p>
-<pre><code>    // Advance to the string representing the ui_name
+<pre tabindex="0"><code>    // Advance to the string representing the ui_name
     if ( !expectToken( parser-&gt;lexer, token, Token::Token_String ) ) {
         return;
     }
@@ -1147,7 +1147,7 @@ Let&rsquo;s check the code!</p>
     property-&gt;ui_name = token.text;
 </code></pre><p>Saved the ui name and then we have the type.<!-- raw HTML omitted -->
 Types can be <em>Float, Int, Range, Texture, Vector, Color</em> and we will simply parse their text and convert it to an enum that we will use in the code generation phase.</p>
-<pre><code>    if ( !expectToken( parser-&gt;lexer, token, Token::Token_Comma ) ) {
+<pre tabindex="0"><code>    if ( !expectToken( parser-&gt;lexer, token, Token::Token_Comma ) ) {
         return;
     }
 
@@ -1161,7 +1161,7 @@ Types can be <em>Float, Int, Range, Texture, Vector, Color</em> and we will simp
 </code></pre><p>Now will come the most complicated part.<!-- raw HTML omitted -->
 We have optional &lsquo;(&rsquo; open parenthesis for the parameters if the type needs it.<!-- raw HTML omitted -->
 For the length of code and article, I skip this part and will add it in next article!</p>
-<pre><code>    // If an open parenthesis is present, then parse the ui arguments.
+<pre tabindex="0"><code>    // If an open parenthesis is present, then parse the ui arguments.
     nextToken( parser-&gt;lexer, token );
     if ( token.type == Token::Token_OpenParen ) {
         property-&gt;ui_arguments = token.text;
@@ -1182,7 +1182,7 @@ For the length of code and article, I skip this part and will add it in next art
     }
 </code></pre><p>At this point we can either be at the end of the property or we could have a &lsquo;=&rsquo; token to add a default value.
 Being that the Lexer class is small, we can backtrack by saving the current Lexer status:</p>
-<pre><code>    // Cache lexer status and advance to next token.
+<pre tabindex="0"><code>    // Cache lexer status and advance to next token.
     // If the token is '=' then we parse the default value.
     // Otherwise backtrack by one token.
     Lexer cached_lexer = *parser-&gt;lexer;
@@ -1191,7 +1191,7 @@ Being that the Lexer class is small, we can backtrack by saving the current Lexe
 <li>If the token is &lsquo;=&rsquo;, parse the default value.</li>
 <li>If not, backtrack the position of the Lexer and finish the parsing.</li>
 </ol>
-<pre><code>    nextToken( parser-&gt;lexer, token );
+<pre tabindex="0"><code>    nextToken( parser-&gt;lexer, token );
 
     // At this point only the optional default value is missing, otherwise the parsing is over.
     if ( token.type == Token::Token_Equals ) {
@@ -1222,7 +1222,7 @@ Also here, for the sake of &lsquo;brevity&rsquo;, I am handling only floats and 
 We can iterate the properties and generate both a C++ struct and a HLSL/GLSL buffer.<!-- raw HTML omitted -->
 The only thing to be concerned is the padding: on the GPU normally the alignment is 16 bytes, so we can track that and insert padding when generating the code.<!-- raw HTML omitted --></p>
 <p>In the method <code>void generateShaderResourceHeader( CodeGenerator* code_generator, const char* path )</code> we can see how we generate the different code for C++:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 //
 // Beginning
 
@@ -1325,7 +1325,7 @@ fprintf( output_file, &quot;\n\n&quot; );
 
 fclose( output_file );
 </code></pre><p>This piece of code will generate a constant buffer from the properties:</p>
-<pre><code>// GLSL
+<pre tabindex="0"><code>// GLSL
 //
 static void generateConstantsCode( const Shader&amp; shader, StringBuffer&amp; out_buffer ) {
     if ( !shader.properties.size() ) {
@@ -1370,7 +1370,7 @@ static void generateConstantsCode( const Shader&amp; shader, StringBuffer&amp; o
 <p>This is an interesting topic and I&rsquo;ll cover it in another article, but a simple solution would be to add a mapping between the GPU constants and the UI, so that we can separate the UI constants from the GPU ones.</p>
 <p>I&rsquo;ll give a brief example but it would be too much for this article and will not be included in the source code.</p>
 <p>Basically we are trying to create a mapping between the material interface:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 struct LocalConstantsUI {
 
     float                    scale                = 32.000000f;
@@ -1389,7 +1389,7 @@ struct LocalConstantsUI {
 
 }; // struct LocalConstantsUI
 </code></pre><p>And the GPU constants:</p>
-<pre><code>// C++
+<pre tabindex="0"><code>// C++
 struct LocalConstants {
 
     float                    scale                = 32.000000f;
@@ -1398,7 +1398,7 @@ struct LocalConstants {
 
 }; // struct LocalConstants
 </code></pre><p>We could enhance HFX with some syntax to mark the <em>derivate</em> properties and just add the <em>system</em> ones in an explicit buffer layout, and add a <em>layout</em> section in the HFX:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 
 properties {
 
@@ -1448,7 +1448,7 @@ For textures we have a couple of options.</p>
 </ol>
 <p>For the sake of fun we will look into the second of course!<!-- raw HTML omitted -->
 If we go back to <code>void declarationGlsl( Parser* parser )</code>, we can add a new method to parse the keyword:</p>
-<pre><code>// Parse hash for includes and defines
+<pre tabindex="0"><code>// Parse hash for includes and defines
 if ( token.type == Token::Token_Hash ) {
     // Get next token and check which directive is
     nextToken( parser-&gt;lexer, token );
@@ -1465,7 +1465,7 @@ else if ( token.type == Token::Token_Identifier ) {        &lt;------------  New
     }
 }
 </code></pre><p>In this way it will search for the identifier <em>uniform</em> and search for the other identifiers. This is GLSL centric of course.</p>
-<pre><code>inline void uniformIdentifier( Parser* parser, const Token&amp; token, CodeFragment&amp; code_fragment ) {
+<pre tabindex="0"><code>inline void uniformIdentifier( Parser* parser, const Token&amp; token, CodeFragment&amp; code_fragment ) {
     for ( uint32_t i = 0; i &lt; token.text.length; ++i ) {
         char c = *(token.text.text + i);
 
@@ -1508,7 +1508,7 @@ In the previous paragraph about <em>Expert Constants</em> we talked about adding
 In this section we can specify the resource list for each <em>pass</em> manually, and later on in the pass we can reference this lists as used by the pass.</p>
 <p>Going on a more complete solution, layouts <strong>should be included and merged when including other HFX files</strong>.<!-- raw HTML omitted -->
 This is something we want and we&rsquo;ll look in another post, we can start simple by defining something local:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 //
 // For the developer
 layout {
@@ -1529,7 +1529,7 @@ With that, we can reference in the pass which list to use.<!-- raw HTML omitted 
 I will not go over it, but basically it will parse the resource lists and add them to the shader.<!-- raw HTML omitted -->
 The parsing itself will read the text and create the <code>ResourceSetLayoutCreation::Binding</code> and add it to the list of the resources.<!-- raw HTML omitted --></p>
 <p>We then add a new identifier in the pass to choose which resource list to be used:</p>
-<pre><code>// HFX
+<pre tabindex="0"><code>// HFX
 //
 pass FillTexture {
 
@@ -1554,7 +1554,7 @@ pass ToScreen {
 <p>The big difference is <strong>if the hfx file contains a layout section</strong>.<!-- raw HTML omitted -->
 If it is not present, then all the informations will be gathered automatically and will be added with the <code>writeAutomaticResourcesLayout</code> method.</p>
 <p>First we will add the LocalConstant buffer created from the properties:</p>
-<pre><code>static void writeAutomaticResourcesLayout( const hfx::Pass&amp; pass, StringBuffer&amp; pass_buffer, uint32_t&amp; pass_offset ) {
+<pre tabindex="0"><code>static void writeAutomaticResourcesLayout( const hfx::Pass&amp; pass, StringBuffer&amp; pass_buffer, uint32_t&amp; pass_offset ) {
 
     using namespace hydra::graphics;
 
@@ -1564,7 +1564,7 @@ If it is not present, then all the informations will be gathered automatically a
     pass_buffer.append( (void*)&amp;binding, sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding) );
     pass_offset += sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding );
 </code></pre><p>Then we will cycle through all the shader stages and write the resources into the memory:</p>
-<pre><code>    for ( size_t s = 0; s &lt; pass.shader_stages.size(); ++s ) {
+<pre tabindex="0"><code>    for ( size_t s = 0; s &lt; pass.shader_stages.size(); ++s ) {
         const Pass::ShaderStage shader_stage = pass.shader_stages[s];
 
         for ( size_t p = 0; p &lt; shader_stage.code-&gt;resources.size(); p++ ) {
@@ -1595,7 +1595,7 @@ If it is not present, then all the informations will be gathered automatically a
     }
 }
 </code></pre><p>If instead there is a layout section, the method <code>writeResourcesLayout</code> is called and will be pretty straight-forward:</p>
-<pre><code>static void writeResourcesLayout( const hfx::Pass&amp; pass, StringBuffer&amp; pass_buffer, uint32_t&amp; pass_offset ) {
+<pre tabindex="0"><code>static void writeResourcesLayout( const hfx::Pass&amp; pass, StringBuffer&amp; pass_buffer, uint32_t&amp; pass_offset ) {
 
     using namespace hydra::graphics;
 
@@ -1608,7 +1608,7 @@ If it is not present, then all the informations will be gathered automatically a
     }
 }
 </code></pre><p>And this will be put at the end of the current pass section:</p>
-<pre><code>pass_buffer.append( (void*)&amp;pass_header, sizeof( ShaderEffectFile::PassHeader ) );
+<pre tabindex="0"><code>pass_buffer.append( (void*)&amp;pass_header, sizeof( ShaderEffectFile::PassHeader ) );
 pass_buffer.append( shader_offset_buffer );
 pass_buffer.append( code_buffer );
 
@@ -1825,7 +1825,7 @@ Gabriel</p>
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

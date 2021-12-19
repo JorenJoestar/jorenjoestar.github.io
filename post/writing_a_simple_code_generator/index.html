@@ -28,7 +28,7 @@
   
     
   
-  <meta name="description" content="UI using ImGUI, SDL and the code generated with this article.   Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.The code is here:
+  <meta name="description" content="UI using ImGUI, SDL and the code generated with this article.Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.The code is here:
 https://github.com/JorenJoestar/DataDrivenRendering
 There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written.">
 
@@ -82,7 +82,7 @@ There is a balance that constantly needs to be found between code and data, and 
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.58e9e3ea16c6b921b0163e93b88cfa1f.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -113,7 +113,7 @@ There is a balance that constantly needs to be found between code and data, and 
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/writing_a_simple_code_generator/">
   <meta property="og:title" content="Writing a simple Code Generator | Joren&#39;s">
-  <meta property="og:description" content="UI using ImGUI, SDL and the code generated with this article.   Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.The code is here:
+  <meta property="og:description" content="UI using ImGUI, SDL and the code generated with this article.Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.The code is here:
 https://github.com/JorenJoestar/DataDrivenRendering
 There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
@@ -569,14 +569,14 @@ It normally contains a type and some attributes, for example it can save where t
 <p>The act of Tokenizing is the act of abstracting the input text.</p>
 </blockquote>
 <p>For example, given the following input text:</p>
-<pre><code>static void amazing_method() {};
+<pre tabindex="0"><code>static void amazing_method() {};
 </code></pre><p>It will generate the list of tokens ‘<strong>keyword, identifier, identifier, open parenthesis, close parenthesis, open brace, close brace, semicolon</strong>’.</p>
 <p>This IS abstracting the text!</p>
 <p>Normally a lexer/scanner is used by the parser to go through the code and retrieve a token and use it in some way. Let’s start seeing what a lexer could be!</p>
 <h2 id="code">Code</h2>
 <p>Let&rsquo;s see the code used by the lexer.</p>
 <p>First thing will be to define the Token:</p>
-<pre><code>// Lexer/Tokenizer code. It is abstract enough so is not grammar specific.
+<pre tabindex="0"><code>// Lexer/Tokenizer code. It is abstract enough so is not grammar specific.
 //
 struct Token {
 
@@ -609,7 +609,7 @@ struct Token {
 </code></pre><p>It is basically a enum with a StringRef.<!-- raw HTML omitted -->
 A StringRef is basically a substring - used to avoid allocations when parsing by simply saving where the Token is in the parsed text and how long it is.</p>
 <p>Next is the Lexer itself:</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // The role of the Lexer is to divide the input string into a list of Tokens.
 struct Lexer {
     
@@ -624,7 +624,7 @@ struct Lexer {
 </code></pre><p>The most important variable is <strong>position</strong> - it saves where the Lexer is in the current text for parsing.</p>
 <p>From now on there will be only methods.</p>
 <p>First some character classification that will help the Lexer:</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // All those methods are to classify a character.
 //
 inline bool IsEndOfLine( char c ) {
@@ -650,7 +650,7 @@ inline bool IsNumber( char c ) {
 <p>Then we have <strong>the most important method for the lexer: nextToken</strong>.<!-- raw HTML omitted -->
 This method will contain all the logic to go to the next token, and we will see it step by step.</p>
 <p>First is skipping all the whitespaces (empty characters, tabs, returns, etc) to arrive at the correct character in the text.</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // This is the main method. Skip whitespaces and get next token. Save also the current position in the input string.
 //
 void nextToken( Lexer* lexer, Token&amp; token ) {
@@ -659,7 +659,7 @@ void nextToken( Lexer* lexer, Token&amp; token ) {
     skipWhitespace( lexer );
 </code></pre><p>The code for skipping the whitespace is pretty straight-forward.
 First it checks if it is a pure whitespace:</p>
-<pre><code>void skipWhitespace( Lexer* lexer ) {
+<pre tabindex="0"><code>void skipWhitespace( Lexer* lexer ) {
     // Scan text until whitespace is finished.
     for ( ;; ) {
         // Check if it is a pure whitespace first.
@@ -672,14 +672,14 @@ First it checks if it is a pure whitespace:</p>
             ++lexer-&gt;position;
 
 </code></pre><p>Then it checks if it is a single line comment:</p>
-<pre><code>        } // Check for single line comments (&quot;//&quot;)
+<pre tabindex="0"><code>        } // Check for single line comments (&quot;//&quot;)
         else if ( (lexer-&gt;position[0] == '/') &amp;&amp; (lexer-&gt;position[1] == '/') ) {
             lexer-&gt;position += 2;
             while ( lexer-&gt;position[0] &amp;&amp; !IsEndOfLine( lexer-&gt;position[0] ) ) {
                 ++lexer-&gt;position;
             }
 </code></pre><p>And last it checks for c-style multiline comments:</p>
-<pre><code>        } // Check for c-style multi-lines comments
+<pre tabindex="0"><code>        } // Check for c-style multi-lines comments
         else if ( (lexer-&gt;position[0] == '/') &amp;&amp; (lexer-&gt;position[1] == '*') ) {
             lexer-&gt;position += 2;
 
@@ -703,17 +703,17 @@ First it checks if it is a pure whitespace:</p>
     }
 }
 </code></pre><p>After skipped all the whitespaces, we initialize the new token:</p>
-<pre><code>    // Initialize token
+<pre tabindex="0"><code>    // Initialize token
     token.type = Token::Token_Unknown;
     token.text.text = lexer-&gt;position;
     token.text.length = 1;
     token.line = lexer-&gt;line;
 </code></pre><p>We get the current character and advance the position, so we can analize it.</p>
-<pre><code>    char c = lexer-&gt;position[0];
+<pre tabindex="0"><code>    char c = lexer-&gt;position[0];
     ++lexer-&gt;position;
 
 </code></pre><p>Here comes the character analisys using a simple <strong>switch</strong>.</p>
-<pre><code>
+<pre tabindex="0"><code>
     switch ( c ) {
         case '\0':
         {
@@ -759,7 +759,7 @@ First it checks if it is a pure whitespace:</p>
 First parsing a string starting from a &lsquo;&quot;&rsquo; character.<!-- raw HTML omitted -->
 It requires to scan the text until it finds another &lsquo;&quot;&rsquo; to indicate the end of the string.<!-- raw HTML omitted -->
 It also supports multiple-line strings with the characters &ldquo;\&rdquo; (double back-slash)</p>
-<pre><code>
+<pre tabindex="0"><code>
         case '&quot;':
         {
             token.type = Token::Token_String;
@@ -787,7 +787,7 @@ It also supports multiple-line strings with the characters &ldquo;\&rdquo; (doub
 </code></pre><p>Then the final classification step: first is checking if the token is an identifier (a string literal that starts with a character and is followed by characters, underscores or numbers).<!-- raw HTML omitted -->
 If not a identifier, check to see if it is a number. This should be expanded to correctly parse numbers, but for now is not used.<!-- raw HTML omitted -->.
 If everything else fails, than we don&rsquo;t recognize the token.</p>
-<pre><code>        default:
+<pre tabindex="0"><code>        default:
         {
             // Identifier/keywords
             if ( IsAlpha( c ) ) {
@@ -878,7 +878,7 @@ One of the most common type of parser (and easier to start with) is the <a href=
 <h2 id="code-1">Code</h2>
 <p>The central piece of code is the Parser.<!-- raw HTML omitted -->
 It uses the Lexer and saves the Types by parsing the input text.<!-- raw HTML omitted --></p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // The Parser parses Tokens using the Lexer and generate an Abstract Syntax Tree.
 struct Parser {
 
@@ -892,7 +892,7 @@ struct Parser {
 </code></pre><p>Let&rsquo;s have a look at the class <strong>Type</strong>.<!-- raw HTML omitted -->
 This class will let us identify correctly primitive types, enums, struct and <em>commands</em> - a special keyword I create to show a concept that can be used away from the canonical C/C++ languages.<!-- raw HTML omitted -->
 By saving a list of names and types we can successfully parse all the types listed above.</p>
-<pre><code>//
+<pre tabindex="0"><code>//
 // Define the language specific structures.
 namespace ast {
 
@@ -921,7 +921,7 @@ namespace ast {
 Entry point for the parsing is generateAST.<!-- raw HTML omitted -->
 It simply goes through ALL the tokens until it reaches the end of the file.<!-- raw HTML omitted -->
 At this level of parsing, we parse only identifiers (keywords like &lsquo;struct&rsquo;, &lsquo;enum&rsquo;, &hellip;).</p>
-<pre><code>void generateAST( Parser* parser ) {
+<pre tabindex="0"><code>void generateAST( Parser* parser ) {
 
     // Read source text until the end.
     // The main body can be a list of declarations.
@@ -950,7 +950,7 @@ At this level of parsing, we parse only identifiers (keywords like &lsquo;struct
 }
 </code></pre><p>The method &lsquo;identifier&rsquo; searches for the language keywords and acts accordingly.<!-- raw HTML omitted -->
 The method &lsquo;expectKeyword&rsquo; simply checks that the keywords are the same.<!-- raw HTML omitted --></p>
-<pre><code>inline void identifier( Parser* parser, const Token&amp; token ) {
+<pre tabindex="0"><code>inline void identifier( Parser* parser, const Token&amp; token ) {
 
     // Scan the name to know which 
     for ( uint32_t i = 0; i &lt; token.text.length; ++i ) {
@@ -996,7 +996,7 @@ When declaring a struct, the token we have are:</p>
 <li>Zero or more variables</li>
 </ol>
 <p>The method expectToken checks the presence of the expected token and saves the line if an error occurs.</p>
-<pre><code>inline void declarationStruct( Parser* parser ) {
+<pre tabindex="0"><code>inline void declarationStruct( Parser* parser ) {
     // name
     Token token;
     if ( !expectToken( parser-&gt;lexer, token, Token::Token_Identifier ) ) {
@@ -1027,7 +1027,7 @@ When declaring a struct, the token we have are:</p>
 
 </code></pre><p>The parsing of a variable is even simpler, just a type followed by the name.
 When reading the type, it searches through the list of all types saved until then.</p>
-<pre><code>inline void declarationVariable( Parser* parser, const StringRef&amp; type_name, ast::Type&amp; type ) {
+<pre tabindex="0"><code>inline void declarationVariable( Parser* parser, const StringRef&amp; type_name, ast::Type&amp; type ) {
     const ast::Type* variable_type = findType( parser, type_name );
     Token token;
     // Name
@@ -1054,7 +1054,7 @@ When reading the type, it searches through the list of all types saved until the
 <li>List of identifiers that corresponds to the enum values</li>
 </ol>
 <!-- raw HTML omitted -->
-<pre><code>
+<pre tabindex="0"><code>
 inline void declarationEnum( Parser* parser ) {
     Token token;
     // Name
@@ -1094,7 +1094,7 @@ inline void declarationEnum( Parser* parser ) {
     }
 }
 </code></pre><p>A command is a special construct that I use in my code, normally with a CommandBuffer, and with the current syntax from HDF:</p>
-<pre><code>command WindowEvents {
+<pre tabindex="0"><code>command WindowEvents {
     Click {
       int16 x;
       int16 y;
@@ -1118,7 +1118,7 @@ Parsing is:</p>
 <li>For each identifier, add a type and scan for internal variables.</li>
 </ol>
 <!-- raw HTML omitted -->
-<pre><code>inline void declarationCommand( Parser* parser ) {
+<pre tabindex="0"><code>inline void declarationCommand( Parser* parser ) {
     // name
     Token token;
     if ( !expectToken( parser-&gt;lexer, token, Token::Token_Identifier ) ) {
@@ -1183,7 +1183,7 @@ Let’s see the three different construct we can output with our language.<!-- r
 <p>We defined an enum as a name and a list of named values.
 For the simplicity of this example, we are not assigning manual values to the enum, but it is something easily changeable, and I will do it in the future.
 Given the enum in HDF:</p>
-<pre><code>enum BlendOperation : byte { Add, Subtract, RevSubtract, Min, Max }
+<pre tabindex="0"><code>enum BlendOperation : byte { Add, Subtract, RevSubtract, Min, Max }
 </code></pre><p>Which code do we want to generate ?</p>
 <p>When I write enums, I almost always need the stringed version of the values. Also I want to add a last value, Count, so that I can use it if I need to allocate anything based on the enum.<!-- raw HTML omitted -->
 As a bonus, I can create a second enum with the bit shifts — called mask — for some use cases.<!-- raw HTML omitted -->
@@ -1192,7 +1192,7 @@ In this piece of code, I will use three different streams for the different part
 Also to note that the strings here are ‘String Ref’ — basically a string that points to the input source code and stores the length of the string, so that there is no need to allocate it newly.<!-- raw HTML omitted -->
 I will use a temporary buffer to null terminate it and write into the output file.<!-- raw HTML omitted --></p>
 <p>This will be the generated code:</p>
-<pre><code>namespace BlendOperation {
+<pre tabindex="0"><code>namespace BlendOperation {
 	enum Enum {
 		Add, Subtract, RevSubtract, Min, Max, Count
 	};
@@ -1220,7 +1220,7 @@ These are the usages:</p>
 <li>Value_masks will contain an optional bitmask for the values.
 <!-- raw HTML omitted --></li>
 </ol>
-<pre><code>void outputCPPEnum( CodeGenerator* code_generator, FILE* output, const ast::Type&amp; type ) {
+<pre tabindex="0"><code>void outputCPPEnum( CodeGenerator* code_generator, FILE* output, const ast::Type&amp; type ) {
 
     // Empty enum: skip output.
     if ( type.names.size() == 0 )
@@ -1235,13 +1235,13 @@ These are the usages:</p>
     StringBuffer&amp; value_masks = code_generator-&gt;string_buffer_2;
 </code></pre><p>We start by adding the character &lsquo;&quot;&rsquo; in the names - they will be C strings!<!-- raw HTML omitted -->
 Then we have a couple of options, just as demonstration: add mask (for the bitmask) and add max, that adds a last element to the generated enum.<!-- raw HTML omitted --></p>
-<pre><code>    value_names.append( &quot;\&quot;&quot; );
+<pre tabindex="0"><code>    value_names.append( &quot;\&quot;&quot; );
 
     bool add_max = true;
     bool add_mask = true;
 </code></pre><p>Next step is the core: go through all the names saved in the enum <strong>ast::Type</strong> during the <strong>parsing</strong> phase, and add the literal as is in the enum, the literal in string version and optional mask.<!-- raw HTML omitted -->
 We also need to take care of the enum with 1 values, they behave in a different way.<!-- raw HTML omitted --></p>
-<pre><code>    char name_buffer[256];
+<pre tabindex="0"><code>    char name_buffer[256];
 
     // Enums with more than 1 values
     if ( type.names.size() &gt; 1 ) {
@@ -1288,7 +1288,7 @@ We also need to take care of the enum with 1 values, they behave in a different 
     }
 
 </code></pre><p>After writing all the values we can add the optional max value in the output:</p>
-<pre><code>    if ( add_max ) {
+<pre tabindex="0"><code>    if ( add_max ) {
         values.append( &quot;, Count&quot; );
 
         value_names.append( &quot;, \&quot;Count\&quot;&quot; );
@@ -1301,7 +1301,7 @@ We also need to take care of the enum with 1 values, they behave in a different 
     
 </code></pre><p>Until now we just saved all those values in the StringBuffers, but still not in the file.<!-- raw HTML omitted -->
 The final piece of code output to file the enum with all the additional data:<!-- raw HTML omitted --></p>
-<pre><code>    copy( type.name, name_buffer, 256 );
+<pre tabindex="0"><code>    copy( type.name, name_buffer, 256 );
 
     fprintf( output, &quot;namespace %s {\n&quot;, name_buffer );
 
@@ -1331,7 +1331,7 @@ The final piece of code output to file the enum with all the additional data:<!-
 <p>Structs are the bread-and-butter of data definition.
 In this simple example we do not handle pointers or references, so it is pretty straight-forward, but as a start in coding generation this could already be powerful for many cases.
 Let’s start with a definition for our dream Data-Driven-Rendering:</p>
-<pre><code>// file.hdf
+<pre tabindex="0"><code>// file.hdf
 struct RenderTarget {
     uint16 			width;
     uint16 			height;
@@ -1349,7 +1349,7 @@ For primitive types there is a translation that must be done to the C++ language
 For the UI area we will define two methods: reflectMembers, that simply adds the ImGui commands needed, and reflectUI, that embeds the members into a Window. This is done so that when starting from a root type I can create a window that let me edit its value, and recursively it can add other member’s UI if they are coming from another struct.<!-- raw HTML omitted -->
 This is shown with the RenderPass struct.<!-- raw HTML omitted --></p>
 <p>This will be the generated code, that includes ImGui too:<!-- raw HTML omitted --></p>
-<pre><code>// CodeGenerated.h
+<pre tabindex="0"><code>// CodeGenerated.h
 
 struct RenderTarget {
 
@@ -1377,7 +1377,7 @@ struct RenderTarget {
 }; // struct RenderTarget
 </code></pre><p>Now let&rsquo;s have a look at the code that will generate that.<!-- raw HTML omitted -->
 First some init steps: clear and alias the StringBuffer, allocate some char buffers on the stack, copy the StringRef into the name buffer:<!-- raw HTML omitted --></p>
-<pre><code>
+<pre tabindex="0"><code>
 void outputCPPStruct( CodeGenerator* code_generator, FILE* output, const ast::Type&amp; type ) {
     const char* tabs = &quot;&quot;;
 
@@ -1390,7 +1390,7 @@ void outputCPPStruct( CodeGenerator* code_generator, FILE* output, const ast::Ty
 
 </code></pre><p>Next is already a powerful piece of code.<!-- raw HTML omitted -->
 Outputting the UI code and iterating through each member.<!-- raw HTML omitted --></p>
-<pre><code>    if ( code_generator-&gt;generate_imgui ) {
+<pre tabindex="0"><code>    if ( code_generator-&gt;generate_imgui ) {
         ui_code.append( &quot;\n\tvoid reflectMembers() {\n&quot; );
     }
 
@@ -1405,7 +1405,7 @@ Outputting the UI code and iterating through each member.<!-- raw HTML omitted -
 </code></pre><p>We are in the middle of the loop, and we want to check if the current member type is a primitive one, then it needs some work to do.<!-- raw HTML omitted -->
 First, output the language specific primitive type keyword (using the s_primitive_type_cpp array).<!-- raw HTML omitted -->
 Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted --></p>
-<pre><code>
+<pre tabindex="0"><code>
         // Translate type name based on output language.
         switch ( member_type.type ) {
             case ast::Type::Types_Primitive:
@@ -1443,7 +1443,7 @@ Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted -->
             }
 
 </code></pre><p>In case of a struct as a member, use the typename as is and call the &lsquo;reflectMembers&rsquo; method for the UI generation:<!-- raw HTML omitted --></p>
-<pre><code>            case ast::Type::Types_Struct:
+<pre tabindex="0"><code>            case ast::Type::Types_Struct:
             {
                 copy( member_type.name, member_type_buffer, 256 );
                 fprintf( output, &quot;%s\t%s %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
@@ -1457,7 +1457,7 @@ Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted -->
             }
 
 </code></pre><p>For enums use the format namespace::Enum that comes with the generated code (and can be anything else) and add a Combo for ImGui. The combo is using the string array generated previously! This is powerful!<!-- raw HTML omitted --></p>
-<pre><code>            case ast::Type::Types_Enum:
+<pre tabindex="0"><code>            case ast::Type::Types_Enum:
             {
                 copy( member_type.name, member_type_buffer, 256 );
                 fprintf( output, &quot;%s\t%s::Enum %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
@@ -1470,7 +1470,7 @@ Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted -->
             }
 
 </code></pre><p>To finish up simlpy add the reflectUI method, that embed the members reflection in a window and finish.<!-- raw HTML omitted --></p>
-<pre><code>            default:
+<pre tabindex="0"><code>            default:
             {
                 break;
             }
@@ -1492,7 +1492,7 @@ Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted -->
 The type is normally used to cycle through the commands and do something accordingly.</p>
 <p>It will output structs because of the need to allocate them in the ring buffer, thus must be simple.</p>
 <p>First let&rsquo;s see the HDF file. The example are window events commands:<!-- raw HTML omitted --></p>
-<pre><code>command WindowEvents {
+<pre tabindex="0"><code>command WindowEvents {
 
 	Click {
 		int16 x;
@@ -1510,7 +1510,7 @@ The type is normally used to cycle through the commands and do something accordi
     }
 };
 </code></pre><p>The generated code will be:<!-- raw HTML omitted --></p>
-<pre><code>namespace WindowEvents {
+<pre tabindex="0"><code>namespace WindowEvents {
 	enum Type {
 		Type_Click, Type_Move, Type_Wheel
 	};
@@ -1545,7 +1545,7 @@ The type is normally used to cycle through the commands and do something accordi
 }; // namespace WindowEvents
 </code></pre><p>And finally the C++ code that generates the output.<!-- raw HTML omitted -->
 The output starts with an enum with all the types, that I normally use to switch commands:<!-- raw HTML omitted --></p>
-<pre><code>void outputCPPCommand( CodeGenerator* code_generator, FILE* output, const ast::Type&amp; type ) {
+<pre tabindex="0"><code>void outputCPPCommand( CodeGenerator* code_generator, FILE* output, const ast::Type&amp; type ) {
 
     char name_buffer[256], member_name_buffer[256], member_type_buffer[256];
     copy( type.name, name_buffer, 256 );
@@ -1567,7 +1567,7 @@ The output starts with an enum with all the types, that I normally use to switch
     fprintf( output, &quot;\n\t};\n\n&quot; );
 </code></pre><p>Then we output all the command structs (like Click, Move, &hellip;).<!-- raw HTML omitted -->
 For each command type we output a struct with all its members. This is similar to the output of the structs:<!-- raw HTML omitted --></p>
-<pre><code>    const char* tabs = &quot;\t&quot;;
+<pre tabindex="0"><code>    const char* tabs = &quot;\t&quot;;
 
     for ( int i = 0; i &lt; type.types.size(); ++i ) {
         const ast::Type&amp; command_type = *type.types[i];
@@ -1828,7 +1828,7 @@ Thank you for reading!</p>
     
     
     
-    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 
