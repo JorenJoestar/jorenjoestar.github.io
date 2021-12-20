@@ -28,7 +28,7 @@
   
     
   
-  <meta name="description" content="The sprites rendered with 1 draw call using the techniques described in this article.Overview Sprite batching is one of the fundamental techniques used in almost all pixel art games (that are lovingly back in town after the first era of 3D), and yet I never found any recent documentation.
+  <meta name="description" content="The sprites rendered with 1 draw call using the techniques described in this article.   Overview Sprite batching is one of the fundamental techniques used in almost all pixel art games (that are lovingly back in town after the first era of 3D), and yet I never found any recent documentation.
 Since the Bindless Age has started old algorithms can be implemented in new ways.
 In this short article I would like to talk about how easy is to manage sprites, including UI, with the bindless model.">
 
@@ -113,7 +113,7 @@ In this short article I would like to talk about how easy is to manage sprites, 
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/modern_sprite_batch/">
   <meta property="og:title" content="Modern (Bindless) Sprite Batch for Vulkan (and more!) | Joren&#39;s">
-  <meta property="og:description" content="The sprites rendered with 1 draw call using the techniques described in this article.Overview Sprite batching is one of the fundamental techniques used in almost all pixel art games (that are lovingly back in town after the first era of 3D), and yet I never found any recent documentation.
+  <meta property="og:description" content="The sprites rendered with 1 draw call using the techniques described in this article.   Overview Sprite batching is one of the fundamental techniques used in almost all pixel art games (that are lovingly back in town after the first era of 3D), and yet I never found any recent documentation.
 Since the Bindless Age has started old algorithms can be implemented in new ways.
 In this short article I would like to talk about how easy is to manage sprites, including UI, with the bindless model."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
@@ -385,7 +385,7 @@ In this short article I would like to talk about how easy is to manage sprites, 
   
   <span class="middot-divider"></span>
   <span class="article-reading-time">
-    6 min read
+    7 min read
   </span>
   
 
@@ -626,7 +626,11 @@ void main() {
     ...
 
 
-</code></pre><p>We can now sample the texture in the fragment program easily:</p>
+</code></pre><p>We can now sample the texture in the fragment program easily.</p>
+<p><strong>NOTE</strong> in Vulkan we need an additional keyword to properly sample a texture in the bindless model without incurring in problems, and this is the <strong>nonuniformEXT</strong> keyword.<br>
+Thanks to Christian Forfang for the email, I totally forgot about that!<br>
+I&rsquo;ve added a toggle so you can see the problems that could happen when you don&rsquo;t include that keyword.<br>
+The correct shader is this:</p>
 <pre tabindex="0"><code> #if defined FRAGMENT
 
   #pragma include &quot;platform.h&quot;
@@ -639,9 +643,35 @@ void main() {
 
 void main() {
 
-      vec4 color = texture( textures[albedo_id], uv_alpha.xy );
+      vec4 color = texture( textures[nonuniformEXT(albedo_id)], uv_alpha.xy );
 
-</code></pre><p>So by simply passing the uint in the instance data we have what we need to render any sprite.</p>
+</code></pre><p>By simply passing the uint in the instance data we have what we need to render any sprite.</p>
+<h2 id="non-uniform-ext-keyword-importance">Non-Uniform-EXT keyword importance</h2>
+<p>There is an incredibly informative blog post about the <strong>nonuniformEXT</strong> on <a href="https://anki3d.org/resource-uniformity-bindless-access-in-vulkan/">Anki 3D blog</a>, as well as the <a href="https://github.com/KhronosGroup/Vulkan-Samples/tree/master/samples/extensions/descriptor_indexing#non-uniform-indexing">spec itself</a>.<br>
+Again thanks a lot to Christian Forfang to point out the missing keyword. I could see the problem without the keyword only on my integrated AMD card from my AMD 5900HX CPU, not on my Nvidia 2070, but it is great to be aware of these kind of problems.</p>
+<p>Here I highlighted the problem as you can see without that keyword:</p>
+
+
+
+
+
+
+<figure>
+
+  <a data-fancybox="" href="bindless_spritebatch_nonuniform_missing.png" >
+
+<img src="bindless_spritebatch_nonuniform_missing.png" >
+</a>
+
+
+<figcaption data-pre="Figure " data-post=":" >
+  <h4>Non synchronized pixels for missing nonuniformEXT keyword</h4>
+  
+</figcaption>
+
+</figure>
+
+<p>I also updated the code so you can choose when to disable it and see the problem yourself.</p>
 <h2 id="one-draw-call">One draw call</h2>
 
 
@@ -906,7 +936,7 @@ Gabriel</p>
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.b22d2266dab94c8508ae1f0cf6b7056c.js"></script>
 
     
 

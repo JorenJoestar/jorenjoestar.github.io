@@ -146,7 +146,11 @@ void main() {
     ...
 
 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We can now sample the texture in the fragment program easily:&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We can now sample the texture in the fragment program easily.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE&lt;/strong&gt; in Vulkan we need an additional keyword to properly sample a texture in the bindless model without incurring in problems, and this is the &lt;strong&gt;nonuniformEXT&lt;/strong&gt; keyword.&lt;br&gt;
+Thanks to Christian Forfang for the email, I totally forgot about that!&lt;br&gt;
+I&amp;rsquo;ve added a toggle so you can see the problems that could happen when you don&amp;rsquo;t include that keyword.&lt;br&gt;
+The correct shader is this:&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; #if defined FRAGMENT
 
   #pragma include &amp;quot;platform.h&amp;quot;
@@ -159,9 +163,35 @@ void main() {
 
 void main() {
 
-      vec4 color = texture( textures[albedo_id], uv_alpha.xy );
+      vec4 color = texture( textures[nonuniformEXT(albedo_id)], uv_alpha.xy );
 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;So by simply passing the uint in the instance data we have what we need to render any sprite.&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;By simply passing the uint in the instance data we have what we need to render any sprite.&lt;/p&gt;
+&lt;h2 id=&#34;non-uniform-ext-keyword-importance&#34;&gt;Non-Uniform-EXT keyword importance&lt;/h2&gt;
+&lt;p&gt;There is an incredibly informative blog post about the &lt;strong&gt;nonuniformEXT&lt;/strong&gt; on &lt;a href=&#34;https://anki3d.org/resource-uniformity-bindless-access-in-vulkan/&#34;&gt;Anki 3D blog&lt;/a&gt;, as well as the &lt;a href=&#34;https://github.com/KhronosGroup/Vulkan-Samples/tree/master/samples/extensions/descriptor_indexing#non-uniform-indexing&#34;&gt;spec itself&lt;/a&gt;.&lt;br&gt;
+Again thanks a lot to Christian Forfang to point out the missing keyword. I could see the problem without the keyword only on my integrated AMD card from my AMD 5900HX CPU, not on my Nvidia 2070, but it is great to be aware of these kind of problems.&lt;/p&gt;
+&lt;p&gt;Here I highlighted the problem as you can see without that keyword:&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;bindless_spritebatch_nonuniform_missing.png&#34; &gt;
+
+&lt;img src=&#34;bindless_spritebatch_nonuniform_missing.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Non synchronized pixels for missing nonuniformEXT keyword&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;I also updated the code so you can choose when to disable it and see the problem yourself.&lt;/p&gt;
 &lt;h2 id=&#34;one-draw-call&#34;&gt;One draw call&lt;/h2&gt;
 
 
