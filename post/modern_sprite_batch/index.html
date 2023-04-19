@@ -28,7 +28,7 @@
   
     
   
-  <meta name="description" content="The sprites rendered with 1 draw call using the techniques described in this article.Overview Sprite batching is one of the fundamental techniques used in almost all pixel art games (that are lovingly back in town after the first era of 3D), and yet I never found any recent documentation.
+  <meta name="description" content="The sprites rendered with 1 draw call using the techniques described in this article. Overview Sprite batching is one of the fundamental techniques used in almost all pixel art games (that are lovingly back in town after the first era of 3D), and yet I never found any recent documentation.
 Since the Bindless Age has started old algorithms can be implemented in new ways.
 In this short article I would like to talk about how easy is to manage sprites, including UI, with the bindless model.">
 
@@ -82,7 +82,7 @@ In this short article I would like to talk about how easy is to manage sprites, 
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
+  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
 
   
 
@@ -113,7 +113,7 @@ In this short article I would like to talk about how easy is to manage sprites, 
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/modern_sprite_batch/">
   <meta property="og:title" content="Modern (Bindless) Sprite Batch for Vulkan (and more!) | Joren&#39;s">
-  <meta property="og:description" content="The sprites rendered with 1 draw call using the techniques described in this article.Overview Sprite batching is one of the fundamental techniques used in almost all pixel art games (that are lovingly back in town after the first era of 3D), and yet I never found any recent documentation.
+  <meta property="og:description" content="The sprites rendered with 1 draw call using the techniques described in this article. Overview Sprite batching is one of the fundamental techniques used in almost all pixel art games (that are lovingly back in town after the first era of 3D), and yet I never found any recent documentation.
 Since the Bindless Age has started old algorithms can be implemented in new ways.
 In this short article I would like to talk about how easy is to manage sprites, including UI, with the bindless model."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
@@ -567,7 +567,6 @@ They are in used in <em>descriptor sets</em>, but with bindless we can simply ig
     current_pipeline = pipeline;
     current_resource_list = resource_list;
 }
-
 </code></pre><p>We use the <em>pipeline</em> and the <em>resource list</em> as informations to know when a batch should be changed.</p>
 <h2 id="passing-texture-index-to-the-gpu">Passing texture index to the GPU</h2>
 <p>As we saw in the previous article, with bindless we define a global array of textures and we simply index into it using shader constants or other tricks (more on that later).</p>
@@ -581,7 +580,6 @@ layout ( set = 1, binding = 10 ) uniform sampler2D textures[];
 layout ( set = 1, binding = 10 ) uniform sampler3D textures_3d[];
 
 #endif // HYDRA_BINDLESS
-
 </code></pre><p>In our implementation we will use <strong>per-instance sprite data</strong> to encode the texture id.</p>
 <pre tabindex="0"><code>//
 //
@@ -624,8 +622,6 @@ void main() {
     out_albedo_id = flags.y;
 
     ...
-
-
 </code></pre><p>We can now sample the texture in the fragment program easily.</p>
 <p><strong>NOTE</strong> in Vulkan we need an additional keyword to properly sample a texture in the bindless model without incurring in problems, and this is the <strong>nonuniformEXT</strong> keyword.<br>
 Thanks to Christian Forfang for the email, I totally forgot about that!<br>
@@ -633,7 +629,7 @@ I&rsquo;ve added a toggle so you can see the problems that could happen when you
 The correct shader is this:</p>
 <pre tabindex="0"><code> #if defined FRAGMENT
 
-  #pragma include &quot;platform.h&quot;
+  #pragma include &#34;platform.h&#34;
 
   layout (location = 0) in vec4 uv_alpha;
   // NOTE: flat attribute!
@@ -644,7 +640,6 @@ The correct shader is this:</p>
 void main() {
 
       vec4 color = texture( textures[nonuniformEXT(albedo_id)], uv_alpha.xy );
-
 </code></pre><p>By simply passing the uint in the instance data we have what we need to render any sprite.</p>
 <h2 id="non-uniform-ext-keyword-importance">Non-Uniform-EXT keyword importance</h2>
 <p>There is an incredibly informative blog post about the <strong>nonuniformEXT</strong> on <a href="https://anki3d.org/resource-uniformity-bindless-access-in-vulkan/">Anki 3D blog</a>, as well as the <a href="https://github.com/KhronosGroup/Vulkan-Samples/tree/master/samples/extensions/descriptor_indexing#non-uniform-indexing">spec itself</a>.<br>
@@ -731,7 +726,6 @@ void main() {
   TextureHandle new_texture = *(TextureHandle*)( pcmd-&gt;TextureId );
   ...
   commands.draw_indexed( sort_key++, hydra::gfx::TopologyType::Triangle, pcmd-&gt;ElemCount, 1, index_buffer_offset + pcmd-&gt;IdxOffset, vtx_buffer_offset + pcmd-&gt;VtxOffset, new_texture.index );
-
 </code></pre><p>With bindless there is no need to create different descriptor sets based on the texture used by the ImGUI window, and with the instance index we can again draw every texture in a simple way!</p>
 <h1 id="conclusion">Conclusion</h1>
 <p>In this article we saw a simple way to evolve a sprite batch to group sprites without the need to worry about texture changes.<br>
@@ -936,7 +930,7 @@ Gabriel</p>
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
 
     
 

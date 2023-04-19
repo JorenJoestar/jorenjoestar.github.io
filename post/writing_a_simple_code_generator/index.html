@@ -28,7 +28,7 @@
   
     
   
-  <meta name="description" content="UI using ImGUI, SDL and the code generated with this article.Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.The code is here:
+  <meta name="description" content="UI using ImGUI, SDL and the code generated with this article. Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues! In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language. The code is here:
 https://github.com/JorenJoestar/DataDrivenRendering
 There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written.">
 
@@ -82,7 +82,7 @@ There is a balance that constantly needs to be found between code and data, and 
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
+  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
 
   
 
@@ -113,7 +113,7 @@ There is a balance that constantly needs to be found between code and data, and 
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/writing_a_simple_code_generator/">
   <meta property="og:title" content="Writing a simple Code Generator | Joren&#39;s">
-  <meta property="og:description" content="UI using ImGUI, SDL and the code generated with this article.Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.The code is here:
+  <meta property="og:description" content="UI using ImGUI, SDL and the code generated with this article. Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues! In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language. The code is here:
 https://github.com/JorenJoestar/DataDrivenRendering
 There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
@@ -628,22 +628,22 @@ struct Lexer {
 // All those methods are to classify a character.
 //
 inline bool IsEndOfLine( char c ) {
-    bool Result = ((c == '\n') || (c == '\r'));
+    bool Result = ((c == &#39;\n&#39;) || (c == &#39;\r&#39;));
     return(Result);
 }
 
 inline bool IsWhitespace( char c ) {
-    bool Result = ((c == ' ') || (c == '\t') || (c == '\v') || (c == '\f') || IsEndOfLine( c ));
+    bool Result = ((c == &#39; &#39;) || (c == &#39;\t&#39;) || (c == &#39;\v&#39;) || (c == &#39;\f&#39;) || IsEndOfLine( c ));
     return(Result);
 }
 
 inline bool IsAlpha( char c ) {
-    bool Result = (((c &gt;= 'a') &amp;&amp; (c &lt;= 'z')) || ((c &gt;= 'A') &amp;&amp; (c &lt;= 'Z')));
+    bool Result = (((c &gt;= &#39;a&#39;) &amp;&amp; (c &lt;= &#39;z&#39;)) || ((c &gt;= &#39;A&#39;) &amp;&amp; (c &lt;= &#39;Z&#39;)));
     return(Result);
 }
 
 inline bool IsNumber( char c ) {
-    bool Result = ((c &gt;= '0') &amp;&amp; (c &lt;= '9'));
+    bool Result = ((c &gt;= &#39;0&#39;) &amp;&amp; (c &lt;= &#39;9&#39;));
     return(Result);
 }
 </code></pre><p>These should be quite straightforward.</p>
@@ -670,21 +670,20 @@ First it checks if it is a pure whitespace:</p>
 
             // Advance to next character
             ++lexer-&gt;position;
-
 </code></pre><p>Then it checks if it is a single line comment:</p>
-<pre tabindex="0"><code>        } // Check for single line comments (&quot;//&quot;)
-        else if ( (lexer-&gt;position[0] == '/') &amp;&amp; (lexer-&gt;position[1] == '/') ) {
+<pre tabindex="0"><code>        } // Check for single line comments (&#34;//&#34;)
+        else if ( (lexer-&gt;position[0] == &#39;/&#39;) &amp;&amp; (lexer-&gt;position[1] == &#39;/&#39;) ) {
             lexer-&gt;position += 2;
             while ( lexer-&gt;position[0] &amp;&amp; !IsEndOfLine( lexer-&gt;position[0] ) ) {
                 ++lexer-&gt;position;
             }
 </code></pre><p>And last it checks for c-style multiline comments:</p>
 <pre tabindex="0"><code>        } // Check for c-style multi-lines comments
-        else if ( (lexer-&gt;position[0] == '/') &amp;&amp; (lexer-&gt;position[1] == '*') ) {
+        else if ( (lexer-&gt;position[0] == &#39;/&#39;) &amp;&amp; (lexer-&gt;position[1] == &#39;*&#39;) ) {
             lexer-&gt;position += 2;
 
             // Advance until the string is closed. Remember to check if line is changed.
-            while ( !((lexer-&gt;position[0] == '*') &amp;&amp; (lexer-&gt;position[1] == '/')) ) {
+            while ( !((lexer-&gt;position[0] == &#39;*&#39;) &amp;&amp; (lexer-&gt;position[1] == &#39;/&#39;)) ) {
                 // Handle change of line
                 if ( IsEndOfLine( lexer-&gt;position[0] ) )
                     ++lexer-&gt;line;
@@ -693,7 +692,7 @@ First it checks if it is a pure whitespace:</p>
                 ++lexer-&gt;position;
             }
 
-            if ( lexer-&gt;position[0] == '*' ) {
+            if ( lexer-&gt;position[0] == &#39;*&#39; ) {
                 lexer-&gt;position += 2;
             }
         }
@@ -711,47 +710,46 @@ First it checks if it is a pure whitespace:</p>
 </code></pre><p>We get the current character and advance the position, so we can analize it.</p>
 <pre tabindex="0"><code>    char c = lexer-&gt;position[0];
     ++lexer-&gt;position;
-
 </code></pre><p>Here comes the character analisys using a simple <strong>switch</strong>.</p>
 <pre tabindex="0"><code>
     switch ( c ) {
-        case '\0':
+        case &#39;\0&#39;:
         {
             token.type = Token::Token_EndOfStream;
         } break;
-        case '(':
+        case &#39;(&#39;:
         {
             token.type = Token::Token_OpenParen;
         } break;
-        case ')':
+        case &#39;)&#39;:
         {
             token.type = Token::Token_CloseParen;
         } break;
-        case ':':
+        case &#39;:&#39;:
         {
             token.type = Token::Token_Colon;
         } break;
-        case ';':
+        case &#39;;&#39;:
         {
             token.type = Token::Token_Semicolon;
         } break;
-        case '*':
+        case &#39;*&#39;:
         {
             token.type = Token::Token_Asterisk;
         } break;
-        case '[':
+        case &#39;[&#39;:
         {
             token.type = Token::Token_OpenBracket;
         } break;
-        case ']':
+        case &#39;]&#39;:
         {
             token.type = Token::Token_CloseBracket;
         } break;
-        case '{':
+        case &#39;{&#39;:
         {
             token.type = Token::Token_OpenBrace;
         } break;
-        case '}':
+        case &#39;}&#39;:
         {
             token.type = Token::Token_CloseBrace;
         } break;
@@ -760,16 +758,16 @@ First parsing a string starting from a &lsquo;&quot;&rsquo; character.<!-- raw H
 It requires to scan the text until it finds another &lsquo;&quot;&rsquo; to indicate the end of the string.<!-- raw HTML omitted -->
 It also supports multiple-line strings with the characters &ldquo;\&rdquo; (double back-slash)</p>
 <pre tabindex="0"><code>
-        case '&quot;':
+        case &#39;&#34;&#39;:
         {
             token.type = Token::Token_String;
 
             token.text.text = lexer-&gt;position;
 
             while ( lexer-&gt;position[0] &amp;&amp;
-                    lexer-&gt;position[0] != '&quot;' )
+                    lexer-&gt;position[0] != &#39;&#34;&#39; )
             {
-                if ( (lexer-&gt;position[0] == '\\') &amp;&amp;
+                if ( (lexer-&gt;position[0] == &#39;\\&#39;) &amp;&amp;
                      lexer-&gt;position[1] )
                 {
                     ++lexer-&gt;position;
@@ -780,7 +778,7 @@ It also supports multiple-line strings with the characters &ldquo;\&rdquo; (doub
             // Saves total string length
             token.text.length = lexer-&gt;position - token.text.text;
 
-            if ( lexer-&gt;position[0] == '&quot;' ) {
+            if ( lexer-&gt;position[0] == &#39;&#34;&#39; ) {
                 ++lexer-&gt;position;
             }
         } break;
@@ -793,7 +791,7 @@ If everything else fails, than we don&rsquo;t recognize the token.</p>
             if ( IsAlpha( c ) ) {
                 token.type = Token::Token_Identifier;
 
-                while ( IsAlpha( lexer-&gt;position[0] ) || IsNumber( lexer-&gt;position[0] ) || (lexer-&gt;position[0] == '_') ) {
+                while ( IsAlpha( lexer-&gt;position[0] ) || IsNumber( lexer-&gt;position[0] ) || (lexer-&gt;position[0] == &#39;_&#39;) ) {
                     ++lexer-&gt;position;
                 }
 
@@ -920,7 +918,7 @@ namespace ast {
 </code></pre><p>And now the actual code making the magic happens!<!-- raw HTML omitted -->
 Entry point for the parsing is generateAST.<!-- raw HTML omitted -->
 It simply goes through ALL the tokens until it reaches the end of the file.<!-- raw HTML omitted -->
-At this level of parsing, we parse only identifiers (keywords like &lsquo;struct&rsquo;, &lsquo;enum&rsquo;, &hellip;).</p>
+At this level of parsing, we parse only identifiers (keywords like &lsquo;struct&rsquo;, &rsquo;enum&rsquo;, &hellip;).</p>
 <pre tabindex="0"><code>void generateAST( Parser* parser ) {
 
     // Read source text until the end.
@@ -949,7 +947,7 @@ At this level of parsing, we parse only identifiers (keywords like &lsquo;struct
     }
 }
 </code></pre><p>The method &lsquo;identifier&rsquo; searches for the language keywords and acts accordingly.<!-- raw HTML omitted -->
-The method &lsquo;expectKeyword&rsquo; simply checks that the keywords are the same.<!-- raw HTML omitted --></p>
+The method &rsquo;expectKeyword&rsquo; simply checks that the keywords are the same.<!-- raw HTML omitted --></p>
 <pre tabindex="0"><code>inline void identifier( Parser* parser, const Token&amp; token ) {
 
     // Scan the name to know which 
@@ -957,9 +955,9 @@ The method &lsquo;expectKeyword&rsquo; simply checks that the keywords are the s
         char c = *(token.text.text + i);
 
         switch ( c ) {
-            case 's':
+            case &#39;s&#39;:
             {
-                if ( expectKeyword( token.text, 6, &quot;struct&quot; ) ) {
+                if ( expectKeyword( token.text, 6, &#34;struct&#34; ) ) {
                     declarationStruct( parser );
                     return;
                 }
@@ -967,18 +965,18 @@ The method &lsquo;expectKeyword&rsquo; simply checks that the keywords are the s
                 break;
             }
 
-            case 'e':
+            case &#39;e&#39;:
             {
-                if ( expectKeyword( token.text, 4, &quot;enum&quot; ) ) {
+                if ( expectKeyword( token.text, 4, &#34;enum&#34; ) ) {
                     declarationEnum( parser );
                     return;
                 }
                 break;
             }
 
-            case 'c':
+            case &#39;c&#39;:
             {
-                if ( expectKeyword( token.text, 7, &quot;command&quot; ) ) {
+                if ( expectKeyword( token.text, 7, &#34;command&#34; ) ) {
                     declarationCommand( parser );
                     return;
                 }
@@ -1024,7 +1022,6 @@ When declaring a struct, the token we have are:</p>
         }
     }
 }
-
 </code></pre><p>The parsing of a variable is even simpler, just a type followed by the name.
 When reading the type, it searches through the list of all types saved until then.</p>
 <pre tabindex="0"><code>inline void declarationVariable( Parser* parser, const StringRef&amp; type_name, ast::Type&amp; type ) {
@@ -1047,7 +1044,7 @@ When reading the type, it searches through the list of all types saved until the
 }
 </code></pre><p>The parsing of the enum is:</p>
 <ol>
-<li>&lsquo;enum&rsquo; keyword</li>
+<li>&rsquo;enum&rsquo; keyword</li>
 <li>Enum name</li>
 <li>(optional) Semicolon and type, taken from Flatbuffers syntax</li>
 <li>Open brace</li>
@@ -1065,7 +1062,7 @@ inline void declarationEnum( Parser* parser ) {
     // Cache name string
     StringRef name = token.text;
 
-    // Optional ': type' for the enum
+    // Optional &#39;: type&#39; for the enum
     nextToken( parser-&gt;lexer, token );
     if ( token.type == Token::Token_Colon ) {
         // Skip to open brace
@@ -1202,7 +1199,7 @@ I will use a temporary buffer to null terminate it and write into the output fil
 	};
 
 	static const char* s_value_names[] = {
-		&quot;Add&quot;, &quot;Subtract&quot;, &quot;RevSubtract&quot;, &quot;Min&quot;, &quot;Max&quot;, &quot;Count&quot;
+		&#34;Add&#34;, &#34;Subtract&#34;, &#34;RevSubtract&#34;, &#34;Min&#34;, &#34;Max&#34;, &#34;Count&#34;
 	};
 
 	static const char* ToString( Enum e ) {
@@ -1235,7 +1232,7 @@ These are the usages:</p>
     StringBuffer&amp; value_masks = code_generator-&gt;string_buffer_2;
 </code></pre><p>We start by adding the character &lsquo;&quot;&rsquo; in the names - they will be C strings!<!-- raw HTML omitted -->
 Then we have a couple of options, just as demonstration: add mask (for the bitmask) and add max, that adds a last element to the generated enum.<!-- raw HTML omitted --></p>
-<pre tabindex="0"><code>    value_names.append( &quot;\&quot;&quot; );
+<pre tabindex="0"><code>    value_names.append( &#34;\&#34;&#34; );
 
     bool add_max = true;
     bool add_mask = true;
@@ -1250,51 +1247,50 @@ We also need to take care of the enum with 1 values, they behave in a different 
 
             if ( add_mask ) {
                 value_masks.append( type.names[v] );
-                value_masks.append( &quot;_mask = 1 &lt;&lt; &quot; );
+                value_masks.append( &#34;_mask = 1 &lt;&lt; &#34; );
                 value_masks.append( _itoa( v, name_buffer, 10 ) );
-                value_masks.append( &quot;, &quot; );
+                value_masks.append( &#34;, &#34; );
             }
 
             values.append( type.names[v] );
-            values.append( &quot;, &quot; );
+            values.append( &#34;, &#34; );
 
             value_names.append( type.names[v] );
-            value_names.append( &quot;\&quot;, \&quot;&quot; );
+            value_names.append( &#34;\&#34;, \&#34;&#34; );
         }
 
         if ( add_mask ) {
             value_masks.append( type.names[max_values] );
-            value_masks.append( &quot;_mask = 1 &lt;&lt; &quot; );
+            value_masks.append( &#34;_mask = 1 &lt;&lt; &#34; );
             value_masks.append( _itoa( max_values, name_buffer, 10 ) );
         }
 
         values.append( type.names[max_values] );
 
         value_names.append( type.names[max_values] );
-        value_names.append( &quot;\&quot;&quot; );
+        value_names.append( &#34;\&#34;&#34; );
     }
     else {
         
         if ( add_mask ) {
             value_masks.append( type.names[0] );
-            value_masks.append( &quot;_mask = 1 &lt;&lt; &quot; );
+            value_masks.append( &#34;_mask = 1 &lt;&lt; &#34; );
             value_masks.append( _itoa( 0, name_buffer, 10 ) );
         }
 
         values.append( type.names[0] );
 
         value_names.append( type.names[0] );
-        value_names.append( &quot;\&quot;&quot; );
+        value_names.append( &#34;\&#34;&#34; );
     }
-
 </code></pre><p>After writing all the values we can add the optional max value in the output:</p>
 <pre tabindex="0"><code>    if ( add_max ) {
-        values.append( &quot;, Count&quot; );
+        values.append( &#34;, Count&#34; );
 
-        value_names.append( &quot;, \&quot;Count\&quot;&quot; );
+        value_names.append( &#34;, \&#34;Count\&#34;&#34; );
 
         if ( add_mask ) {
-            value_masks.append( &quot;, Count_mask = 1 &lt;&lt; &quot; );
+            value_masks.append( &#34;, Count_mask = 1 &lt;&lt; &#34; );
             value_masks.append( _itoa( type.names.size(), name_buffer, 10 ) );
         }
     }
@@ -1303,29 +1299,29 @@ We also need to take care of the enum with 1 values, they behave in a different 
 The final piece of code output to file the enum with all the additional data:<!-- raw HTML omitted --></p>
 <pre tabindex="0"><code>    copy( type.name, name_buffer, 256 );
 
-    fprintf( output, &quot;namespace %s {\n&quot;, name_buffer );
+    fprintf( output, &#34;namespace %s {\n&#34;, name_buffer );
 
-    fprintf( output, &quot;\tenum Enum {\n&quot; );
-    fprintf( output, &quot;\t\t%s\n&quot;, values.data );
-    fprintf( output, &quot;\t};\n&quot; );
+    fprintf( output, &#34;\tenum Enum {\n&#34; );
+    fprintf( output, &#34;\t\t%s\n&#34;, values.data );
+    fprintf( output, &#34;\t};\n&#34; );
 
     // Write the mask
     if ( add_mask ) {
-        fprintf( output, &quot;\n\tenum Mask {\n&quot; );
-        fprintf( output, &quot;\t\t%s\n&quot;, value_masks.data );
-        fprintf( output, &quot;\t};\n&quot; );
+        fprintf( output, &#34;\n\tenum Mask {\n&#34; );
+        fprintf( output, &#34;\t\t%s\n&#34;, value_masks.data );
+        fprintf( output, &#34;\t};\n&#34; );
     }
 
     // Write the string values
-    fprintf( output, &quot;\n\tstatic const char* s_value_names[] = {\n&quot; );
-    fprintf( output, &quot;\t\t%s\n&quot;, value_names.data );
-    fprintf( output, &quot;\t};\n&quot; );
+    fprintf( output, &#34;\n\tstatic const char* s_value_names[] = {\n&#34; );
+    fprintf( output, &#34;\t\t%s\n&#34;, value_names.data );
+    fprintf( output, &#34;\t};\n&#34; );
 
-    fprintf( output, &quot;\n\tstatic const char* ToString( Enum e ) {\n&quot; );
-    fprintf( output, &quot;\t\treturn s_value_names[(int)e];\n&quot; );
-    fprintf( output, &quot;\t}\n&quot; );
+    fprintf( output, &#34;\n\tstatic const char* ToString( Enum e ) {\n&#34; );
+    fprintf( output, &#34;\t\treturn s_value_names[(int)e];\n&#34; );
+    fprintf( output, &#34;\t}\n&#34; );
 
-    fprintf( output, &quot;} // namespace %s\n\n&quot;, name_buffer );
+    fprintf( output, &#34;} // namespace %s\n\n&#34;, name_buffer );
 }
 </code></pre><h2 id="struct">Struct</h2>
 <p>Structs are the bread-and-butter of data definition.
@@ -1360,15 +1356,15 @@ struct RenderTarget {
 	TextureFormat::Enum format;
 
 	void reflectMembers() {
-		ImGui::InputScalar( &quot;width&quot;, ImGuiDataType_U16, &amp;width );
-		ImGui::InputScalar( &quot;height&quot;, ImGuiDataType_U16, &amp;height );
-		ImGui::InputScalar( &quot;scale_x&quot;, ImGuiDataType_Float, &amp;scale_x );
-		ImGui::InputScalar( &quot;scale_y&quot;, ImGuiDataType_Float, &amp;scale_y );
-		ImGui::Combo( &quot;format&quot;, (int32_t*)&amp;format, TextureFormat::s_value_names, TextureFormat::Count );
+		ImGui::InputScalar( &#34;width&#34;, ImGuiDataType_U16, &amp;width );
+		ImGui::InputScalar( &#34;height&#34;, ImGuiDataType_U16, &amp;height );
+		ImGui::InputScalar( &#34;scale_x&#34;, ImGuiDataType_Float, &amp;scale_x );
+		ImGui::InputScalar( &#34;scale_y&#34;, ImGuiDataType_Float, &amp;scale_y );
+		ImGui::Combo( &#34;format&#34;, (int32_t*)&amp;format, TextureFormat::s_value_names, TextureFormat::Count );
 	}
 
 	void reflectUI() {
-		ImGui::Begin(&quot;RenderTarget&quot;);
+		ImGui::Begin(&#34;RenderTarget&#34;);
 		reflectMembers();
 		ImGui::End();
 	}
@@ -1379,7 +1375,7 @@ struct RenderTarget {
 First some init steps: clear and alias the StringBuffer, allocate some char buffers on the stack, copy the StringRef into the name buffer:<!-- raw HTML omitted --></p>
 <pre tabindex="0"><code>
 void outputCPPStruct( CodeGenerator* code_generator, FILE* output, const ast::Type&amp; type ) {
-    const char* tabs = &quot;&quot;;
+    const char* tabs = &#34;&#34;;
 
     code_generator-&gt;string_buffer_0.clear();
 
@@ -1387,21 +1383,19 @@ void outputCPPStruct( CodeGenerator* code_generator, FILE* output, const ast::Ty
 
     char name_buffer[256], member_name_buffer[256], member_type_buffer[256];
     copy( type.name, name_buffer, 256 );
-
 </code></pre><p>Next is already a powerful piece of code.<!-- raw HTML omitted -->
 Outputting the UI code and iterating through each member.<!-- raw HTML omitted --></p>
 <pre tabindex="0"><code>    if ( code_generator-&gt;generate_imgui ) {
-        ui_code.append( &quot;\n\tvoid reflectMembers() {\n&quot; );
+        ui_code.append( &#34;\n\tvoid reflectMembers() {\n&#34; );
     }
 
-    fprintf( output, &quot;%sstruct %s {\n\n&quot;, tabs, name_buffer );
+    fprintf( output, &#34;%sstruct %s {\n\n&#34;, tabs, name_buffer );
 
     for ( int i = 0; i &lt; type.types.size(); ++i ) {
         const ast::Type&amp; member_type = *type.types[i];
         const StringRef&amp; member_name = type.names[i];
 
         copy( member_name, member_name_buffer, 256 );
-
 </code></pre><p>We are in the middle of the loop, and we want to check if the current member type is a primitive one, then it needs some work to do.<!-- raw HTML omitted -->
 First, output the language specific primitive type keyword (using the s_primitive_type_cpp array).<!-- raw HTML omitted -->
 Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted --></p>
@@ -1411,7 +1405,7 @@ Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted -->
             case ast::Type::Types_Primitive:
             {
                 strcpy_s( member_type_buffer, 256, s_primitive_type_cpp[member_type.primitive_type] );
-                fprintf( output, &quot;%s\t%s %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+                fprintf( output, &#34;%s\t%s %s;\n&#34;, tabs, member_type_buffer, member_name_buffer );
                 
                 if ( code_generator-&gt;generate_imgui ) {
                     switch ( member_type.primitive_type ) {
@@ -1426,14 +1420,14 @@ Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted -->
                         case ast::Type::Primitive_Float:
                         case ast::Type::Primitive_Double:
                         {
-                            ui_code.append( &quot;\t\tImGui::InputScalar( \&quot;%s\&quot;, %s, &amp;%s );\n&quot;, member_name_buffer, s_primitive_type_imgui[member_type.primitive_type], member_name_buffer );
+                            ui_code.append( &#34;\t\tImGui::InputScalar( \&#34;%s\&#34;, %s, &amp;%s );\n&#34;, member_name_buffer, s_primitive_type_imgui[member_type.primitive_type], member_name_buffer );
                             
                             break;
                         }
                         
                         case ast::Type::Primitive_Bool:
                         {
-                            ui_code.append( &quot;\t\tImGui::Checkbox( \&quot;%s\&quot;, &amp;%s );\n&quot;, member_name_buffer, member_name_buffer );
+                            ui_code.append( &#34;\t\tImGui::Checkbox( \&#34;%s\&#34;, &amp;%s );\n&#34;, member_name_buffer, member_name_buffer );
                             break;
                         }
                     }
@@ -1441,34 +1435,31 @@ Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted -->
 
                 break;
             }
-
 </code></pre><p>In case of a struct as a member, use the typename as is and call the &lsquo;reflectMembers&rsquo; method for the UI generation:<!-- raw HTML omitted --></p>
 <pre tabindex="0"><code>            case ast::Type::Types_Struct:
             {
                 copy( member_type.name, member_type_buffer, 256 );
-                fprintf( output, &quot;%s\t%s %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+                fprintf( output, &#34;%s\t%s %s;\n&#34;, tabs, member_type_buffer, member_name_buffer );
 
                 if ( code_generator-&gt;generate_imgui ) {
-                    ui_code.append( &quot;\t\tImGui::Text(\&quot;%s\&quot;);\n&quot;, member_name_buffer );
-                    ui_code.append( &quot;\t\t%s.reflectMembers();\n&quot;, member_name_buffer );
+                    ui_code.append( &#34;\t\tImGui::Text(\&#34;%s\&#34;);\n&#34;, member_name_buffer );
+                    ui_code.append( &#34;\t\t%s.reflectMembers();\n&#34;, member_name_buffer );
                 }
 
                 break;
             }
-
 </code></pre><p>For enums use the format namespace::Enum that comes with the generated code (and can be anything else) and add a Combo for ImGui. The combo is using the string array generated previously! This is powerful!<!-- raw HTML omitted --></p>
 <pre tabindex="0"><code>            case ast::Type::Types_Enum:
             {
                 copy( member_type.name, member_type_buffer, 256 );
-                fprintf( output, &quot;%s\t%s::Enum %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+                fprintf( output, &#34;%s\t%s::Enum %s;\n&#34;, tabs, member_type_buffer, member_name_buffer );
 
                 if ( code_generator-&gt;generate_imgui ) {
-                    ui_code.append( &quot;\t\tImGui::Combo( \&quot;%s\&quot;, (int32_t*)&amp;%s, %s::s_value_names, %s::Count );\n&quot;, member_name_buffer, member_name_buffer, member_type_buffer, member_type_buffer );
+                    ui_code.append( &#34;\t\tImGui::Combo( \&#34;%s\&#34;, (int32_t*)&amp;%s, %s::s_value_names, %s::Count );\n&#34;, member_name_buffer, member_name_buffer, member_type_buffer, member_type_buffer );
                 }
 
                 break;
             }
-
 </code></pre><p>To finish up simlpy add the reflectUI method, that embed the members reflection in a window and finish.<!-- raw HTML omitted --></p>
 <pre tabindex="0"><code>            default:
             {
@@ -1477,14 +1468,13 @@ Second, add some ImGui code to edit the field directly.<!-- raw HTML omitted -->
         }
     }
 
-    ui_code.append( &quot;\t}&quot; );
-    ui_code.append( &quot;\n\n\tvoid reflectUI() {\n\t\tImGui::Begin(\&quot;%s\&quot;);\n\t\treflectMembers();\n\t\tImGui::End();\n\t}\n&quot;, name_buffer );
+    ui_code.append( &#34;\t}&#34; );
+    ui_code.append( &#34;\n\n\tvoid reflectUI() {\n\t\tImGui::Begin(\&#34;%s\&#34;);\n\t\treflectMembers();\n\t\tImGui::End();\n\t}\n&#34;, name_buffer );
 
-    fprintf( output, &quot;%s\n&quot;, ui_code.data );
+    fprintf( output, &#34;%s\n&#34;, ui_code.data );
 
-    fprintf( output, &quot;\n%s}; // struct %s\n\n&quot;, tabs, name_buffer );
+    fprintf( output, &#34;\n%s}; // struct %s\n\n&#34;, tabs, name_buffer );
 }
-
 </code></pre><h2 id="command">Command</h2>
 <p>I wanted to include an example of something that does not exist in any language, but it shows the power of removing boilerplate code.</p>
 <p>I define commands as little structs with a type used anytime I need to do some command parsing, normally from a ring buffer.</p>
@@ -1550,30 +1540,30 @@ The output starts with an enum with all the types, that I normally use to switch
     char name_buffer[256], member_name_buffer[256], member_type_buffer[256];
     copy( type.name, name_buffer, 256 );
 
-    fprintf( output, &quot;namespace %s {\n&quot;, name_buffer );
+    fprintf( output, &#34;namespace %s {\n&#34;, name_buffer );
 
     // Add enum with all types
-    fprintf( output, &quot;\tenum Type {\n&quot; );
-    fprintf( output, &quot;\t\t&quot; );
+    fprintf( output, &#34;\tenum Type {\n&#34; );
+    fprintf( output, &#34;\t\t&#34; );
     for ( int i = 0; i &lt; type.types.size() - 1; ++i ) {
         const ast::Type&amp; command_type = *type.types[i];
         copy( command_type.name, name_buffer, 256 );
-        fprintf( output, &quot;Type_%s, &quot;, name_buffer );
+        fprintf( output, &#34;Type_%s, &#34;, name_buffer );
     }
 
     const ast::Type* last_type = type.types[type.types.size() - 1];
     copy( last_type-&gt;name, name_buffer, 256 );
-    fprintf( output, &quot;Type_%s&quot;, name_buffer );
-    fprintf( output, &quot;\n\t};\n\n&quot; );
+    fprintf( output, &#34;Type_%s&#34;, name_buffer );
+    fprintf( output, &#34;\n\t};\n\n&#34; );
 </code></pre><p>Then we output all the command structs (like Click, Move, &hellip;).<!-- raw HTML omitted -->
 For each command type we output a struct with all its members. This is similar to the output of the structs:<!-- raw HTML omitted --></p>
-<pre tabindex="0"><code>    const char* tabs = &quot;\t&quot;;
+<pre tabindex="0"><code>    const char* tabs = &#34;\t&#34;;
 
     for ( int i = 0; i &lt; type.types.size(); ++i ) {
         const ast::Type&amp; command_type = *type.types[i];
 
         copy( command_type.name, member_type_buffer, 256 );
-        fprintf( output, &quot;%sstruct %s {\n\n&quot;, tabs, member_type_buffer );
+        fprintf( output, &#34;%sstruct %s {\n\n&#34;, tabs, member_type_buffer );
         
         for ( int i = 0; i &lt; command_type.types.size(); ++i ) {
             const ast::Type&amp; member_type = *command_type.types[i];
@@ -1586,7 +1576,7 @@ For each command type we output a struct with all its members. This is similar t
                 case ast::Type::Types_Primitive:
                 {
                     strcpy_s( member_type_buffer, 256, s_primitive_type_cpp[member_type.primitive_type] );
-                    fprintf( output, &quot;%s\t%s %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+                    fprintf( output, &#34;%s\t%s %s;\n&#34;, tabs, member_type_buffer, member_name_buffer );
 
                     break;
                 }
@@ -1594,7 +1584,7 @@ For each command type we output a struct with all its members. This is similar t
                 case ast::Type::Types_Struct:
                 {
                     copy( member_type.name, member_type_buffer, 256 );
-                    fprintf( output, &quot;%s\t%s %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+                    fprintf( output, &#34;%s\t%s %s;\n&#34;, tabs, member_type_buffer, member_name_buffer );
 
                     break;
                 }
@@ -1602,7 +1592,7 @@ For each command type we output a struct with all its members. This is similar t
                 case ast::Type::Types_Enum:
                 {
                     copy( member_type.name, member_type_buffer, 256 );
-                    fprintf( output, &quot;%s\t%s::Enum %s;\n&quot;, tabs, member_type_buffer, member_name_buffer );
+                    fprintf( output, &#34;%s\t%s::Enum %s;\n&#34;, tabs, member_type_buffer, member_name_buffer );
 
                     break;
                 }
@@ -1616,12 +1606,12 @@ For each command type we output a struct with all its members. This is similar t
 
         copy( command_type.name, member_type_buffer, 256 );
 
-        fprintf( output, &quot;\n%s\tstatic Type GetType() { return Type_%s; }\n&quot;, tabs, member_type_buffer );
-        fprintf( output, &quot;\n%s}; // struct %s\n\n&quot;, tabs, name_buffer );
+        fprintf( output, &#34;\n%s\tstatic Type GetType() { return Type_%s; }\n&#34;, tabs, member_type_buffer );
+        fprintf( output, &#34;\n%s}; // struct %s\n\n&#34;, tabs, name_buffer );
     }
 
     copy( type.name, name_buffer, 256 );
-    fprintf( output, &quot;}; // namespace %s\n\n&quot;, name_buffer );
+    fprintf( output, &#34;}; // namespace %s\n\n&#34;, name_buffer );
 
 }
 </code></pre><h1 id="conclusions">Conclusions</h1>
@@ -1828,7 +1818,7 @@ Thank you for reading!</p>
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
 
     
 

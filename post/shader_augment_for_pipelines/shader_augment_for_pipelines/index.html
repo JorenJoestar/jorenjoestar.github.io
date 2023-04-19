@@ -28,10 +28,10 @@
   
     
   
-  <meta name="description" content="Overview In the last articles we looked at progressively building tools to move rendering code towards data.We looked on how to create a simple lexer, a simple parser and a code generator.With those we were able to create a very simple language to augment shaders.
+  <meta name="description" content="Overview In the last articles we looked at progressively building tools to move rendering code towards data. We looked on how to create a simple lexer, a simple parser and a code generator. With those we were able to create a very simple language to augment shaders.
 Why that ?
 There are few reasons:
- Shader languages misses any way of linking multiple programs Shader languages misses any way to define render states CGFX and Microsoft FX are mostly dead Ability to use ANY shader language - and just add the infrastructure Ability to generate permutations without manually creating them  Hydra FX aims to add all the missing features and becoming just an augmentation to ANY shader language.">
+Shader languages misses any way of linking multiple programs Shader languages misses any way to define render states CGFX and Microsoft FX are mostly dead Ability to use ANY shader language - and just add the infrastructure Ability to generate permutations without manually creating them Hydra FX aims to add all the missing features and becoming just an augmentation to ANY shader language.">
 
   
   <link rel="alternate" hreflang="en-us" href="https://jorenjoestar.github.io/post/shader_augment_for_pipelines/shader_augment_for_pipelines/">
@@ -83,7 +83,7 @@ There are few reasons:
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
+  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
 
   
 
@@ -114,10 +114,10 @@ There are few reasons:
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/shader_augment_for_pipelines/shader_augment_for_pipelines/">
   <meta property="og:title" content="Augmenting shader languages for modern rendering APIs | Joren&#39;s">
-  <meta property="og:description" content="Overview In the last articles we looked at progressively building tools to move rendering code towards data.We looked on how to create a simple lexer, a simple parser and a code generator.With those we were able to create a very simple language to augment shaders.
+  <meta property="og:description" content="Overview In the last articles we looked at progressively building tools to move rendering code towards data. We looked on how to create a simple lexer, a simple parser and a code generator. With those we were able to create a very simple language to augment shaders.
 Why that ?
 There are few reasons:
- Shader languages misses any way of linking multiple programs Shader languages misses any way to define render states CGFX and Microsoft FX are mostly dead Ability to use ANY shader language - and just add the infrastructure Ability to generate permutations without manually creating them  Hydra FX aims to add all the missing features and becoming just an augmentation to ANY shader language."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
+Shader languages misses any way of linking multiple programs Shader languages misses any way to define render states CGFX and Microsoft FX are mostly dead Ability to use ANY shader language - and just add the infrastructure Ability to generate permutations without manually creating them Hydra FX aims to add all the missing features and becoming just an augmentation to ANY shader language."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
   <meta property="article:published_time" content="2020-03-16T12:11:37-04:00">
@@ -574,12 +574,12 @@ This is used in the <a href="https://jorenjoestar.github.io/post/data_driven_ren
 <pre tabindex="0"><code>shader PBR {
 
     properties {
-        albedo_texture(&quot;Albedo&quot;, 2D) = &quot;&quot;
-        normals_texture(&quot;Normals&quot;, 2D) = &quot;&quot;
-        metal_roughness_texture(&quot;MetalRoughness&quot;, 2D) = &quot;&quot;
-        emissive_texture(&quot;Emissive&quot;, 2D) = &quot;&quot;
-        occlusion_texture(&quot;Occlusion&quot;, 2D) = &quot;&quot;
-        scale(&quot;Scale&quot;, Float) = 16.0
+        albedo_texture(&#34;Albedo&#34;, 2D) = &#34;&#34;
+        normals_texture(&#34;Normals&#34;, 2D) = &#34;&#34;
+        metal_roughness_texture(&#34;MetalRoughness&#34;, 2D) = &#34;&#34;
+        emissive_texture(&#34;Emissive&#34;, 2D) = &#34;&#34;
+        occlusion_texture(&#34;Occlusion&#34;, 2D) = &#34;&#34;
+        scale(&#34;Scale&#34;, Float) = 16.0
     }
 
     layout {
@@ -658,7 +658,7 @@ This is used in the <a href="https://jorenjoestar.github.io/post/data_driven_ren
 
     glsl GBuffer_V {
 
-        #pragma include &quot;Platform.h&quot;
+        #pragma include &#34;Platform.h&#34;
 
         layout (location = 0) in vec3 Position;
         layout (location = 1) in vec3 Normal;
@@ -688,7 +688,7 @@ This is used in the <a href="https://jorenjoestar.github.io/post/data_driven_ren
 
     glsl GBuffer_F {
 
-        #pragma include &quot;Platform.h&quot;
+        #pragma include &#34;Platform.h&#34;
     
         layout (location = 0) out vec4 Out_Color;
         layout (location = 1) out vec4 Out_Normals;
@@ -763,7 +763,7 @@ This is used in the <a href="https://jorenjoestar.github.io/post/data_driven_ren
 
     glsl PositionOnly {
 
-        #pragma include &quot;Platform.h&quot;
+        #pragma include &#34;Platform.h&#34;
 
         #if defined VERTEX
 
@@ -796,7 +796,7 @@ This is used in the <a href="https://jorenjoestar.github.io/post/data_driven_ren
 
     glsl PositionNormals {
 
-        #pragma include &quot;Platform.h&quot;
+        #pragma include &#34;Platform.h&#34;
 
         #if defined VERTEX
 
@@ -952,7 +952,7 @@ This is <em>ideal</em> to also incorporate code from previous codebases with a s
 <p>Let&rsquo;s look at the GBuffer Vertex GLSL code:</p>
 <pre tabindex="0"><code>glsl GBuffer_V {
 
-    #pragma include &quot;Platform.h&quot;
+    #pragma include &#34;Platform.h&#34;
 
     layout (location = 0) in vec3 Position;
     layout (location = 1) in vec3 Normal;
@@ -1000,7 +1000,7 @@ There can be multiple resource lists, normally they should be grouped per freque
 <p>A small addition is to use externally specified resource list and code, like for <strong>starnest.hfx</strong>:</p>
 <pre tabindex="0"><code>pass main {
 	...
-	resources = &quot;ShaderToy.Main&quot;	
+	resources = &#34;ShaderToy.Main&#34;	
 }
 </code></pre><p>This means that the pass named &lsquo;main&rsquo; will simply use the resources defined in &lsquo;shadertoy.hfx&rsquo; - resource list called main.</p>
 <h2 id="5-permutations">5: Permutations</h2>
@@ -1222,7 +1222,7 @@ Gabriel</p>
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
 
     
 

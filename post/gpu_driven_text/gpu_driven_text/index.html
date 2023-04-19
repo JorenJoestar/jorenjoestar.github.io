@@ -82,7 +82,7 @@ Normally these values can be mapped and read back into the GPU, but sometimes ca
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
+  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
 
   
 
@@ -505,55 +505,55 @@ This reminded me of a system that I use to render values that live only on the G
 Here we are rendering&hellip;text straight from a shader ? WHAT ?</p>
 <p>The idea comes from <a href="https://glslsandbox.com/e#35231.0">this article</a> as far as I understood, but the idea is the following: <strong>compress each character data into an array of 4 floats (vec4/float4), with each component being the packed bits of one quadrant</strong>, and given an UV reconstruct the shape of the character.</p>
 <p>Taken straight from that website as deeper explanation:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">/*
-</span><span style="color:#75715e">--------
-</span><span style="color:#75715e">-███----
-</span><span style="color:#75715e">██-██---
-</span><span style="color:#75715e">██-██---
-</span><span style="color:#75715e">-███----
-</span><span style="color:#75715e">█████-█-
-</span><span style="color:#75715e">██-████-
-</span><span style="color:#75715e">██--██--
-</span><span style="color:#75715e">██-███--
-</span><span style="color:#75715e">-███-██-
-</span><span style="color:#75715e">--------
-</span><span style="color:#75715e">--------
-</span><span style="color:#75715e">
-</span><span style="color:#75715e">00000000
-</span><span style="color:#75715e">01110000
-</span><span style="color:#75715e">11011000
-</span><span style="color:#75715e">11011000
-</span><span style="color:#75715e">01110000
-</span><span style="color:#75715e">11111010
-</span><span style="color:#75715e">11011110
-</span><span style="color:#75715e">11001100
-</span><span style="color:#75715e">11011100
-</span><span style="color:#75715e">01110110
-</span><span style="color:#75715e">00000000
-</span><span style="color:#75715e">00000000
-</span><span style="color:#75715e">
-</span><span style="color:#75715e">//Broken up into 4 8x3 (24 bit) chunks for each component of the vec4.
-</span><span style="color:#75715e">//Hexadecimal is being used to reduce clutter in the code but decimal still works.
-</span><span style="color:#75715e">
-</span><span style="color:#75715e">00000000
-</span><span style="color:#75715e">01110000 -&gt; 00000000 01110000 11011000 -&gt; 0x0070D8
-</span><span style="color:#75715e">11011000
-</span><span style="color:#75715e">
-</span><span style="color:#75715e">11011000
-</span><span style="color:#75715e">01110000 -&gt; 11011000 01110000 11111010 -&gt; 0xD870FA
-</span><span style="color:#75715e">11111010
-</span><span style="color:#75715e">
-</span><span style="color:#75715e">11011110
-</span><span style="color:#75715e">11001100 -&gt; 11011110 11001100 11011100 -&gt; 0xDECCDC
-</span><span style="color:#75715e">11011100
-</span><span style="color:#75715e">
-</span><span style="color:#75715e">01110110
-</span><span style="color:#75715e">00000000 -&gt; 01110110 00000000 00000000 -&gt; 0x760000
-</span><span style="color:#75715e">00000000
-</span><span style="color:#75715e">
-</span><span style="color:#75715e">vec4(0x0070D8,0xD870FA,0xDECCDC,0x760000)
-</span><span style="color:#75715e">*/</span>
-</code></pre></div><p>There is quite some bit trickery involved that I will not dwelve into, but the gist of it is simple, even though the process to arrive there must have been interesting!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#75715e">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">--------
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-███----
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">██-██---
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">██-██---
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-███----
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">█████-█-
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">██-████-
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">██--██--
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">██-███--
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-███-██-
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">--------
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">--------
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">00000000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">01110000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11011000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11011000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">01110000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11111010
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11011110
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11001100
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11011100
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">01110110
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">00000000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">00000000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//Broken up into 4 8x3 (24 bit) chunks for each component of the vec4.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//Hexadecimal is being used to reduce clutter in the code but decimal still works.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">00000000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">01110000 -&gt; 00000000 01110000 11011000 -&gt; 0x0070D8
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11011000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11011000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">01110000 -&gt; 11011000 01110000 11111010 -&gt; 0xD870FA
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11111010
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11011110
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11001100 -&gt; 11011110 11001100 11011100 -&gt; 0xDECCDC
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">11011100
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">01110110
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">00000000 -&gt; 01110110 00000000 00000000 -&gt; 0x760000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">00000000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">vec4(0x0070D8,0xD870FA,0xDECCDC,0x760000)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">*/</span>
+</span></span></code></pre></div><p>There is quite some bit trickery involved that I will not dwelve into, but the gist of it is simple, even though the process to arrive there must have been interesting!</p>
 <p>Given these compressed fonts, we can use GPU buffers to store all the informations needed to write anything we want on the screen.</p>
 <h1 id="the-solution">The Solution</h1>
 <p>From a higher level view, what we will do is the following:</p>
@@ -567,83 +567,83 @@ Here we are rendering&hellip;text straight from a shader ? WHAT ?</p>
 <p>We will use 4 different buffers to have this working. It can be improved honestly, but this is good enough for a debug only feature!</p>
 <h3 id="data-and-atomics-buffer">Data and atomics buffer</h3>
 <p>This buffer will contain the atomics and the data to be filled with each character of each string.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">// Common buffers used to render gpu driven font
-</span><span style="color:#75715e"></span>layout (std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>) buffer DebugGpuFontBuffer {
-    uint        current_data_index;
-    uint        current_entry_index;
-    uint        padding1;
-    uint        padding2;
-
-    vec4        data[];
-};
-</code></pre></div><h3 id="entry-buffer">Entry buffer</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#75715e">// Common buffers used to render gpu driven font
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">layout</span> (std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>) buffer DebugGpuFontBuffer {
+</span></span><span style="display:flex;"><span>    uint        current_data_index;
+</span></span><span style="display:flex;"><span>    uint        current_entry_index;
+</span></span><span style="display:flex;"><span>    uint        padding1;
+</span></span><span style="display:flex;"><span>    uint        padding2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    vec4        data[];
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><h3 id="entry-buffer">Entry buffer</h3>
 <p>For each string we want to render, we need a position and where in the global data memory we need to read, thus offset and count.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#66d9ef">struct</span> DebugGPUStringEntry {
-    <span style="color:#66d9ef">float</span>       x;
-    <span style="color:#66d9ef">float</span>       y;
-    uint        offset;
-    uint        count;
-};
-
-layout (std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>) buffer DebugGpuFontEntries {
-    DebugGPUStringEntry entries[];
-};
-</code></pre></div><h3 id="dispatch-buffer">Dispatch buffer</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> DebugGPUStringEntry {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">float</span>       x;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">float</span>       y;
+</span></span><span style="display:flex;"><span>    uint        offset;
+</span></span><span style="display:flex;"><span>    uint        count;
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">layout</span> (std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>) buffer DebugGpuFontEntries {
+</span></span><span style="display:flex;"><span>    DebugGPUStringEntry entries[];
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><h3 id="dispatch-buffer">Dispatch buffer</h3>
 <p>This buffer is used to generate draw for each character in the global data.<br>
 We need this so that each character knows where it belongs in a string.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">layout(std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>) buffer DebugGPUFontDispatch {
-    uvec4               dispatches[];
-};
-</code></pre></div><h3 id="indirect-buffer">Indirect buffer</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#a6e22e">layout</span>(std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>) buffer DebugGPUFontDispatch {
+</span></span><span style="display:flex;"><span>    uvec4               dispatches[];
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><h3 id="indirect-buffer">Indirect buffer</h3>
 <p>Final buffer is the one driving how many total characters we will draw.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">layout(std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>) buffer DebugGPUIndirect {
-    uint            vertex_count;
-    uint            instance_count;
-    uint            first_vertex;
-    uint            first_instance;
-
-    uint            pad00;
-    uint            pad01;
-    uint            pad02;
-    uint            pad03;
-};
-</code></pre></div><p>Now that we know the data used, let&rsquo;s see the algorithm itself.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#a6e22e">layout</span>(std430, binding<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>) buffer DebugGPUIndirect {
+</span></span><span style="display:flex;"><span>    uint            vertex_count;
+</span></span><span style="display:flex;"><span>    uint            instance_count;
+</span></span><span style="display:flex;"><span>    uint            first_vertex;
+</span></span><span style="display:flex;"><span>    uint            first_instance;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    uint            pad00;
+</span></span><span style="display:flex;"><span>    uint            pad01;
+</span></span><span style="display:flex;"><span>    uint            pad02;
+</span></span><span style="display:flex;"><span>    uint            pad03;
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>Now that we know the data used, let&rsquo;s see the algorithm itself.</p>
 <h2 id="reserving-memory-and-writing-text-to-gpu-buffers">Reserving memory and writing text to GPU buffers</h2>
 <p>The main ingredient for this solution is the possibility to write to StructuredBuffers/SSBOs (depending on the API of your choice) PLUS the usage of <em>atomic operations</em>.</p>
 <p>These operations are possible since OpenGL 4+ (actually my initial implementation is on an OpenGL-backed engine), so all newer APIs are supported.</p>
 <p>Let&rsquo;s have a look at some code, from the <strong>vertex shader of a sprite</strong>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">// 1. Reserve memory
-</span><span style="color:#75715e">// Reserve 1 entry, that will include position and where in the data buffer we will write our text.
-</span><span style="color:#75715e"></span>uint entry_index <span style="color:#f92672">=</span> atomicAdd(current_entry_index, <span style="color:#ae81ff">1</span>);
-<span style="color:#75715e">// Reserve 16 characters
-</span><span style="color:#75715e"></span>uint data_index <span style="color:#f92672">=</span> atomicAdd(current_data_index, <span style="color:#ae81ff">16</span>);
-
-<span style="color:#75715e">// 2. Cache string entry
-</span><span style="color:#75715e">// Cache data offset and count. We will use this to drive the text rendering.
-</span><span style="color:#75715e"></span>entries[entry_index].x <span style="color:#f92672">=</span> STRWIDTH(<span style="color:#ae81ff">5</span>);
-entries[entry_index].y <span style="color:#f92672">=</span> STRHEIGHT(<span style="color:#ae81ff">5</span>);
-entries[entry_index].offset <span style="color:#f92672">=</span> data_index;
-entries[entry_index].count <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>;
-
-<span style="color:#75715e">// 3. Write actual text
-</span><span style="color:#75715e">// MAVERICK: I did not found a better way to write this...
-</span><span style="color:#75715e"></span>data[data_index] <span style="color:#f92672">=</span> ch_p;
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> ch_o;
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> ch_s;
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">3</span>] <span style="color:#f92672">=</span> ch_spc;
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>] <span style="color:#f92672">=</span> get_digit(position.x, <span style="color:#ae81ff">2</span>);
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span>] <span style="color:#f92672">=</span> get_digit(position.x, <span style="color:#ae81ff">1</span>);
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">6</span>] <span style="color:#f92672">=</span> get_digit(position.x, <span style="color:#ae81ff">0</span>);
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">7</span>] <span style="color:#f92672">=</span> ch_per;
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>] <span style="color:#f92672">=</span> get_digit(position.x, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">9</span>] <span style="color:#f92672">=</span> ch_com;
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">10</span>] <span style="color:#f92672">=</span> get_digit(position.y, <span style="color:#ae81ff">2</span>);
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">11</span>] <span style="color:#f92672">=</span> get_digit(position.y, <span style="color:#ae81ff">1</span>);
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">12</span>] <span style="color:#f92672">=</span> get_digit(position.y, <span style="color:#ae81ff">0</span>);
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">13</span>] <span style="color:#f92672">=</span> ch_per;
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">14</span>] <span style="color:#f92672">=</span> get_digit(position.y, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
-data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">15</span>] <span style="color:#f92672">=</span> ch_spc;
-</code></pre></div><p>As we can see the way of writing the text is horrible, but it works.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#75715e">// 1. Reserve memory
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Reserve 1 entry, that will include position and where in the data buffer we will write our text.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>uint entry_index <span style="color:#f92672">=</span> <span style="color:#a6e22e">atomicAdd</span>(current_entry_index, <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Reserve 16 characters
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>uint data_index <span style="color:#f92672">=</span> <span style="color:#a6e22e">atomicAdd</span>(current_data_index, <span style="color:#ae81ff">16</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 2. Cache string entry
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Cache data offset and count. We will use this to drive the text rendering.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>entries[entry_index].x <span style="color:#f92672">=</span> <span style="color:#a6e22e">STRWIDTH</span>(<span style="color:#ae81ff">5</span>);
+</span></span><span style="display:flex;"><span>entries[entry_index].y <span style="color:#f92672">=</span> <span style="color:#a6e22e">STRHEIGHT</span>(<span style="color:#ae81ff">5</span>);
+</span></span><span style="display:flex;"><span>entries[entry_index].offset <span style="color:#f92672">=</span> data_index;
+</span></span><span style="display:flex;"><span>entries[entry_index].count <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 3. Write actual text
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// MAVERICK: I did not found a better way to write this...
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>data[data_index] <span style="color:#f92672">=</span> ch_p;
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> ch_o;
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> ch_s;
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">3</span>] <span style="color:#f92672">=</span> ch_spc;
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(position.x, <span style="color:#ae81ff">2</span>);
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(position.x, <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">6</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(position.x, <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">7</span>] <span style="color:#f92672">=</span> ch_per;
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(position.x, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">9</span>] <span style="color:#f92672">=</span> ch_com;
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">10</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(position.y, <span style="color:#ae81ff">2</span>);
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">11</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(position.y, <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">12</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(position.y, <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">13</span>] <span style="color:#f92672">=</span> ch_per;
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">14</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(position.y, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">15</span>] <span style="color:#f92672">=</span> ch_spc;
+</span></span></code></pre></div><p>As we can see the way of writing the text is horrible, but it works.</p>
 <p>We are first reserving memory using <em>atomic operations</em>.</p>
 <p>We then cache the string informations, like position and where to access the global data.</p>
 <p>Finally we write the text!</p>
@@ -651,122 +651,122 @@ data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff"
 <p>Once we collected all the characters around, we need to generate the per-character dispatches and the indirect draw.<br>
 I wrote a compute shader for that, optimizable, but good for the purpose here.<br>
 It also writes another string with GPU data about the system itself:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">layout (local_size_x <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_y <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_z <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) in;
-<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>() {
-    <span style="color:#75715e">// Write global label with gpu font system data
-</span><span style="color:#75715e"></span>    uint entry_index <span style="color:#f92672">=</span> atomicAdd(current_entry_index, <span style="color:#ae81ff">1</span>);
-    uint data_index <span style="color:#f92672">=</span> atomicAdd(current_data_index, <span style="color:#ae81ff">16</span>);
-
-    data[data_index] <span style="color:#f92672">=</span> ch_t;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> ch_e;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> ch_s;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">3</span>] <span style="color:#f92672">=</span> ch_t;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>] <span style="color:#f92672">=</span> ch_spc;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span>] <span style="color:#f92672">=</span> ch_h;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">6</span>] <span style="color:#f92672">=</span> ch_g;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">7</span>] <span style="color:#f92672">=</span> ch_per;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>] <span style="color:#f92672">=</span> ch_4;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">9</span>] <span style="color:#f92672">=</span> ch_spc;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">10</span>] <span style="color:#f92672">=</span> get_digit(current_data_index, <span style="color:#ae81ff">1</span>);
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">11</span>] <span style="color:#f92672">=</span> get_digit(current_data_index, <span style="color:#ae81ff">0</span>);
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">12</span>] <span style="color:#f92672">=</span> ch_spc;
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">13</span>] <span style="color:#f92672">=</span> get_digit(current_entry_index, <span style="color:#ae81ff">1</span>);
-    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">14</span>] <span style="color:#f92672">=</span> get_digit(current_entry_index, <span style="color:#ae81ff">0</span>);
-
-    vec2 print_pos <span style="color:#f92672">=</span> floor(vec2(STRWIDTH(<span style="color:#ae81ff">5</span>), STRHEIGHT(<span style="color:#ae81ff">4</span>)));
-    entries[entry_index].x <span style="color:#f92672">=</span> print_pos.x;
-    entries[entry_index].y <span style="color:#f92672">=</span> print_pos.y;
-    entries[entry_index].offset <span style="color:#f92672">=</span> data_index;
-    entries[entry_index].count <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>;
-</code></pre></div><p>Here we are &ldquo;simply&rdquo; writing a string containing the indices used by the system, just to keep track of them.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">    <span style="color:#75715e">// Write single character dispatch informations
-</span><span style="color:#75715e"></span>    uint global_index <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
-    <span style="color:#66d9ef">for</span> (uint e <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; e <span style="color:#f92672">&lt;</span> current_entry_index; <span style="color:#f92672">++</span>e) {
-      uint entry_data_index <span style="color:#f92672">=</span> entries[<span style="color:#ae81ff">0</span>].offset;
-      <span style="color:#66d9ef">for</span> (uint i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> entries[<span style="color:#ae81ff">0</span>].count; <span style="color:#f92672">++</span>i) {
-        dispatches[global_index].x <span style="color:#f92672">=</span> e;
-        dispatches[global_index].y <span style="color:#f92672">=</span> i;
-
-        <span style="color:#f92672">++</span>global_index;
-      }
-    }
-</code></pre></div><p>This is where we create the per character data.<br>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#a6e22e">layout</span> (local_size_x <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_y <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>, local_size_z <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) in;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Write global label with gpu font system data
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    uint entry_index <span style="color:#f92672">=</span> <span style="color:#a6e22e">atomicAdd</span>(current_entry_index, <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>    uint data_index <span style="color:#f92672">=</span> <span style="color:#a6e22e">atomicAdd</span>(current_data_index, <span style="color:#ae81ff">16</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    data[data_index] <span style="color:#f92672">=</span> <span style="color:#66d9ef">ch_t</span>;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> ch_e;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> ch_s;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">3</span>] <span style="color:#f92672">=</span> <span style="color:#66d9ef">ch_t</span>;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>] <span style="color:#f92672">=</span> ch_spc;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span>] <span style="color:#f92672">=</span> ch_h;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">6</span>] <span style="color:#f92672">=</span> ch_g;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">7</span>] <span style="color:#f92672">=</span> ch_per;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>] <span style="color:#f92672">=</span> ch_4;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">9</span>] <span style="color:#f92672">=</span> ch_spc;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">10</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(current_data_index, <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">11</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(current_data_index, <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">12</span>] <span style="color:#f92672">=</span> ch_spc;
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">13</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(current_entry_index, <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>    data[data_index <span style="color:#f92672">+</span> <span style="color:#ae81ff">14</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_digit</span>(current_entry_index, <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    vec2 print_pos <span style="color:#f92672">=</span> <span style="color:#a6e22e">floor</span>(<span style="color:#a6e22e">vec2</span>(<span style="color:#a6e22e">STRWIDTH</span>(<span style="color:#ae81ff">5</span>), <span style="color:#a6e22e">STRHEIGHT</span>(<span style="color:#ae81ff">4</span>)));
+</span></span><span style="display:flex;"><span>    entries[entry_index].x <span style="color:#f92672">=</span> print_pos.x;
+</span></span><span style="display:flex;"><span>    entries[entry_index].y <span style="color:#f92672">=</span> print_pos.y;
+</span></span><span style="display:flex;"><span>    entries[entry_index].offset <span style="color:#f92672">=</span> data_index;
+</span></span><span style="display:flex;"><span>    entries[entry_index].count <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>;
+</span></span></code></pre></div><p>Here we are &ldquo;simply&rdquo; writing a string containing the indices used by the system, just to keep track of them.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span>    <span style="color:#75715e">// Write single character dispatch informations
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    uint global_index <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> (uint e <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; e <span style="color:#f92672">&lt;</span> current_entry_index; <span style="color:#f92672">++</span>e) {
+</span></span><span style="display:flex;"><span>      uint entry_data_index <span style="color:#f92672">=</span> entries[<span style="color:#ae81ff">0</span>].offset;
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">for</span> (uint i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> entries[<span style="color:#ae81ff">0</span>].count; <span style="color:#f92672">++</span>i) {
+</span></span><span style="display:flex;"><span>        dispatches[global_index].x <span style="color:#f92672">=</span> e;
+</span></span><span style="display:flex;"><span>        dispatches[global_index].y <span style="color:#f92672">=</span> i;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">++</span>global_index;
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>This is where we create the per character data.<br>
 We can optimize this, probably using one uint instead of 4.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">    <span style="color:#75715e">// Write indirect draw values
-</span><span style="color:#75715e"></span>    vertex_count <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>;
-    instance_count <span style="color:#f92672">=</span> global_index;
-    first_vertex <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
-    first_instance <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
-    pad00 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
-}
-</code></pre></div><p>Finally we draw 2 triangles for each character data.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span>    <span style="color:#75715e">// Write indirect draw values
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    vertex_count <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>;
+</span></span><span style="display:flex;"><span>    instance_count <span style="color:#f92672">=</span> global_index;
+</span></span><span style="display:flex;"><span>    first_vertex <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>    first_instance <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>    pad00 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Finally we draw 2 triangles for each character data.</p>
 <h2 id="indirect-rendering-of-the-gpu-driven-text">(Indirect) Rendering of the GPU Driven Text</h2>
 <p>We are now ready to write the actual text on the screen!</p>
 <p>Here is the final shader:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">#if defined VERTEX
-</span><span style="color:#75715e"></span>
-  layout (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>) out vec2 uv;
-  layout (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) flat out uint global_data_index;
-
-  <span style="color:#75715e">// Per vertex positions and uvs of a quad
-</span><span style="color:#75715e"></span>  vec3 positions[<span style="color:#ae81ff">6</span>]       <span style="color:#f92672">=</span> vec3[<span style="color:#ae81ff">6</span>]( vec3(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0</span>), vec3(<span style="color:#ae81ff">0.5</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0</span>), vec3(<span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0</span>), vec3(<span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0</span>), vec3(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0</span>), vec3(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0</span>) );
-  vec2 uvs[<span style="color:#ae81ff">6</span>]             <span style="color:#f92672">=</span> vec2[<span style="color:#ae81ff">6</span>]( vec2(<span style="color:#ae81ff">0.0</span>, <span style="color:#ae81ff">1.0</span>),    vec2(<span style="color:#ae81ff">1.0</span>, <span style="color:#ae81ff">1.0</span>),   vec2(<span style="color:#ae81ff">1.0</span>, <span style="color:#ae81ff">0.0</span>), vec2(<span style="color:#ae81ff">1.0</span>, <span style="color:#ae81ff">0.0</span>), vec2(<span style="color:#ae81ff">0.0</span>, <span style="color:#ae81ff">0.0</span>), vec2(<span style="color:#ae81ff">0.0</span>, <span style="color:#ae81ff">1.0</span>) );
-
-  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>() {
-
-      <span style="color:#66d9ef">const</span> uint vertex_index <span style="color:#f92672">=</span> gl_VertexID <span style="color:#f92672">%</span> <span style="color:#ae81ff">6</span>;
-      <span style="color:#75715e">// Calculate UVs
-</span><span style="color:#75715e"></span>      uv.xy <span style="color:#f92672">=</span> uvs[vertex_index];
-
-      <span style="color:#75715e">// Sprite size
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">const</span> vec2 sprite_size <span style="color:#f92672">=</span> CHAR_SIZE;
-      <span style="color:#75715e">// Calculate world position
-</span><span style="color:#75715e"></span>      vec4 world_position <span style="color:#f92672">=</span> vec4( vec2(positions[ vertex_index ].xy <span style="color:#f92672">*</span> sprite_size ), <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span> );
-
-      uint global_char_index <span style="color:#f92672">=</span> gl_InstanceIndex;
-      uint entry_index <span style="color:#f92672">=</span> dispatches[global_char_index].x;
-      uint entry_char_index <span style="color:#f92672">=</span> dispatches[global_char_index].y;
-
-      DebugGPUStringEntry entry <span style="color:#f92672">=</span> entries[entry_index];
-      <span style="color:#75715e">// Calculate actual position from the start of the string
-</span><span style="color:#75715e"></span>      world_position.xy <span style="color:#f92672">+=</span> vec2(entry.x <span style="color:#f92672">+</span> entry_char_index <span style="color:#f92672">*</span> sprite_size.x, entry.y);
-      <span style="color:#75715e">// Move position to upper left corner
-</span><span style="color:#75715e"></span>      world_position.xy <span style="color:#f92672">+=</span> sprite_size <span style="color:#f92672">*</span> <span style="color:#ae81ff">0.5f</span>;
-      <span style="color:#75715e">// Pass entry data to read the final compressed font character
-</span><span style="color:#75715e"></span>      global_data_index <span style="color:#f92672">=</span> entry.offset <span style="color:#f92672">+</span> entry_char_index;
-
-      gl_Position <span style="color:#f92672">=</span> locals.projection_matrix_2d <span style="color:#f92672">*</span> world_position;
-
-  }
-  
-  <span style="color:#75715e">#endif </span><span style="color:#75715e">// VERTEX
-</span><span style="color:#75715e"></span>
-
-  <span style="color:#75715e">#if defined FRAGMENT
-</span><span style="color:#75715e"></span>
-  layout (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>) in vec2 uv;
-  layout (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) flat in uint global_data_index;
-
-  layout (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>) out vec4 out_color;
-
-  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>() {
-
-    vec4 char_data <span style="color:#f92672">=</span> data[global_data_index];
-    vec2 duv <span style="color:#f92672">=</span> uv <span style="color:#f92672">*</span> CHAR_SIZE;
-    vec2 print_pos <span style="color:#f92672">=</span> vec2(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">10</span>);
-    <span style="color:#75715e">// Decompress char and color pixel!
-</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">float</span> textPixel <span style="color:#f92672">=</span> print_char(char_data, duv, print_pos);
-      
-    <span style="color:#66d9ef">if</span> (textPixel <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.01f</span>)
-          discard;
-      
-    vec3 col <span style="color:#f92672">=</span> vec3(<span style="color:#ae81ff">1</span>);
-    col <span style="color:#f92672">*=</span> mix(vec3(<span style="color:#ae81ff">0.2</span>),vec3(<span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">0</span>),textPixel);
-    out_color <span style="color:#f92672">=</span> vec4(col.rgb, <span style="color:#ae81ff">1</span>);
-  }
-
-  <span style="color:#75715e">#endif </span><span style="color:#75715e">// FRAGMENT
-</span></code></pre></div><p>It should be pretty straighforward, but basically what is happening is this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#75715e">#if defined VERTEX
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">layout</span> (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>) out vec2 uv;
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">layout</span> (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) flat out uint global_data_index;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Per vertex positions and uvs of a quad
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  vec3 positions[<span style="color:#ae81ff">6</span>]       <span style="color:#f92672">=</span> vec3[<span style="color:#ae81ff">6</span>]( <span style="color:#a6e22e">vec3</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0</span>), <span style="color:#a6e22e">vec3</span>(<span style="color:#ae81ff">0.5</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0</span>), <span style="color:#a6e22e">vec3</span>(<span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0</span>), <span style="color:#a6e22e">vec3</span>(<span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0</span>), <span style="color:#a6e22e">vec3</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0</span>), <span style="color:#a6e22e">vec3</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">0</span>) );
+</span></span><span style="display:flex;"><span>  vec2 uvs[<span style="color:#ae81ff">6</span>]             <span style="color:#f92672">=</span> vec2[<span style="color:#ae81ff">6</span>]( <span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">0.0</span>, <span style="color:#ae81ff">1.0</span>),    <span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">1.0</span>, <span style="color:#ae81ff">1.0</span>),   <span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">1.0</span>, <span style="color:#ae81ff">0.0</span>), <span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">1.0</span>, <span style="color:#ae81ff">0.0</span>), <span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">0.0</span>, <span style="color:#ae81ff">0.0</span>), <span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">0.0</span>, <span style="color:#ae81ff">1.0</span>) );
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">const</span> uint vertex_index <span style="color:#f92672">=</span> gl_VertexID <span style="color:#f92672">%</span> <span style="color:#ae81ff">6</span>;
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Calculate UVs
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      uv.xy <span style="color:#f92672">=</span> uvs[vertex_index];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Sprite size
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#66d9ef">const</span> vec2 sprite_size <span style="color:#f92672">=</span> CHAR_SIZE;
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Calculate world position
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      vec4 world_position <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>( <span style="color:#a6e22e">vec2</span>(positions[ vertex_index ].xy <span style="color:#f92672">*</span> sprite_size ), <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span> );
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      uint global_char_index <span style="color:#f92672">=</span> gl_InstanceIndex;
+</span></span><span style="display:flex;"><span>      uint entry_index <span style="color:#f92672">=</span> dispatches[global_char_index].x;
+</span></span><span style="display:flex;"><span>      uint entry_char_index <span style="color:#f92672">=</span> dispatches[global_char_index].y;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      DebugGPUStringEntry entry <span style="color:#f92672">=</span> entries[entry_index];
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Calculate actual position from the start of the string
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      world_position.xy <span style="color:#f92672">+=</span> <span style="color:#a6e22e">vec2</span>(entry.x <span style="color:#f92672">+</span> entry_char_index <span style="color:#f92672">*</span> sprite_size.x, entry.y);
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Move position to upper left corner
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      world_position.xy <span style="color:#f92672">+=</span> sprite_size <span style="color:#f92672">*</span> <span style="color:#ae81ff">0.5f</span>;
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Pass entry data to read the final compressed font character
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      global_data_index <span style="color:#f92672">=</span> entry.offset <span style="color:#f92672">+</span> entry_char_index;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      gl_Position <span style="color:#f92672">=</span> locals.projection_matrix_2d <span style="color:#f92672">*</span> world_position;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#endif </span><span style="color:#75715e">// VERTEX
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#if defined FRAGMENT
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">layout</span> (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>) in vec2 uv;
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">layout</span> (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>) flat in uint global_data_index;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">layout</span> (location <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>) out vec4 out_color;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    vec4 char_data <span style="color:#f92672">=</span> data[global_data_index];
+</span></span><span style="display:flex;"><span>    vec2 duv <span style="color:#f92672">=</span> uv <span style="color:#f92672">*</span> CHAR_SIZE;
+</span></span><span style="display:flex;"><span>    vec2 print_pos <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">10</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Decompress char and color pixel!
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">float</span> textPixel <span style="color:#f92672">=</span> <span style="color:#a6e22e">print_char</span>(char_data, duv, print_pos);
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (textPixel <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.01f</span>)
+</span></span><span style="display:flex;"><span>          discard;
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>    vec3 col <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec3</span>(<span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>    col <span style="color:#f92672">*=</span> <span style="color:#a6e22e">mix</span>(<span style="color:#a6e22e">vec3</span>(<span style="color:#ae81ff">0.2</span>),<span style="color:#a6e22e">vec3</span>(<span style="color:#ae81ff">0.5</span>,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">0</span>),textPixel);
+</span></span><span style="display:flex;"><span>    out_color <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(col.rgb, <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#endif </span><span style="color:#75715e">// FRAGMENT
+</span></span></span></code></pre></div><p>It should be pretty straighforward, but basically what is happening is this:</p>
 <ul>
 <li>Read the dispatch information, to know where the sprite will be located</li>
 <li>Expand the quad to the correct location</li>
@@ -774,241 +774,241 @@ We can optimize this, probably using one uint instead of 4.</p>
 <li>Color the pixel!</li>
 </ul>
 <p>The real magic happens in the &lsquo;print_char&rsquo; method, and here I will post all the code that comes from the shadertoy example I wrote before!</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">float</span> DOWN_SCALE <span style="color:#f92672">=</span> <span style="color:#ae81ff">1.0f</span>;
-
-<span style="color:#75715e">#define MAX_INT_DIGITS 4
-</span><span style="color:#75715e"></span><span style="color:#75715e">//#define FLIP_Y
-</span><span style="color:#75715e"></span>
-<span style="color:#66d9ef">const</span> vec2 CHAR_SIZE <span style="color:#f92672">=</span> vec2(<span style="color:#ae81ff">8</span>, <span style="color:#ae81ff">12</span>);
-<span style="color:#66d9ef">const</span> vec2 CHAR_SPACING <span style="color:#f92672">=</span> vec2(<span style="color:#ae81ff">8</span>, <span style="color:#ae81ff">12</span>);
-
-<span style="color:#66d9ef">float</span> <span style="color:#a6e22e">STRWIDTH</span>(<span style="color:#66d9ef">float</span> c) {
-    <span style="color:#66d9ef">return</span> c <span style="color:#f92672">*</span> CHAR_SPACING.x;
-}
-
-<span style="color:#66d9ef">float</span> <span style="color:#a6e22e">STRHEIGHT</span>(<span style="color:#66d9ef">float</span> c) {
-    <span style="color:#66d9ef">return</span> c <span style="color:#f92672">*</span> CHAR_SPACING.y;
-}
-
-<span style="color:#75715e">#define NORMAL 0
-</span><span style="color:#75715e">#define INVERT 1
-</span><span style="color:#75715e">#define UNDERLINE 2
-</span><span style="color:#75715e"></span>
-<span style="color:#66d9ef">int</span> TEXT_MODE <span style="color:#f92672">=</span> NORMAL;
-
-vec4 ch_spc <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_exc <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x003078</span>,<span style="color:#ae81ff">0x787830</span>,<span style="color:#ae81ff">0x300030</span>,<span style="color:#ae81ff">0x300000</span>);
-vec4 ch_quo <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x006666</span>,<span style="color:#ae81ff">0x662400</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_hsh <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x006C6C</span>,<span style="color:#ae81ff">0xFE6C6C</span>,<span style="color:#ae81ff">0x6CFE6C</span>,<span style="color:#ae81ff">0x6C0000</span>);
-vec4 ch_dol <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x30307C</span>,<span style="color:#ae81ff">0xC0C078</span>,<span style="color:#ae81ff">0x0C0CF8</span>,<span style="color:#ae81ff">0x303000</span>);
-vec4 ch_pct <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0xC4CC18</span>,<span style="color:#ae81ff">0x3060CC</span>,<span style="color:#ae81ff">0x8C0000</span>);
-vec4 ch_amp <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x0070D8</span>,<span style="color:#ae81ff">0xD870FA</span>,<span style="color:#ae81ff">0xDECCDC</span>,<span style="color:#ae81ff">0x760000</span>);
-vec4 ch_apo <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x003030</span>,<span style="color:#ae81ff">0x306000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_lbr <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000C18</span>,<span style="color:#ae81ff">0x306060</span>,<span style="color:#ae81ff">0x603018</span>,<span style="color:#ae81ff">0x0C0000</span>);
-vec4 ch_rbr <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x006030</span>,<span style="color:#ae81ff">0x180C0C</span>,<span style="color:#ae81ff">0x0C1830</span>,<span style="color:#ae81ff">0x600000</span>);
-vec4 ch_ast <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x663CFF</span>,<span style="color:#ae81ff">0x3C6600</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_crs <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x18187E</span>,<span style="color:#ae81ff">0x181800</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_com <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000038</span>,<span style="color:#ae81ff">0x386000</span>);
-vec4 ch_dsh <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0000FE</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_per <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000038</span>,<span style="color:#ae81ff">0x380000</span>);
-vec4 ch_lsl <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000002</span>,<span style="color:#ae81ff">0x060C18</span>,<span style="color:#ae81ff">0x3060C0</span>,<span style="color:#ae81ff">0x800000</span>);
-vec4 ch_0 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x007CC6</span>,<span style="color:#ae81ff">0xD6D6D6</span>,<span style="color:#ae81ff">0xD6D6C6</span>,<span style="color:#ae81ff">0x7C0000</span>);
-vec4 ch_1 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x001030</span>,<span style="color:#ae81ff">0xF03030</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0xFC0000</span>);
-vec4 ch_2 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCC0C18</span>,<span style="color:#ae81ff">0x3060CC</span>,<span style="color:#ae81ff">0xFC0000</span>);
-vec4 ch_3 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0x0C0C38</span>,<span style="color:#ae81ff">0x0C0CCC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_4 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000C1C</span>,<span style="color:#ae81ff">0x3C6CCC</span>,<span style="color:#ae81ff">0xFE0C0C</span>,<span style="color:#ae81ff">0x1E0000</span>);
-vec4 ch_5 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00FCC0</span>,<span style="color:#ae81ff">0xC0C0F8</span>,<span style="color:#ae81ff">0x0C0CCC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_6 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x003860</span>,<span style="color:#ae81ff">0xC0C0F8</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_7 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00FEC6</span>,<span style="color:#ae81ff">0xC6060C</span>,<span style="color:#ae81ff">0x183030</span>,<span style="color:#ae81ff">0x300000</span>);
-vec4 ch_8 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCCEC78</span>,<span style="color:#ae81ff">0xDCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_9 <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCCCC7C</span>,<span style="color:#ae81ff">0x181830</span>,<span style="color:#ae81ff">0x700000</span>);
-vec4 ch_col <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x383800</span>,<span style="color:#ae81ff">0x003838</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_scl <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x383800</span>,<span style="color:#ae81ff">0x003838</span>,<span style="color:#ae81ff">0x183000</span>);
-vec4 ch_les <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000C18</span>,<span style="color:#ae81ff">0x3060C0</span>,<span style="color:#ae81ff">0x603018</span>,<span style="color:#ae81ff">0x0C0000</span>);
-vec4 ch_equ <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x007E00</span>,<span style="color:#ae81ff">0x7E0000</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_grt <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x006030</span>,<span style="color:#ae81ff">0x180C06</span>,<span style="color:#ae81ff">0x0C1830</span>,<span style="color:#ae81ff">0x600000</span>);
-vec4 ch_que <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0x0C1830</span>,<span style="color:#ae81ff">0x300030</span>,<span style="color:#ae81ff">0x300000</span>);
-vec4 ch_ats <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x007CC6</span>,<span style="color:#ae81ff">0xC6DEDE</span>,<span style="color:#ae81ff">0xDEC0C0</span>,<span style="color:#ae81ff">0x7C0000</span>);
-vec4 ch_A <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x003078</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xFCCCCC</span>,<span style="color:#ae81ff">0xCC0000</span>);
-vec4 ch_B <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00FC66</span>,<span style="color:#ae81ff">0x66667C</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0xFC0000</span>);
-vec4 ch_C <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x003C66</span>,<span style="color:#ae81ff">0xC6C0C0</span>,<span style="color:#ae81ff">0xC0C666</span>,<span style="color:#ae81ff">0x3C0000</span>);
-vec4 ch_D <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00F86C</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0x66666C</span>,<span style="color:#ae81ff">0xF80000</span>);
-vec4 ch_E <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00FE62</span>,<span style="color:#ae81ff">0x60647C</span>,<span style="color:#ae81ff">0x646062</span>,<span style="color:#ae81ff">0xFE0000</span>);
-vec4 ch_F <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00FE66</span>,<span style="color:#ae81ff">0x62647C</span>,<span style="color:#ae81ff">0x646060</span>,<span style="color:#ae81ff">0xF00000</span>);
-vec4 ch_G <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x003C66</span>,<span style="color:#ae81ff">0xC6C0C0</span>,<span style="color:#ae81ff">0xCEC666</span>,<span style="color:#ae81ff">0x3E0000</span>);
-vec4 ch_H <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCCFC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xCC0000</span>);
-vec4 ch_I <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x007830</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_J <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x001E0C</span>,<span style="color:#ae81ff">0x0C0C0C</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_K <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00E666</span>,<span style="color:#ae81ff">0x6C6C78</span>,<span style="color:#ae81ff">0x6C6C66</span>,<span style="color:#ae81ff">0xE60000</span>);
-vec4 ch_L <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00F060</span>,<span style="color:#ae81ff">0x606060</span>,<span style="color:#ae81ff">0x626666</span>,<span style="color:#ae81ff">0xFE0000</span>);
-vec4 ch_M <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00C6EE</span>,<span style="color:#ae81ff">0xFEFED6</span>,<span style="color:#ae81ff">0xC6C6C6</span>,<span style="color:#ae81ff">0xC60000</span>);
-vec4 ch_N <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00C6C6</span>,<span style="color:#ae81ff">0xE6F6FE</span>,<span style="color:#ae81ff">0xDECEC6</span>,<span style="color:#ae81ff">0xC60000</span>);
-vec4 ch_O <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00386C</span>,<span style="color:#ae81ff">0xC6C6C6</span>,<span style="color:#ae81ff">0xC6C66C</span>,<span style="color:#ae81ff">0x380000</span>);
-vec4 ch_P <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00FC66</span>,<span style="color:#ae81ff">0x66667C</span>,<span style="color:#ae81ff">0x606060</span>,<span style="color:#ae81ff">0xF00000</span>);
-vec4 ch_Q <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00386C</span>,<span style="color:#ae81ff">0xC6C6C6</span>,<span style="color:#ae81ff">0xCEDE7C</span>,<span style="color:#ae81ff">0x0C1E00</span>);
-vec4 ch_R <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00FC66</span>,<span style="color:#ae81ff">0x66667C</span>,<span style="color:#ae81ff">0x6C6666</span>,<span style="color:#ae81ff">0xE60000</span>);
-vec4 ch_S <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCCC070</span>,<span style="color:#ae81ff">0x18CCCC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_T <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00FCB4</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_U <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_V <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xCCCC78</span>,<span style="color:#ae81ff">0x300000</span>);
-vec4 ch_W <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00C6C6</span>,<span style="color:#ae81ff">0xC6C6D6</span>,<span style="color:#ae81ff">0xD66C6C</span>,<span style="color:#ae81ff">0x6C0000</span>);
-vec4 ch_X <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCC7830</span>,<span style="color:#ae81ff">0x78CCCC</span>,<span style="color:#ae81ff">0xCC0000</span>);
-vec4 ch_Y <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCC78</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_Z <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00FECE</span>,<span style="color:#ae81ff">0x981830</span>,<span style="color:#ae81ff">0x6062C6</span>,<span style="color:#ae81ff">0xFE0000</span>);
-vec4 ch_lsb <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x003C30</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x3C0000</span>);
-vec4 ch_rsl <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000080</span>,<span style="color:#ae81ff">0xC06030</span>,<span style="color:#ae81ff">0x180C06</span>,<span style="color:#ae81ff">0x020000</span>);
-vec4 ch_rsb <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x003C0C</span>,<span style="color:#ae81ff">0x0C0C0C</span>,<span style="color:#ae81ff">0x0C0C0C</span>,<span style="color:#ae81ff">0x3C0000</span>);
-vec4 ch_pow <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x10386C</span>,<span style="color:#ae81ff">0xC60000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_usc <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00FF00</span>);
-vec4 ch_a <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00780C</span>,<span style="color:#ae81ff">0x7CCCCC</span>,<span style="color:#ae81ff">0x760000</span>);
-vec4 ch_b <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00E060</span>,<span style="color:#ae81ff">0x607C66</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0xDC0000</span>);
-vec4 ch_c <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xC0C0CC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_d <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x001C0C</span>,<span style="color:#ae81ff">0x0C7CCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x760000</span>);
-vec4 ch_e <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xFCC0CC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_f <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00386C</span>,<span style="color:#ae81ff">0x6060F8</span>,<span style="color:#ae81ff">0x606060</span>,<span style="color:#ae81ff">0xF00000</span>);
-vec4 ch_g <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0076CC</span>,<span style="color:#ae81ff">0xCCCC7C</span>,<span style="color:#ae81ff">0x0CCC78</span>);
-vec4 ch_h <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00E060</span>,<span style="color:#ae81ff">0x606C76</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0xE60000</span>);
-vec4 ch_i <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x001818</span>,<span style="color:#ae81ff">0x007818</span>,<span style="color:#ae81ff">0x181818</span>,<span style="color:#ae81ff">0x7E0000</span>);
-vec4 ch_j <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000C0C</span>,<span style="color:#ae81ff">0x003C0C</span>,<span style="color:#ae81ff">0x0C0C0C</span>,<span style="color:#ae81ff">0xCCCC78</span>);
-vec4 ch_k <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00E060</span>,<span style="color:#ae81ff">0x60666C</span>,<span style="color:#ae81ff">0x786C66</span>,<span style="color:#ae81ff">0xE60000</span>);
-vec4 ch_l <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x007818</span>,<span style="color:#ae81ff">0x181818</span>,<span style="color:#ae81ff">0x181818</span>,<span style="color:#ae81ff">0x7E0000</span>);
-vec4 ch_m <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00FCD6</span>,<span style="color:#ae81ff">0xD6D6D6</span>,<span style="color:#ae81ff">0xC60000</span>);
-vec4 ch_n <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00F8CC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xCC0000</span>);
-vec4 ch_o <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_p <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00DC66</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0x7C60F0</span>);
-vec4 ch_q <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0076CC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x7C0C1E</span>);
-vec4 ch_r <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00EC6E</span>,<span style="color:#ae81ff">0x766060</span>,<span style="color:#ae81ff">0xF00000</span>);
-vec4 ch_s <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0x6018CC</span>,<span style="color:#ae81ff">0x780000</span>);
-vec4 ch_t <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000020</span>,<span style="color:#ae81ff">0x60FC60</span>,<span style="color:#ae81ff">0x60606C</span>,<span style="color:#ae81ff">0x380000</span>);
-vec4 ch_u <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x760000</span>);
-vec4 ch_v <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCC78</span>,<span style="color:#ae81ff">0x300000</span>);
-vec4 ch_w <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00C6C6</span>,<span style="color:#ae81ff">0xD6D66C</span>,<span style="color:#ae81ff">0x6C0000</span>);
-vec4 ch_x <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00C66C</span>,<span style="color:#ae81ff">0x38386C</span>,<span style="color:#ae81ff">0xC60000</span>);
-vec4 ch_y <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x006666</span>,<span style="color:#ae81ff">0x66663C</span>,<span style="color:#ae81ff">0x0C18F0</span>);
-vec4 ch_z <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00FC8C</span>,<span style="color:#ae81ff">0x1860C4</span>,<span style="color:#ae81ff">0xFC0000</span>);
-vec4 ch_lpa <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x001C30</span>,<span style="color:#ae81ff">0x3060C0</span>,<span style="color:#ae81ff">0x603030</span>,<span style="color:#ae81ff">0x1C0000</span>);
-vec4 ch_bar <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x001818</span>,<span style="color:#ae81ff">0x181800</span>,<span style="color:#ae81ff">0x181818</span>,<span style="color:#ae81ff">0x180000</span>);
-vec4 ch_rpa <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x00E030</span>,<span style="color:#ae81ff">0x30180C</span>,<span style="color:#ae81ff">0x183030</span>,<span style="color:#ae81ff">0xE00000</span>);
-vec4 ch_tid <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x0073DA</span>,<span style="color:#ae81ff">0xCE0000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
-vec4 ch_lar <span style="color:#f92672">=</span> vec4(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x10386C</span>,<span style="color:#ae81ff">0xC6C6FE</span>,<span style="color:#ae81ff">0x000000</span>);
-
-<span style="color:#75715e">//Extracts bit b from the given number.
-</span><span style="color:#75715e">//Shifts bits right (num / 2^bit) then ANDs the result with 1 (mod(result,2.0)).
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">extract_bit</span>(<span style="color:#66d9ef">float</span> n, <span style="color:#66d9ef">float</span> b)
-{
-    b <span style="color:#f92672">=</span> clamp(b,<span style="color:#f92672">-</span><span style="color:#ae81ff">1.0</span>,<span style="color:#ae81ff">24.0</span>);
-    <span style="color:#66d9ef">return</span> floor(mod(floor(n <span style="color:#f92672">/</span> pow(<span style="color:#ae81ff">2.0</span>,floor(b))),<span style="color:#ae81ff">2.0</span>));
-}
-
-<span style="color:#75715e">//Returns the pixel at uv in the given bit-packed sprite.
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">sprite</span>(vec4 spr, vec2 size, vec2 uv)
-{
-    uv <span style="color:#f92672">=</span> floor(uv);
-
-<span style="color:#75715e">#if defined(FLIP_Y)
-</span><span style="color:#75715e"></span>    <span style="color:#75715e">// Invert y uv coordinate
-</span><span style="color:#75715e"></span>    uv.y <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> uv.y;
-<span style="color:#75715e">#endif </span><span style="color:#75715e">// FLIP_Y
-</span><span style="color:#75715e"></span>
-    <span style="color:#75715e">//Calculate the bit to extract (x + y * width) (flipped on x-axis)
-</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">float</span> bit <span style="color:#f92672">=</span> (size.x<span style="color:#f92672">-</span>uv.x<span style="color:#f92672">-</span><span style="color:#ae81ff">1.0</span>) <span style="color:#f92672">+</span> uv.y <span style="color:#f92672">*</span> size.x;
-
-    <span style="color:#75715e">//Clipping bound to remove garbage outside the sprite&#39;s boundaries.
-</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">bool</span> bounds <span style="color:#f92672">=</span> all(greaterThanEqual(uv,vec2(<span style="color:#ae81ff">0</span>))) <span style="color:#f92672">&amp;&amp;</span> all(lessThan(uv,size));
-
-    <span style="color:#66d9ef">float</span> pixels <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>;
-    pixels <span style="color:#f92672">+=</span> extract_bit(spr.x, bit <span style="color:#f92672">-</span> <span style="color:#ae81ff">72.0</span>);
-    pixels <span style="color:#f92672">+=</span> extract_bit(spr.y, bit <span style="color:#f92672">-</span> <span style="color:#ae81ff">48.0</span>);
-    pixels <span style="color:#f92672">+=</span> extract_bit(spr.z, bit <span style="color:#f92672">-</span> <span style="color:#ae81ff">24.0</span>);
-    pixels <span style="color:#f92672">+=</span> extract_bit(spr.w, bit <span style="color:#f92672">-</span> <span style="color:#ae81ff">00.0</span>);
-
-
-    <span style="color:#66d9ef">return</span> bounds <span style="color:#f92672">?</span> pixels : <span style="color:#ae81ff">0.0</span>;
-}
-
-<span style="color:#75715e">//Prints a character and moves the print position forward by 1 character width.
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">print_char</span>(vec4 ch, vec2 uv, inout vec2 print_pos)
-{
-    <span style="color:#66d9ef">if</span>( TEXT_MODE <span style="color:#f92672">==</span> INVERT )
-    {
-        <span style="color:#75715e">//Inverts all of the bits in the character.
-</span><span style="color:#75715e"></span>        ch <span style="color:#f92672">=</span> pow(<span style="color:#ae81ff">2.0</span>,<span style="color:#ae81ff">24.0</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">1.0</span><span style="color:#f92672">-</span>ch;
-    }
-    <span style="color:#66d9ef">if</span>( TEXT_MODE <span style="color:#f92672">==</span> UNDERLINE )
-    {
-        <span style="color:#75715e">//Makes the bottom 8 bits all 1.
-</span><span style="color:#75715e"></span>        <span style="color:#75715e">//Shifts the bottom chunk right 8 bits to drop the lowest 8 bits,
-</span><span style="color:#75715e"></span>        <span style="color:#75715e">//then shifts it left 8 bits and adds 255 (binary 11111111).
-</span><span style="color:#75715e"></span>        ch.w <span style="color:#f92672">=</span> floor(ch.w<span style="color:#f92672">/</span><span style="color:#ae81ff">256.0</span>)<span style="color:#f92672">*</span><span style="color:#ae81ff">256.0</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">255.0</span>;
-    }
-
-    <span style="color:#66d9ef">float</span> px <span style="color:#f92672">=</span> sprite(ch, CHAR_SIZE, uv <span style="color:#f92672">-</span> print_pos);
-    print_pos.x <span style="color:#f92672">+=</span> CHAR_SPACING.x;
-    <span style="color:#66d9ef">return</span> px;
-}
-
-
-<span style="color:#75715e">//Returns the digit sprite for the given number.
-</span><span style="color:#75715e"></span>vec4 <span style="color:#a6e22e">get_digit</span>(<span style="color:#66d9ef">float</span> d)
-{
-    d <span style="color:#f92672">=</span> floor(d);
-
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">0.0</span>) <span style="color:#66d9ef">return</span> ch_0;
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">1.0</span>) <span style="color:#66d9ef">return</span> ch_1;
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">2.0</span>) <span style="color:#66d9ef">return</span> ch_2;
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">3.0</span>) <span style="color:#66d9ef">return</span> ch_3;
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">4.0</span>) <span style="color:#66d9ef">return</span> ch_4;
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">5.0</span>) <span style="color:#66d9ef">return</span> ch_5;
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">6.0</span>) <span style="color:#66d9ef">return</span> ch_6;
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">7.0</span>) <span style="color:#66d9ef">return</span> ch_7;
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">8.0</span>) <span style="color:#66d9ef">return</span> ch_8;
-    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">9.0</span>) <span style="color:#66d9ef">return</span> ch_9;
-    <span style="color:#66d9ef">return</span> vec4(<span style="color:#ae81ff">0.0</span>);
-}
-
-<span style="color:#75715e">//Prints out the given number starting at pos.
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">print_number</span>(<span style="color:#66d9ef">float</span> number, vec2 uv, inout vec2 print_pos)
-{
-    <span style="color:#66d9ef">float</span> result <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>;
-
-    <span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;i <span style="color:#f92672">&gt;=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;i<span style="color:#f92672">--</span>)
-    {
-        <span style="color:#66d9ef">float</span> digit <span style="color:#f92672">=</span> mod( number <span style="color:#f92672">/</span> pow(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(i)) , <span style="color:#ae81ff">10.0</span>);
-
-        <span style="color:#66d9ef">if</span>(i <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#75715e">//Add a decimal point.
-</span><span style="color:#75715e"></span>        {
-            result <span style="color:#f92672">+=</span> print_char(ch_per,uv, print_pos);
-        }
-
-        <span style="color:#66d9ef">if</span>(abs(number) <span style="color:#f92672">&gt;</span> pow(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(i)) <span style="color:#f92672">||</span> i <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#75715e">//Clip off leading zeros.
-</span><span style="color:#75715e"></span>        {
-            result <span style="color:#f92672">+=</span> print_char(get_digit(digit),uv, print_pos);
-        }
-    }
-    <span style="color:#66d9ef">return</span> result;
-}
-
-vec4 <span style="color:#a6e22e">get_digit</span>(<span style="color:#66d9ef">float</span> number, <span style="color:#66d9ef">int</span> position) {
-    <span style="color:#66d9ef">float</span> digit <span style="color:#f92672">=</span> mod( number <span style="color:#f92672">/</span> pow(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(position)) , <span style="color:#ae81ff">10.0</span>);
-    <span style="color:#66d9ef">return</span> get_digit( digit );
-}
-
-<span style="color:#66d9ef">float</span> <span style="color:#a6e22e">print_integer</span>(<span style="color:#66d9ef">float</span> number, <span style="color:#66d9ef">int</span> zeros, vec2 uv, inout vec2 print_pos)
-{
-    <span style="color:#66d9ef">float</span> result <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>;
-
-    <span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> MAX_INT_DIGITS;i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>;i<span style="color:#f92672">--</span>)
-    {
-        <span style="color:#66d9ef">float</span> digit <span style="color:#f92672">=</span> mod( number <span style="color:#f92672">/</span> pow(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(i)) , <span style="color:#ae81ff">10.0</span>);
-
-        <span style="color:#66d9ef">if</span>(abs(number) <span style="color:#f92672">&gt;</span> pow(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(i)) <span style="color:#f92672">||</span> zeros <span style="color:#f92672">&gt;</span> i  <span style="color:#f92672">||</span> i <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#75715e">//Clip off leading zeros.
-</span><span style="color:#75715e"></span>        {
-            result <span style="color:#f92672">+=</span> print_char(get_digit(digit),uv, print_pos);
-        }
-    }
-    <span style="color:#66d9ef">return</span> result;
-}
-</code></pre></div><p>It is a little code intensitve, but the gist is the same: decompress the packed infomration to know if the current pixel falls into the compressed font character or not!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">float</span> DOWN_SCALE <span style="color:#f92672">=</span> <span style="color:#ae81ff">1.0f</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define MAX_INT_DIGITS 4
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">//#define FLIP_Y
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> vec2 CHAR_SIZE <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">8</span>, <span style="color:#ae81ff">12</span>);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> vec2 CHAR_SPACING <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">8</span>, <span style="color:#ae81ff">12</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">STRWIDTH</span>(<span style="color:#66d9ef">float</span> c) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> c <span style="color:#f92672">*</span> CHAR_SPACING.x;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">STRHEIGHT</span>(<span style="color:#66d9ef">float</span> c) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> c <span style="color:#f92672">*</span> CHAR_SPACING.y;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define NORMAL 0
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define INVERT 1
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define UNDERLINE 2
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> TEXT_MODE <span style="color:#f92672">=</span> NORMAL;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>vec4 ch_spc <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_exc <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x003078</span>,<span style="color:#ae81ff">0x787830</span>,<span style="color:#ae81ff">0x300030</span>,<span style="color:#ae81ff">0x300000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_quo <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x006666</span>,<span style="color:#ae81ff">0x662400</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_hsh <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x006C6C</span>,<span style="color:#ae81ff">0xFE6C6C</span>,<span style="color:#ae81ff">0x6CFE6C</span>,<span style="color:#ae81ff">0x6C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_dol <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x30307C</span>,<span style="color:#ae81ff">0xC0C078</span>,<span style="color:#ae81ff">0x0C0CF8</span>,<span style="color:#ae81ff">0x303000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_pct <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0xC4CC18</span>,<span style="color:#ae81ff">0x3060CC</span>,<span style="color:#ae81ff">0x8C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_amp <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x0070D8</span>,<span style="color:#ae81ff">0xD870FA</span>,<span style="color:#ae81ff">0xDECCDC</span>,<span style="color:#ae81ff">0x760000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_apo <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x003030</span>,<span style="color:#ae81ff">0x306000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_lbr <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000C18</span>,<span style="color:#ae81ff">0x306060</span>,<span style="color:#ae81ff">0x603018</span>,<span style="color:#ae81ff">0x0C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_rbr <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x006030</span>,<span style="color:#ae81ff">0x180C0C</span>,<span style="color:#ae81ff">0x0C1830</span>,<span style="color:#ae81ff">0x600000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_ast <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x663CFF</span>,<span style="color:#ae81ff">0x3C6600</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_crs <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x18187E</span>,<span style="color:#ae81ff">0x181800</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_com <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000038</span>,<span style="color:#ae81ff">0x386000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_dsh <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0000FE</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_per <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000038</span>,<span style="color:#ae81ff">0x380000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_lsl <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000002</span>,<span style="color:#ae81ff">0x060C18</span>,<span style="color:#ae81ff">0x3060C0</span>,<span style="color:#ae81ff">0x800000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_0 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x007CC6</span>,<span style="color:#ae81ff">0xD6D6D6</span>,<span style="color:#ae81ff">0xD6D6C6</span>,<span style="color:#ae81ff">0x7C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_1 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x001030</span>,<span style="color:#ae81ff">0xF03030</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0xFC0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_2 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCC0C18</span>,<span style="color:#ae81ff">0x3060CC</span>,<span style="color:#ae81ff">0xFC0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_3 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0x0C0C38</span>,<span style="color:#ae81ff">0x0C0CCC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_4 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000C1C</span>,<span style="color:#ae81ff">0x3C6CCC</span>,<span style="color:#ae81ff">0xFE0C0C</span>,<span style="color:#ae81ff">0x1E0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_5 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00FCC0</span>,<span style="color:#ae81ff">0xC0C0F8</span>,<span style="color:#ae81ff">0x0C0CCC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_6 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x003860</span>,<span style="color:#ae81ff">0xC0C0F8</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_7 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00FEC6</span>,<span style="color:#ae81ff">0xC6060C</span>,<span style="color:#ae81ff">0x183030</span>,<span style="color:#ae81ff">0x300000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_8 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCCEC78</span>,<span style="color:#ae81ff">0xDCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_9 <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCCCC7C</span>,<span style="color:#ae81ff">0x181830</span>,<span style="color:#ae81ff">0x700000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_col <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x383800</span>,<span style="color:#ae81ff">0x003838</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_scl <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x383800</span>,<span style="color:#ae81ff">0x003838</span>,<span style="color:#ae81ff">0x183000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_les <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000C18</span>,<span style="color:#ae81ff">0x3060C0</span>,<span style="color:#ae81ff">0x603018</span>,<span style="color:#ae81ff">0x0C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_equ <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x007E00</span>,<span style="color:#ae81ff">0x7E0000</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_grt <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x006030</span>,<span style="color:#ae81ff">0x180C06</span>,<span style="color:#ae81ff">0x0C1830</span>,<span style="color:#ae81ff">0x600000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_que <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0x0C1830</span>,<span style="color:#ae81ff">0x300030</span>,<span style="color:#ae81ff">0x300000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_ats <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x007CC6</span>,<span style="color:#ae81ff">0xC6DEDE</span>,<span style="color:#ae81ff">0xDEC0C0</span>,<span style="color:#ae81ff">0x7C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_A <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x003078</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xFCCCCC</span>,<span style="color:#ae81ff">0xCC0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_B <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00FC66</span>,<span style="color:#ae81ff">0x66667C</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0xFC0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_C <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x003C66</span>,<span style="color:#ae81ff">0xC6C0C0</span>,<span style="color:#ae81ff">0xC0C666</span>,<span style="color:#ae81ff">0x3C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_D <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00F86C</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0x66666C</span>,<span style="color:#ae81ff">0xF80000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_E <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00FE62</span>,<span style="color:#ae81ff">0x60647C</span>,<span style="color:#ae81ff">0x646062</span>,<span style="color:#ae81ff">0xFE0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_F <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00FE66</span>,<span style="color:#ae81ff">0x62647C</span>,<span style="color:#ae81ff">0x646060</span>,<span style="color:#ae81ff">0xF00000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_G <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x003C66</span>,<span style="color:#ae81ff">0xC6C0C0</span>,<span style="color:#ae81ff">0xCEC666</span>,<span style="color:#ae81ff">0x3E0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_H <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCCFC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xCC0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_I <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x007830</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_J <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x001E0C</span>,<span style="color:#ae81ff">0x0C0C0C</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_K <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00E666</span>,<span style="color:#ae81ff">0x6C6C78</span>,<span style="color:#ae81ff">0x6C6C66</span>,<span style="color:#ae81ff">0xE60000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_L <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00F060</span>,<span style="color:#ae81ff">0x606060</span>,<span style="color:#ae81ff">0x626666</span>,<span style="color:#ae81ff">0xFE0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_M <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00C6EE</span>,<span style="color:#ae81ff">0xFEFED6</span>,<span style="color:#ae81ff">0xC6C6C6</span>,<span style="color:#ae81ff">0xC60000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_N <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00C6C6</span>,<span style="color:#ae81ff">0xE6F6FE</span>,<span style="color:#ae81ff">0xDECEC6</span>,<span style="color:#ae81ff">0xC60000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_O <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00386C</span>,<span style="color:#ae81ff">0xC6C6C6</span>,<span style="color:#ae81ff">0xC6C66C</span>,<span style="color:#ae81ff">0x380000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_P <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00FC66</span>,<span style="color:#ae81ff">0x66667C</span>,<span style="color:#ae81ff">0x606060</span>,<span style="color:#ae81ff">0xF00000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_Q <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00386C</span>,<span style="color:#ae81ff">0xC6C6C6</span>,<span style="color:#ae81ff">0xCEDE7C</span>,<span style="color:#ae81ff">0x0C1E00</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_R <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00FC66</span>,<span style="color:#ae81ff">0x66667C</span>,<span style="color:#ae81ff">0x6C6666</span>,<span style="color:#ae81ff">0xE60000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_S <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCCC070</span>,<span style="color:#ae81ff">0x18CCCC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_T <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00FCB4</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_U <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_V <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xCCCC78</span>,<span style="color:#ae81ff">0x300000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_W <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00C6C6</span>,<span style="color:#ae81ff">0xC6C6D6</span>,<span style="color:#ae81ff">0xD66C6C</span>,<span style="color:#ae81ff">0x6C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_X <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCC7830</span>,<span style="color:#ae81ff">0x78CCCC</span>,<span style="color:#ae81ff">0xCC0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_Y <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCC78</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_Z <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00FECE</span>,<span style="color:#ae81ff">0x981830</span>,<span style="color:#ae81ff">0x6062C6</span>,<span style="color:#ae81ff">0xFE0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_lsb <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x003C30</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x303030</span>,<span style="color:#ae81ff">0x3C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_rsl <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000080</span>,<span style="color:#ae81ff">0xC06030</span>,<span style="color:#ae81ff">0x180C06</span>,<span style="color:#ae81ff">0x020000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_rsb <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x003C0C</span>,<span style="color:#ae81ff">0x0C0C0C</span>,<span style="color:#ae81ff">0x0C0C0C</span>,<span style="color:#ae81ff">0x3C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_pow <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x10386C</span>,<span style="color:#ae81ff">0xC60000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_usc <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00FF00</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_a <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00780C</span>,<span style="color:#ae81ff">0x7CCCCC</span>,<span style="color:#ae81ff">0x760000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_b <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00E060</span>,<span style="color:#ae81ff">0x607C66</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0xDC0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_c <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xC0C0CC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_d <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x001C0C</span>,<span style="color:#ae81ff">0x0C7CCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x760000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_e <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xFCC0CC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_f <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00386C</span>,<span style="color:#ae81ff">0x6060F8</span>,<span style="color:#ae81ff">0x606060</span>,<span style="color:#ae81ff">0xF00000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_g <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0076CC</span>,<span style="color:#ae81ff">0xCCCC7C</span>,<span style="color:#ae81ff">0x0CCC78</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_h <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00E060</span>,<span style="color:#ae81ff">0x606C76</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0xE60000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_i <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x001818</span>,<span style="color:#ae81ff">0x007818</span>,<span style="color:#ae81ff">0x181818</span>,<span style="color:#ae81ff">0x7E0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_j <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000C0C</span>,<span style="color:#ae81ff">0x003C0C</span>,<span style="color:#ae81ff">0x0C0C0C</span>,<span style="color:#ae81ff">0xCCCC78</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_k <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00E060</span>,<span style="color:#ae81ff">0x60666C</span>,<span style="color:#ae81ff">0x786C66</span>,<span style="color:#ae81ff">0xE60000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_l <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x007818</span>,<span style="color:#ae81ff">0x181818</span>,<span style="color:#ae81ff">0x181818</span>,<span style="color:#ae81ff">0x7E0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_m <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00FCD6</span>,<span style="color:#ae81ff">0xD6D6D6</span>,<span style="color:#ae81ff">0xC60000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_n <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00F8CC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0xCC0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_o <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_p <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00DC66</span>,<span style="color:#ae81ff">0x666666</span>,<span style="color:#ae81ff">0x7C60F0</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_q <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0076CC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x7C0C1E</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_r <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00EC6E</span>,<span style="color:#ae81ff">0x766060</span>,<span style="color:#ae81ff">0xF00000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_s <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x0078CC</span>,<span style="color:#ae81ff">0x6018CC</span>,<span style="color:#ae81ff">0x780000</span>);
+</span></span><span style="display:flex;"><span>vec4 <span style="color:#66d9ef">ch_t</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000020</span>,<span style="color:#ae81ff">0x60FC60</span>,<span style="color:#ae81ff">0x60606C</span>,<span style="color:#ae81ff">0x380000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_u <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCCCC</span>,<span style="color:#ae81ff">0x760000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_v <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00CCCC</span>,<span style="color:#ae81ff">0xCCCC78</span>,<span style="color:#ae81ff">0x300000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_w <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00C6C6</span>,<span style="color:#ae81ff">0xD6D66C</span>,<span style="color:#ae81ff">0x6C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_x <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00C66C</span>,<span style="color:#ae81ff">0x38386C</span>,<span style="color:#ae81ff">0xC60000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_y <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x006666</span>,<span style="color:#ae81ff">0x66663C</span>,<span style="color:#ae81ff">0x0C18F0</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_z <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x00FC8C</span>,<span style="color:#ae81ff">0x1860C4</span>,<span style="color:#ae81ff">0xFC0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_lpa <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x001C30</span>,<span style="color:#ae81ff">0x3060C0</span>,<span style="color:#ae81ff">0x603030</span>,<span style="color:#ae81ff">0x1C0000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_bar <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x001818</span>,<span style="color:#ae81ff">0x181800</span>,<span style="color:#ae81ff">0x181818</span>,<span style="color:#ae81ff">0x180000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_rpa <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x00E030</span>,<span style="color:#ae81ff">0x30180C</span>,<span style="color:#ae81ff">0x183030</span>,<span style="color:#ae81ff">0xE00000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_tid <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x0073DA</span>,<span style="color:#ae81ff">0xCE0000</span>,<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>vec4 ch_lar <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0x000000</span>,<span style="color:#ae81ff">0x10386C</span>,<span style="color:#ae81ff">0xC6C6FE</span>,<span style="color:#ae81ff">0x000000</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//Extracts bit b from the given number.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//Shifts bits right (num / 2^bit) then ANDs the result with 1 (mod(result,2.0)).
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">extract_bit</span>(<span style="color:#66d9ef">float</span> n, <span style="color:#66d9ef">float</span> b)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    b <span style="color:#f92672">=</span> <span style="color:#a6e22e">clamp</span>(b,<span style="color:#f92672">-</span><span style="color:#ae81ff">1.0</span>,<span style="color:#ae81ff">24.0</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">floor</span>(<span style="color:#a6e22e">mod</span>(<span style="color:#a6e22e">floor</span>(n <span style="color:#f92672">/</span> <span style="color:#a6e22e">pow</span>(<span style="color:#ae81ff">2.0</span>,<span style="color:#a6e22e">floor</span>(b))),<span style="color:#ae81ff">2.0</span>));
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//Returns the pixel at uv in the given bit-packed sprite.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">sprite</span>(vec4 spr, vec2 size, vec2 uv)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    uv <span style="color:#f92672">=</span> <span style="color:#a6e22e">floor</span>(uv);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#if defined(FLIP_Y)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// Invert y uv coordinate
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    uv.y <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> uv.y;
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#endif </span><span style="color:#75715e">// FLIP_Y
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">//Calculate the bit to extract (x + y * width) (flipped on x-axis)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">float</span> bit <span style="color:#f92672">=</span> (size.x<span style="color:#f92672">-</span>uv.x<span style="color:#f92672">-</span><span style="color:#ae81ff">1.0</span>) <span style="color:#f92672">+</span> uv.y <span style="color:#f92672">*</span> size.x;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">//Clipping bound to remove garbage outside the sprite&#39;s boundaries.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">bool</span> bounds <span style="color:#f92672">=</span> <span style="color:#a6e22e">all</span>(<span style="color:#a6e22e">greaterThanEqual</span>(uv,<span style="color:#a6e22e">vec2</span>(<span style="color:#ae81ff">0</span>))) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">all</span>(<span style="color:#a6e22e">lessThan</span>(uv,size));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">float</span> pixels <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>;
+</span></span><span style="display:flex;"><span>    pixels <span style="color:#f92672">+=</span> <span style="color:#a6e22e">extract_bit</span>(spr.x, bit <span style="color:#f92672">-</span> <span style="color:#ae81ff">72.0</span>);
+</span></span><span style="display:flex;"><span>    pixels <span style="color:#f92672">+=</span> <span style="color:#a6e22e">extract_bit</span>(spr.y, bit <span style="color:#f92672">-</span> <span style="color:#ae81ff">48.0</span>);
+</span></span><span style="display:flex;"><span>    pixels <span style="color:#f92672">+=</span> <span style="color:#a6e22e">extract_bit</span>(spr.z, bit <span style="color:#f92672">-</span> <span style="color:#ae81ff">24.0</span>);
+</span></span><span style="display:flex;"><span>    pixels <span style="color:#f92672">+=</span> <span style="color:#a6e22e">extract_bit</span>(spr.w, bit <span style="color:#f92672">-</span> <span style="color:#ae81ff">00.0</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> bounds <span style="color:#f92672">?</span> pixels : <span style="color:#ae81ff">0.0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//Prints a character and moves the print position forward by 1 character width.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">print_char</span>(vec4 ch, vec2 uv, inout vec2 print_pos)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>( TEXT_MODE <span style="color:#f92672">==</span> INVERT )
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//Inverts all of the bits in the character.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        ch <span style="color:#f92672">=</span> <span style="color:#a6e22e">pow</span>(<span style="color:#ae81ff">2.0</span>,<span style="color:#ae81ff">24.0</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">1.0</span><span style="color:#f92672">-</span>ch;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>( TEXT_MODE <span style="color:#f92672">==</span> UNDERLINE )
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//Makes the bottom 8 bits all 1.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#75715e">//Shifts the bottom chunk right 8 bits to drop the lowest 8 bits,
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#75715e">//then shifts it left 8 bits and adds 255 (binary 11111111).
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        ch.w <span style="color:#f92672">=</span> <span style="color:#a6e22e">floor</span>(ch.w<span style="color:#f92672">/</span><span style="color:#ae81ff">256.0</span>)<span style="color:#f92672">*</span><span style="color:#ae81ff">256.0</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">255.0</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">float</span> px <span style="color:#f92672">=</span> <span style="color:#a6e22e">sprite</span>(ch, CHAR_SIZE, uv <span style="color:#f92672">-</span> print_pos);
+</span></span><span style="display:flex;"><span>    print_pos.x <span style="color:#f92672">+=</span> CHAR_SPACING.x;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> px;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//Returns the digit sprite for the given number.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>vec4 <span style="color:#a6e22e">get_digit</span>(<span style="color:#66d9ef">float</span> d)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    d <span style="color:#f92672">=</span> <span style="color:#a6e22e">floor</span>(d);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">0.0</span>) <span style="color:#66d9ef">return</span> ch_0;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">1.0</span>) <span style="color:#66d9ef">return</span> ch_1;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">2.0</span>) <span style="color:#66d9ef">return</span> ch_2;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">3.0</span>) <span style="color:#66d9ef">return</span> ch_3;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">4.0</span>) <span style="color:#66d9ef">return</span> ch_4;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">5.0</span>) <span style="color:#66d9ef">return</span> ch_5;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">6.0</span>) <span style="color:#66d9ef">return</span> ch_6;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">7.0</span>) <span style="color:#66d9ef">return</span> ch_7;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">8.0</span>) <span style="color:#66d9ef">return</span> ch_8;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span>(d <span style="color:#f92672">==</span> <span style="color:#ae81ff">9.0</span>) <span style="color:#66d9ef">return</span> ch_9;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">vec4</span>(<span style="color:#ae81ff">0.0</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//Prints out the given number starting at pos.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">print_number</span>(<span style="color:#66d9ef">float</span> number, vec2 uv, inout vec2 print_pos)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">float</span> result <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;i <span style="color:#f92672">&gt;=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;i<span style="color:#f92672">--</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">float</span> digit <span style="color:#f92672">=</span> <span style="color:#a6e22e">mod</span>( number <span style="color:#f92672">/</span> <span style="color:#a6e22e">pow</span>(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(i)) , <span style="color:#ae81ff">10.0</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span>(i <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#75715e">//Add a decimal point.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        {
+</span></span><span style="display:flex;"><span>            result <span style="color:#f92672">+=</span> <span style="color:#a6e22e">print_char</span>(ch_per,uv, print_pos);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span>(<span style="color:#a6e22e">abs</span>(number) <span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">pow</span>(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(i)) <span style="color:#f92672">||</span> i <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#75715e">//Clip off leading zeros.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        {
+</span></span><span style="display:flex;"><span>            result <span style="color:#f92672">+=</span> <span style="color:#a6e22e">print_char</span>(<span style="color:#a6e22e">get_digit</span>(digit),uv, print_pos);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> result;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>vec4 <span style="color:#a6e22e">get_digit</span>(<span style="color:#66d9ef">float</span> number, <span style="color:#66d9ef">int</span> position) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">float</span> digit <span style="color:#f92672">=</span> <span style="color:#a6e22e">mod</span>( number <span style="color:#f92672">/</span> <span style="color:#a6e22e">pow</span>(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(position)) , <span style="color:#ae81ff">10.0</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">get_digit</span>( digit );
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">print_integer</span>(<span style="color:#66d9ef">float</span> number, <span style="color:#66d9ef">int</span> zeros, vec2 uv, inout vec2 print_pos)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">float</span> result <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> MAX_INT_DIGITS;i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>;i<span style="color:#f92672">--</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">float</span> digit <span style="color:#f92672">=</span> <span style="color:#a6e22e">mod</span>( number <span style="color:#f92672">/</span> <span style="color:#a6e22e">pow</span>(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(i)) , <span style="color:#ae81ff">10.0</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span>(<span style="color:#a6e22e">abs</span>(number) <span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">pow</span>(<span style="color:#ae81ff">10.0</span>, <span style="color:#66d9ef">float</span>(i)) <span style="color:#f92672">||</span> zeros <span style="color:#f92672">&gt;</span> i  <span style="color:#f92672">||</span> i <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#75715e">//Clip off leading zeros.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        {
+</span></span><span style="display:flex;"><span>            result <span style="color:#f92672">+=</span> <span style="color:#a6e22e">print_char</span>(<span style="color:#a6e22e">get_digit</span>(digit),uv, print_pos);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> result;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>It is a little code intensitve, but the gist is the same: decompress the packed infomration to know if the current pixel falls into the compressed font character or not!</p>
 <h1 id="conclusion">Conclusion</h1>
 <p>I will probably add the code to my <a href="https://github.com/jorenjoestar/datadrivenrendering">DataDrivenRendering</a> repository, but in the meantime I wanted to write this article.<br>
 The general idea should be simple, the execution can be improved a lot but the help can be great to debug GPU only systems, that are becoming more and more used.<br>
@@ -1211,7 +1211,7 @@ Maybe this is the start of a GPU-Driven ImGui system ? :p</p>
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
 
     
 

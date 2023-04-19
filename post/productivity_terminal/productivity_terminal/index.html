@@ -28,7 +28,8 @@
   
     
   
-  <meta name="description" content="After reading the great article by Sarah Drasner on productivity I wanted to share some other improvements that I use in my daily work and personal coding life.I am developing mostly rendering and other game-related code, so my OS is Windows 10.I have a background in using Linux-only for work at the beginning of my career, so bash customization and Vim were too useful to be overlooked!
+  <meta name="description" content="After reading the great article by Sarah Drasner on productivity I wanted to share some other improvements that I use in my daily work and personal coding life.
+I am developing mostly rendering and other game-related code, so my OS is Windows 10. I have a background in using Linux-only for work at the beginning of my career, so bash customization and Vim were too useful to be overlooked!
 For Windows I started using Cmder few years ago, but I should check also the revamped powershell.">
 
   
@@ -81,7 +82,7 @@ For Windows I started using Cmder few years ago, but I should check also the rev
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
+  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
 
   
 
@@ -112,7 +113,8 @@ For Windows I started using Cmder few years ago, but I should check also the rev
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/productivity_terminal/productivity_terminal/">
   <meta property="og:title" content="Improving Productivity in Terminals with Aliases | Joren&#39;s">
-  <meta property="og:description" content="After reading the great article by Sarah Drasner on productivity I wanted to share some other improvements that I use in my daily work and personal coding life.I am developing mostly rendering and other game-related code, so my OS is Windows 10.I have a background in using Linux-only for work at the beginning of my career, so bash customization and Vim were too useful to be overlooked!
+  <meta property="og:description" content="After reading the great article by Sarah Drasner on productivity I wanted to share some other improvements that I use in my daily work and personal coding life.
+I am developing mostly rendering and other game-related code, so my OS is Windows 10. I have a background in using Linux-only for work at the beginning of my career, so bash customization and Vim were too useful to be overlooked!
 For Windows I started using Cmder few years ago, but I should check also the revamped powershell."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
@@ -539,7 +541,7 @@ Also notice the &lsquo;$*&rsquo; at the end - it means to append all the argumen
 <pre tabindex="0"><code>vi=vim $*
 vimrc=vim %CMDER_ROOT%\vendor\msysgit\share\vim\vimrc
 
-subl=&quot;C:\Program Files\Sublime Text 3\sublime_text.exe&quot; $*
+subl=&#34;C:\Program Files\Sublime Text 3\sublime_text.exe&#34; $*
 </code></pre><p>With the alias <em>subl</em> you can open any file into Sublime Text. Very handy combination Cmder + Sublime Text!</p>
 <p>Also quickly editing your <em>vimrc</em> file is a need for VIM users.</p>
 <h1 id="grepping">Grepping</h1>
@@ -575,7 +577,7 @@ src/Nes.cpp:    blipBuffer-&gt;clear();
 src/Nes.cpp:    blipBuffer-&gt;clear();
 src/Nes.cpp:        blipBuffer-&gt;end_frame( count );
 src/Nes.cpp:    //    //blipBuffer-&gt;end_frame( remainingCycles );
-src/Nes.h:#include &quot;BlipBuffer/blip_buf.h&quot;
+src/Nes.h:#include &#34;BlipBuffer/blip_buf.h&#34;
 src/Nes.h:            Blip_Buffer*            blipBuffer = nullptr;
 </code></pre><p>Instead using the list only option:</p>
 <p><code>grep --color -Iirl blipbuffer *</code></p>
@@ -590,15 +592,15 @@ Again I add generic and very specific version of commands:</p>
 <pre tabindex="0"><code>gs=git status
 gl=git log --oneline --all --graph --decorate $*
 
-ga=git add &quot;$*&quot;
-gcm=git commit -m &quot;$*&quot;
-grmdir=git rm -r &quot;$*&quot;
-grmf=git rm &quot;$*&quot;
+ga=git add &#34;$*&#34;
+gcm=git commit -m &#34;$*&#34;
+grmdir=git rm -r &#34;$*&#34;
+grmf=git rm &#34;$*&#34;
 
-gpso=git push -u origin &quot;$*&quot;
+gpso=git push -u origin &#34;$*&#34;
 gpsom=git push -u origin master
 
-gplo=git pull origin &quot;$*&quot;
+gplo=git pull origin &#34;$*&#34;
 gplom=git pull origin master
 
 gru=git remote update
@@ -623,10 +625,10 @@ In this case - and this is more a git concept - when working with subtree I use 
 <em>ga</em> adds the files and folders you write after the command.</p>
 <h1 id="visual-studio-compiler">Visual Studio Compiler</h1>
 <p>Some different aliases I use for Visual Studio:</p>
-<pre tabindex="0"><code>vs=&quot;%VS140COMNTOOLS%..\IDE\devenv.exe&quot; /edit &quot;$*&quot;
+<pre tabindex="0"><code>vs=&#34;%VS140COMNTOOLS%..\IDE\devenv.exe&#34; /edit &#34;$*&#34;
 
 ;= Needed to find MSBuild executable.
-vcvars=&quot;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat&quot;
+vcvars=&#34;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat&#34;
 
 msb=MSBuild $1 /property:Configuration=$2 /property:Platform=$3
 msbd=MSBuild $1 /property:Configuration=Debug /property:Platform=x64
@@ -835,7 +837,7 @@ Gabriel</p>
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
 
     
 

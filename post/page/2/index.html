@@ -80,7 +80,7 @@
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
+  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
 
   
 
@@ -441,7 +441,7 @@
   
   <div class="article-style" itemprop="articleBody">
     Overview Data Driven Rendering Series:
- https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language.
+https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/ In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely. In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language. I also separated the code a little bit for clarity and added the usage of STB array and hash maps.
   </div>
   
 
@@ -526,7 +526,8 @@
   
   <div class="article-style" itemprop="articleBody">
     Overview Data Driven Rendering Series:
- https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  In Part 1 of this series we created a simple language to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features.The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.
+https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/ In Part 1 of this series we created a simple language to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features. The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.
+(Personal though: part of me would like to help in contributing to the creation of a standard through these articles and code.
   </div>
   
 
@@ -585,7 +586,7 @@
   
   <span class="middot-divider"></span>
   <span class="article-reading-time">
-    21 min read
+    22 min read
   </span>
   
 
@@ -613,7 +614,7 @@
   
   <div class="article-style" itemprop="articleBody">
     Overview Data Driven Rendering Series:
- https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  In this article we will create a simple language that can encapsulate shader code (called code fragments) and output different files for each fragment.This is the initial step to switch from an engine that loads single files for each shader stage (vertex, fragment, compute, &hellip;) to one that uses an effect file that contains more than one shader.
+https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/ In this article we will create a simple language that can encapsulate shader code (called code fragments) and output different files for each fragment. This is the initial step to switch from an engine that loads single files for each shader stage (vertex, fragment, compute, &hellip;) to one that uses an effect file that contains more than one shader.
 We will start by motivation, then will define the language itself (very simple), then we will look at the Parser and last the Code Generator.
   </div>
   
@@ -700,7 +701,7 @@ We will start by motivation, then will define the language itself (very simple),
 
   
   <div class="article-style" itemprop="articleBody">
-    UI using ImGUI, SDL and the code generated with this article.Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.The code is here:
+    UI using ImGUI, SDL and the code generated with this article. Motivation Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues! In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language. The code is here:
 https://github.com/JorenJoestar/DataDrivenRendering
 There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written.
   </div>
@@ -786,10 +787,10 @@ There is a balance that constantly needs to be found between code and data, and 
 
   
   <div class="article-style" itemprop="articleBody">
-    Some of the UI for the Hydra NES emulator, using ImGUI.Writing an emulator is an incredibly fun learning experience.
+    Some of the UI for the Hydra NES emulator, using ImGUI. Writing an emulator is an incredibly fun learning experience.
 It is an exquisite exercise in reverse-engineering from both documentation and code.
 In this post I want to share some tips on how and where to start based on my experience on the NES emulator I am writing.
-Information The gathering of information is the most important (and hard!
+Information The gathering of information is the most important (and hard!) process that will live through all the writing process.
   </div>
   
 
@@ -873,7 +874,8 @@ Information The gathering of information is the most important (and hard!
 
   
   <div class="article-style" itemprop="articleBody">
-    Auto generated UI from Flatbuffers files.Motivation Finding a good balance between code and data in Rendering.What is the necessary code that should be written ?Why ?In rendering many areas can be described in a fast and robust way using data.A pipeline (in D3D12/Vulkan lingo) for example is a collection of different states: depth stencil, alpha blend, rasterizer, shaders, etc.All those state can be hard-coded or defined in data.
+    Auto generated UI from Flatbuffers files. Motivation Finding a good balance between code and data in Rendering. What is the necessary code that should be written ? Why ?
+In rendering many areas can be described in a fast and robust way using data. A pipeline (in D3D12/Vulkan lingo) for example is a collection of different states: depth stencil, alpha blend, rasterizer, shaders, etc. All those state can be hard-coded or defined in data.
   </div>
   
 
@@ -957,7 +959,7 @@ Information The gathering of information is the most important (and hard!
 
   
   <div class="article-style" itemprop="articleBody">
-    Legend of Zelda emulated plus debugging windows.Hello everyone!
+    Legend of Zelda emulated plus debugging windows. Hello everyone!
 Today I release the source code of my bare-bone NES emulator, written in C++.
 I had the idea to write an emulator of one of my favorite console (after the SNES) years ago, and started in 2015 to write the first code (actually in 2008, but it was too daunting even to start). Then I concentrated on my other big project (still ongoing) and left all the NES code on a side.
   </div>
@@ -1085,7 +1087,7 @@ I had the idea to write an emulator of one of my favorite console (after the SNE
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
 
     
 

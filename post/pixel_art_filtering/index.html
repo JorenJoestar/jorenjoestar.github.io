@@ -28,7 +28,8 @@
   
     
   
-  <meta name="description" content="An example of non integer scaling of pixel art.Overview Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.One of the most annoying problem we are seeing, especially since we don&rsquo;t have all the CRT TVs that &lsquo;apply their filters&rsquo;, is the pixel &lsquo;shimmering&rsquo; happening when scaling or moving a pixel art image with non-integer values.">
+  <meta name="description" content="An example of non integer scaling of pixel art. Overview Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.
+One of the most annoying problem we are seeing, especially since we don&rsquo;t have all the CRT TVs that &lsquo;apply their filters&rsquo;, is the pixel &lsquo;shimmering&rsquo; happening when scaling or moving a pixel art image with non-integer values.">
 
   
   <link rel="alternate" hreflang="en-us" href="https://jorenjoestar.github.io/post/pixel_art_filtering/">
@@ -80,7 +81,7 @@
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
+  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
 
   
 
@@ -111,7 +112,8 @@
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/pixel_art_filtering/">
   <meta property="og:title" content="Pixel Art Filtering | Joren&#39;s">
-  <meta property="og:description" content="An example of non integer scaling of pixel art.Overview Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.One of the most annoying problem we are seeing, especially since we don&rsquo;t have all the CRT TVs that &lsquo;apply their filters&rsquo;, is the pixel &lsquo;shimmering&rsquo; happening when scaling or moving a pixel art image with non-integer values."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
+  <meta property="og:description" content="An example of non integer scaling of pixel art. Overview Pixel art is living a beautiful renaissance these last years, with more and more studios embracing its visuals and more artists going back to this unique way of describing visuals in a game.
+One of the most annoying problem we are seeing, especially since we don&rsquo;t have all the CRT TVs that &lsquo;apply their filters&rsquo;, is the pixel &lsquo;shimmering&rsquo; happening when scaling or moving a pixel art image with non-integer values."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
   <meta property="article:published_time" content="2021-04-12T19:56:56&#43;02:00">
@@ -708,7 +710,7 @@ All the shaders are into the <strong>DataDrivenRendering/data/articles/PixelArtF
 
     return (floor(pixel) + interpolationAmount) / texture_size;
 }
-</code></pre><p>The &lsquo;texels_per_pixel&rsquo; variable is calculated on the CPU, and it is basically a ratio between the camera render target size and the screen size, including the possible zoom of it.</p>
+</code></pre><p>The &rsquo;texels_per_pixel&rsquo; variable is calculated on the CPU, and it is basically a ratio between the camera render target size and the screen size, including the possible zoom of it.</p>
 <p>In the original post from the author it can be found in the comment section.</p>
 <p>I write it down here as reference:</p>
 <pre tabindex="0"><code>static f32 calculate_texels_per_pixel( f32 camera_width, f32 camera_height, f32 camera_zoom, f32 screen_width, f32 screen_height ) {
@@ -790,8 +792,8 @@ Also to note that the smooth size can be driven by the filter width in the demo,
 // samples from a linearly-interpolated texture to produce an appearance similar to
 // nearest-neighbor interpolation, but with resolution-dependent antialiasing
 // 
-// this function's interface is exactly the same as texture's, aside from the 'res'
-// parameter, which represents the resolution of the texture 'tex'.
+// this function&#39;s interface is exactly the same as texture&#39;s, aside from the &#39;res&#39;
+// parameter, which represents the resolution of the texture &#39;tex&#39;.
 // basically calculates the lengths of (a.x, b.x) and (a.y, b.y) at the same time
 vec2 v2len(in vec2 a, in vec2 b) {
     return sqrt( a * a + b * b );
@@ -802,7 +804,7 @@ vec2 uv_blocky( in vec2 uv, in ivec2 res ) {
     
     vec2 seam = floor(pixels + .5); // find the nearest seam between texels.
     
-    // here's where the magic happens. scale up the distance to the seam so that all
+    // here&#39;s where the magic happens. scale up the distance to the seam so that all
     // interpolation happens in a one-pixel-wide space.
     pixels = (pixels - seam) / v2len(dFdx(pixels), dFdy(pixels)) + seam;
     
@@ -1090,7 +1092,7 @@ I&rsquo;ve used two textures, that were free to use made available by the amazin
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
 
     
 

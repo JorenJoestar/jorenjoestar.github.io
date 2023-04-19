@@ -29,7 +29,7 @@
     
   
   <meta name="description" content="Overview Data Driven Rendering Series:
- https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language.">
+https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/ In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely. In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language. I also separated the code a little bit for clarity and added the usage of STB array and hash maps.">
 
   
   <link rel="alternate" hreflang="en-us" href="https://jorenjoestar.github.io/post/writing_shader_effect_language_3/">
@@ -81,7 +81,7 @@
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
+  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
 
   
 
@@ -113,7 +113,7 @@
   <meta property="og:url" content="https://jorenjoestar.github.io/post/writing_shader_effect_language_3/">
   <meta property="og:title" content="Writing a Shader Effect Language Part 3: Materials | Joren&#39;s">
   <meta property="og:description" content="Overview Data Driven Rendering Series:
- https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely.In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
+https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/ In Part 2 of this series we added Resource Layouts and Properties to the HFX language, trying to arrive at a point in which we can describe the rendering of a Shader Effect almost entirely. In this article I would like to explore further adds to HFX, especially a proper Material System to be used in conjunction with the HFX language. I also separated the code a little bit for clarity and added the usage of STB array and hash maps."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
   <meta property="article:published_time" content="2019-10-14T10:43:49-04:00">
@@ -598,7 +598,6 @@ struct ShaderEffect {
     uint32_t                        pool_id;
 
 }; // struct ShaderEffect
-
 </code></pre><p>You see both a <strong>pipeline name</strong> and an array of <strong>passes</strong> with a name. These are to insert the pass into a very <strong>primordial</strong> render graph, that I wrote just because I didn&rsquo;t want to hardcode the frame structure, especially because next article will be EXACTLY on this topic!</p>
 <p>Having defined the Shader Effect, we can now move into the next big actor.</p>
 <h2 id="material">Material</h2>
@@ -612,21 +611,21 @@ The concept of Material is really <strong>unique values for the properties of a 
 This is done for every property.</p>
 <p>Let&rsquo;s have a look at our new material:</p>
 <pre tabindex="0"><code>{
-    &quot;name&quot;: &quot;SimpleFullscreen&quot;,
-    &quot;effect_path&quot;: &quot;SimpleFullscreen.hfx&quot;,
-    &quot;properties&quot;: [
+    &#34;name&#34;: &#34;SimpleFullscreen&#34;,
+    &#34;effect_path&#34;: &#34;SimpleFullscreen.hfx&#34;,
+    &#34;properties&#34;: [
         {
-            &quot;scale&quot;: 16.0,
-            &quot;albedo&quot;: &quot;AngeloCensorship.png&quot;,
-            &quot;modulo&quot;: 2.0
+            &#34;scale&#34;: 16.0,
+            &#34;albedo&#34;: &#34;AngeloCensorship.png&#34;,
+            &#34;modulo&#34;: 2.0
         }
     ],
-    &quot;bindings&quot;: [
+    &#34;bindings&#34;: [
         {
-            &quot;LocalConstants&quot;: &quot;LocalConstants&quot;,
-            &quot;destination_texture&quot;: &quot;compute_output_texture&quot;,
-            &quot;input_texture&quot;: &quot;compute_output_texture&quot;,
-            &quot;albedo_texture&quot;: &quot;albedo&quot;
+            &#34;LocalConstants&#34;: &#34;LocalConstants&#34;,
+            &#34;destination_texture&#34;: &#34;compute_output_texture&#34;,
+            &#34;input_texture&#34;: &#34;compute_output_texture&#34;,
+            &#34;albedo_texture&#34;: &#34;albedo&#34;
         }
     ]
 }
@@ -868,7 +867,6 @@ Properties are both numerical and path to textures, bindings are name to retriev
     if ( !render_pipeline ) {
         return nullptr;
     }
-
 </code></pre><p>Access the Shader Effect through the resource dependencies, and the Render Pipeline from the map.</p>
 <pre tabindex="0"><code>    // 4. Load material
     char* material_name = material_file.header-&gt;name;
@@ -941,7 +939,6 @@ This memory will be overwritten by the other numerical properties and used to in
         char* value = material-&gt;loaded_string_buffer.append_use( binding.value );
         material-&gt;lookups.add_binding_to_resource( name, value );
     }
-
 </code></pre><p>We populate the resource lookups.</p>
 <pre tabindex="0"><code>    BufferCreation checker_constants_creation = {};
     checker_constants_creation.type = BufferType::Constant;
@@ -1014,9 +1011,8 @@ This memory will be overwritten by the other numerical properties and used to in
         material-&gt;shader_instances[i].pipeline = material-&gt;effect-&gt;passes[i].pipeline_handle;
     }
 }
-
 </code></pre><p>For each Pass, Resource Layout and Binding, we search the Database to retrieve the actual resource and create the Resource List.</p>
-<p>This can be improved - having a global database of resources and a &lsquo;local&rsquo; one based on material resources.<!-- raw HTML omitted --></p>
+<p>This can be improved - having a global database of resources and a &rsquo;local&rsquo; one based on material resources.<!-- raw HTML omitted --></p>
 <pre tabindex="0"><code>    // 5. Bind material to pipeline
     for ( uint8_t p = 0; p &lt; shader_effect-&gt;num_passes; ++p ) {
         char* stage_name = shader_effect-&gt;passes[p].name;
@@ -1065,7 +1061,6 @@ As everthing in this articles, this is primordial and simple, but I think is a v
     commands-&gt;end_submit();
     // Set render stage states (depth, alpha, ...)
 }
-
 </code></pre><p>Before rendering anything this code will bind the correct FBO/Render Targets, clear and set viewport and set render states.<!-- raw HTML omitted -->
 After this we are ready to render the actual stage. In this simple implementation we have only 3 type of stages: Compute, Post and Swapchain.<!-- raw HTML omitted --></p>
 <p>They are very simple and similar, like this:</p>
@@ -1299,7 +1294,7 @@ I really hope soon there will be some <em>rendering joy</em>!</p>
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
 
     
 

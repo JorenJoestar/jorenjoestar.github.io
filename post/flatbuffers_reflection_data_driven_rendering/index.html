@@ -28,7 +28,8 @@
   
     
   
-  <meta name="description" content="Auto generated UI from Flatbuffers files.Motivation Finding a good balance between code and data in Rendering.What is the necessary code that should be written ?Why ?In rendering many areas can be described in a fast and robust way using data.A pipeline (in D3D12/Vulkan lingo) for example is a collection of different states: depth stencil, alpha blend, rasterizer, shaders, etc.All those state can be hard-coded or defined in data.">
+  <meta name="description" content="Auto generated UI from Flatbuffers files. Motivation Finding a good balance between code and data in Rendering. What is the necessary code that should be written ? Why ?
+In rendering many areas can be described in a fast and robust way using data. A pipeline (in D3D12/Vulkan lingo) for example is a collection of different states: depth stencil, alpha blend, rasterizer, shaders, etc. All those state can be hard-coded or defined in data.">
 
   
   <link rel="alternate" hreflang="en-us" href="https://jorenjoestar.github.io/post/flatbuffers_reflection_data_driven_rendering/">
@@ -80,7 +81,7 @@
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
+  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
 
   
 
@@ -111,7 +112,8 @@
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/flatbuffers_reflection_data_driven_rendering/">
   <meta property="og:title" content="Flatbuffers, Reflection and Data-Driven Rendering | Joren&#39;s">
-  <meta property="og:description" content="Auto generated UI from Flatbuffers files.Motivation Finding a good balance between code and data in Rendering.What is the necessary code that should be written ?Why ?In rendering many areas can be described in a fast and robust way using data.A pipeline (in D3D12/Vulkan lingo) for example is a collection of different states: depth stencil, alpha blend, rasterizer, shaders, etc.All those state can be hard-coded or defined in data."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
+  <meta property="og:description" content="Auto generated UI from Flatbuffers files. Motivation Finding a good balance between code and data in Rendering. What is the necessary code that should be written ? Why ?
+In rendering many areas can be described in a fast and robust way using data. A pipeline (in D3D12/Vulkan lingo) for example is a collection of different states: depth stencil, alpha blend, rasterizer, shaders, etc. All those state can be hard-coded or defined in data."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
   <meta property="article:published_time" content="2019-07-26T07:37:26-04:00">
@@ -567,10 +569,10 @@ A bigger version (that I am using for my low-level renderer) is included in the 
 
 enum TextureFormat : ushort { UNKNOWN, R32G32B32A32_TYPELESS, R32G32B32A32_FLOAT, R32G32B32A32_UINT, R32G32B32A32_SINT, R32G32B32_TYPELESS, R32G32B32_FLOAT, R32G32B32_UINT, R32G32B32_SINT, R16G16B16A16_TYPELESS, R16G16B16A16_FLOAT, R16G16B16A16_UNORM, R16G16B16A16_UINT, R16G16B16A16_SNORM, R16G16B16A16_SINT, R32G32_TYPELESS, R32G32_FLOAT, R32G32_UINT, R32G32_SINT, R10G10B10A2_TYPELESS, R10G10B10A2_UNORM, R10G10B10A2_UINT, R11G11B10_FLOAT, R8G8B8A8_TYPELESS, R8G8B8A8_UNORM, R8G8B8A8_UNORM_SRGB, R8G8B8A8_UINT, R8G8B8A8_SNORM, R8G8B8A8_SINT, R16G16_TYPELESS, R16G16_FLOAT, R16G16_UNORM, R16G16_UINT, R16G16_SNORM, R16G16_SINT, R32_TYPELESS, R32_FLOAT, R32_UINT, R32_SINT, R8G8_TYPELESS, R8G8_UNORM, R8G8_UINT, R8G8_SNORM, R8G8_SINT, R16_TYPELESS, R16_FLOAT, R16_UNORM, R16_UINT, R16_SNORM, R16_SINT, R8_TYPELESS, R8_UNORM, R8_UINT, R8_SNORM, R8_SINT, R9G9B9E5_SHAREDEXP, D32_FLOAT_S8X24_UINT, D32_FLOAT, D24_UNORM_S8_UINT, D24_UNORM_X8_UINT, D16_UNORM, S8_UINT, BC1_TYPELESS, BC1_UNORM, BC1_UNORM_SRGB, BC2_TYPELESS, BC2_UNORM, BC2_UNORM_SRGB, BC3_TYPELESS, BC3_UNORM, BC3_UNORM_SRGB, BC4_TYPELESS, BC4_UNORM, BC4_SNORM, BC5_TYPELESS, BC5_UNORM, BC5_SNORM, B5G6R5_UNORM, B5G5R5A1_UNORM, B8G8R8A8_UNORM, B8G8R8X8_UNORM, R10G10B10_XR_BIAS_A2_UNORM, B8G8R8A8_TYPELESS, B8G8R8A8_UNORM_SRGB, B8G8R8X8_TYPELESS, B8G8R8X8_UNORM_SRGB, BC6H_TYPELESS, BC6H_UF16, BC6H_SF16, BC7_TYPELESS, BC7_UNORM, BC7_UNORM_SRGB, FORCE_UINT }
 
-attribute &quot;ui&quot;;
+attribute &#34;ui&#34;;
 
 struct RenderTarget {
-    width                   : ushort (ui: &quot;min:1, max:16384&quot;);
+    width                   : ushort (ui: &#34;min:1, max:16384&#34;);
     height                  : ushort;
     scale_x                 : float;
     scale_y                 : float;
@@ -642,8 +644,8 @@ Let’s begin by retrieving the TypeTable:</p>
 Listing the members and their type is pretty straight-forward:</p>
 <pre tabindex="0"><code>for ( uint32_t i = 0; i &lt; type_table.num_elems; ++i ) {
     const flatbuffers::TypeCode&amp; type_code = type_table.type_codes[i];
-    ImGui::Text( &quot;%s: %s&quot;, type_table.names[i], flatbuffers::ElementaryTypeNames()[type_code.base_type] );
-    sprintf_s( s_string_buffer, 128, &quot;%s&quot;, type_table.names[i] );
+    ImGui::Text( &#34;%s: %s&#34;, type_table.names[i], flatbuffers::ElementaryTypeNames()[type_code.base_type] );
+    sprintf_s( s_string_buffer, 128, &#34;%s&#34;, type_table.names[i] );
     
     if ( type_code.sequence_ref == 0 ) {
         if ( type_table.type_refs[type_code.sequence_ref] ) {
@@ -672,26 +674,26 @@ Listing the members and their type is pretty straight-forward:</p>
 <p>Here the binary fbs file and its corresponding schema are loaded.</p>
 <pre tabindex="0"><code>// 1. Obtain the schema from the binary fbs generated
 std::string bfbsfile;    
-flatbuffers::LoadFile(&quot;..\\data\\RenderDefinitions.bfbs&quot;, true, &amp;bfbsfile );     
+flatbuffers::LoadFile(&#34;..\\data\\RenderDefinitions.bfbs&#34;, true, &amp;bfbsfile );     
 const reflection::Schema&amp; schema = *reflection::GetSchema( bfbsfile.c_str() );
 </code></pre><p>The schema can be used to list the types:</p>
 <pre tabindex="0"><code>// 2. List all the types present in the fbs.    
 auto types = schema.objects();    
 for ( size_t i = 0; i &lt; types-&gt;Length(); i++ ) {        
    const reflection::Object* type = types-&gt;Get( i );
-   ImGui::Text( &quot;    %s&quot;, type-&gt;name()-&gt;c_str() );    
+   ImGui::Text( &#34;    %s&#34;, type-&gt;name()-&gt;c_str() );    
 }
 </code></pre><p>(Using the auto here because I am lazy. The type is some multiple templates of offsets…)
 We can also list all the enums:</p>
 <pre tabindex="0"><code>auto enums = schema.enums();    
 for ( size_t i = 0; i &lt; enums-&gt;Length(); i++ ) {        
     const reflection::Enum* enum_ = enums-&gt;Get( i );
-    ImGui::Text( &quot;    %s&quot;, enum_-&gt;name()-&gt;c_str() );    
+    ImGui::Text( &#34;    %s&#34;, enum_-&gt;name()-&gt;c_str() );    
 }
 </code></pre><p>A problem I found (with a workaround in the code) is that enums do not have an easily to access array of string values.</p>
 <p>So I generated one for the sake of example, but I am far from happy with the solution!</p>
 <p>Going forward, we can get the type we want to reflect (notice the full namespace.type):</p>
-<pre tabindex="0"><code>auto render_target_type = types-&gt;LookupByKey( &quot;rendering.RenderTarget&quot; );
+<pre tabindex="0"><code>auto render_target_type = types-&gt;LookupByKey( &#34;rendering.RenderTarget&#34; );
 and begin the work on each field:
 auto fields = render_target_type-&gt;fields();    
 if ( fields ) {
@@ -699,7 +701,6 @@ if ( fields ) {
     for ( size_t i = 0; i &lt; fields-&gt;Length(); i++ ) {
             auto field = fields-&gt;Get( i );
             ...
-
 </code></pre><p>and the UI can be generated.</p>
 <p>For each field, the primitive type can be accessed with the following:</p>
 <pre tabindex="0"><code>reflection::BaseType field_base_type = field-&gt;type()-&gt;base_type();
@@ -707,9 +708,9 @@ if ( fields ) {
 <p>Last piece of the puzzle: attributes!</p>
 <pre tabindex="0"><code>auto field_attributes = field-&gt;attributes();
 if ( field_attributes ) {
-    auto ui = field_attributes-&gt;LookupByKey( &quot;ui&quot; );
+    auto ui = field_attributes-&gt;LookupByKey( &#34;ui&#34; );
     if ( ui ) {
-      ImGui::Text(&quot;UI attribute: %s&quot;, ui-&gt;value()-&gt;c_str());
+      ImGui::Text(&#34;UI attribute: %s&#34;, ui-&gt;value()-&gt;c_str());
     }
 }
 </code></pre><p>These can be parsed as strings and can be used to drive UI code (like a slider with min, max and steps).</p>
@@ -915,7 +916,7 @@ if ( field_attributes ) {
     
     
     
-    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
+    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
 
     
 
