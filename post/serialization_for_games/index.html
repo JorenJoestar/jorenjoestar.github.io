@@ -30,7 +30,7 @@
   
   <meta name="description" content="Overview We will go through all the logical steps (and the code!) to write a binary serializer that supports versioning and memory mappability. It is not an automatic process, and it will not contain any data definition schema.
 As use cases, we have:
-Creation and reading of game resources/assets Game world states (&ldquo;savegames&rdquo;) Networking transmission/reception Not having the schema is a problem, and we will try to go around it in the best way possible.">
+ Creation and reading of game resources/assets Game world states (&ldquo;savegames&rdquo;) Networking transmission/reception  Not having the schema is a problem, and we will try to go around it in the best way possible.">
 
   
   <link rel="alternate" hreflang="en-us" href="https://jorenjoestar.github.io/post/serialization_for_games/">
@@ -82,7 +82,7 @@ Creation and reading of game resources/assets Game world states (&ldquo;savegame
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -115,7 +115,7 @@ Creation and reading of game resources/assets Game world states (&ldquo;savegame
   <meta property="og:title" content="Serialization For Games | Joren&#39;s">
   <meta property="og:description" content="Overview We will go through all the logical steps (and the code!) to write a binary serializer that supports versioning and memory mappability. It is not an automatic process, and it will not contain any data definition schema.
 As use cases, we have:
-Creation and reading of game resources/assets Game world states (&ldquo;savegames&rdquo;) Networking transmission/reception Not having the schema is a problem, and we will try to go around it in the best way possible."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
+ Creation and reading of game resources/assets Game world states (&ldquo;savegames&rdquo;) Networking transmission/reception  Not having the schema is a problem, and we will try to go around it in the best way possible."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
   <meta property="article:published_time" content="2021-08-09T10:05:38&#43;02:00">
@@ -721,204 +721,206 @@ In that case we don&rsquo;t need <strong>any serialization process</strong>, but
 <li>A runtime conversion mechanism between the offset and the needed type.</li>
 </ul>
 <p>Let&rsquo;s see an example of that, the <strong>Relative Pointer</strong> class.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span><span style="color:#75715e">//
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// RelativePointer ////////////////////////////////////////////////////////
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">RelativePointer</span> {
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    T<span style="color:#f92672">*</span>                  <span style="color:#a6e22e">get</span>() <span style="color:#66d9ef">const</span>;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">bool</span>                <span style="color:#a6e22e">is_equal</span>( <span style="color:#66d9ef">const</span> RelativePointer<span style="color:#f92672">&amp;</span> other ) <span style="color:#66d9ef">const</span>;
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">bool</span>                <span style="color:#a6e22e">is_null</span>() <span style="color:#66d9ef">const</span>;
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">bool</span>                <span style="color:#a6e22e">is_not_null</span>() <span style="color:#66d9ef">const</span>;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Operator overloading to give a cleaner interface
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    T<span style="color:#f92672">*</span>                  <span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span>;
-</span></span><span style="display:flex;"><span>    T<span style="color:#f92672">&amp;</span>                  <span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span>;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">void</span>                <span style="color:#a6e22e">set</span>( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> raw_pointer );
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">void</span>                <span style="color:#a6e22e">set_null</span>();
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    i32                 offset;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>}; <span style="color:#75715e">// struct RelativePointer
-</span></span></span></code></pre></div><p>As we can see we save an offset, but the real power comes from the <strong>operator overload</strong>.<br>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">//
+</span><span style="color:#75715e">// RelativePointer ////////////////////////////////////////////////////////
+</span><span style="color:#75715e">// 
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">RelativePointer</span> {
+
+    T<span style="color:#f92672">*</span>                  <span style="color:#a6e22e">get</span>() <span style="color:#66d9ef">const</span>;
+
+    <span style="color:#66d9ef">bool</span>                <span style="color:#a6e22e">is_equal</span>( <span style="color:#66d9ef">const</span> RelativePointer<span style="color:#f92672">&amp;</span> other ) <span style="color:#66d9ef">const</span>;
+    <span style="color:#66d9ef">bool</span>                <span style="color:#a6e22e">is_null</span>() <span style="color:#66d9ef">const</span>;
+    <span style="color:#66d9ef">bool</span>                <span style="color:#a6e22e">is_not_null</span>() <span style="color:#66d9ef">const</span>;
+
+    <span style="color:#75715e">// Operator overloading to give a cleaner interface
+</span><span style="color:#75715e"></span>    T<span style="color:#f92672">*</span>                  <span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span>;
+    T<span style="color:#f92672">&amp;</span>                  <span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span>;
+
+    <span style="color:#66d9ef">void</span>                <span style="color:#a6e22e">set</span>( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> raw_pointer );
+    <span style="color:#66d9ef">void</span>                <span style="color:#a6e22e">set_null</span>();
+
+    i32                 offset;
+
+}; <span style="color:#75715e">// struct RelativePointer
+</span><span style="color:#75715e"></span>
+</code></pre></div><p>As we can see we save an offset, but the real power comes from the <strong>operator overload</strong>.<br>
 Let&rsquo;s see the implementation:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span><span style="color:#75715e">// RelativePointer ////////////////////////////////////////////////////////
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">inline</span> T<span style="color:#f92672">*</span> RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span>get() <span style="color:#66d9ef">const</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// For debugging purposes leave the address variable.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> address <span style="color:#f92672">=</span> ( ( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> )<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">this</span><span style="color:#f92672">-&gt;</span>offset ) <span style="color:#f92672">+</span> offset;
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> offset <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> ( T<span style="color:#f92672">*</span> )address : <span style="color:#66d9ef">nullptr</span>;
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">inline</span> T<span style="color:#f92672">*</span> RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span><span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">get</span>();
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">inline</span> T<span style="color:#f92672">&amp;</span> RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span><span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span>( get() );
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>The <strong>genius</strong> idea, coming from <a href="https://steamcdn-a.akamaihd.net/apps/valve/2015/Migdalskiy_Sergiy_Physics_Optimization_Strategies.pdf">the talk</a> I&rsquo;ve written before, comes from using the current memory, the <em>offset</em> member variable, to give a <strong>reference point in memory</strong>, and adding the content of the offset itself to retrieve the memory!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">// RelativePointer ////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> T<span style="color:#f92672">*</span> RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span>get() <span style="color:#66d9ef">const</span> {
+    <span style="color:#75715e">// For debugging purposes leave the address variable.
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> address <span style="color:#f92672">=</span> ( ( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> )<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">this</span><span style="color:#f92672">-&gt;</span>offset ) <span style="color:#f92672">+</span> offset;
+    <span style="color:#66d9ef">return</span> offset <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> ( T<span style="color:#f92672">*</span> )address : <span style="color:#66d9ef">nullptr</span>;
+}
+
+<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> T<span style="color:#f92672">*</span> RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span><span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span> {
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">get</span>();
+}
+
+<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> T<span style="color:#f92672">&amp;</span> RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span><span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span> {
+    <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span>( get() );
+}
+</code></pre></div><p>The <strong>genius</strong> idea, coming from <a href="https://steamcdn-a.akamaihd.net/apps/valve/2015/Migdalskiy_Sergiy_Physics_Optimization_Strategies.pdf">the talk</a> I&rsquo;ve written before, comes from using the current memory, the <em>offset</em> member variable, to give a <strong>reference point in memory</strong>, and adding the content of the offset itself to retrieve the memory!</p>
 <p><code>char* address = ( ( char* )&amp;this-&gt;offset ) + offset;</code></p>
 <p>Employing this simple trick, you can now point to any part of the blob in a transparent way.</p>
 <p>Even for a dynamic array implementation, we can add a similar method and reuse its data to use it as <em>memory mappable array</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span><span style="color:#75715e">// Relative data access.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">inline</span> T<span style="color:#f92672">*</span> Array<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span>get() {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> ( relative ) {
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> address <span style="color:#f92672">=</span> ( ( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> )<span style="color:#f92672">&amp;</span>size ) <span style="color:#f92672">+</span> capacity;
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> capacity <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> ( T<span style="color:#f92672">*</span> )address : <span style="color:#66d9ef">nullptr</span>;
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nullptr</span>;
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><h1 id="writing-serialization-code">Writing Serialization Code</h1>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">// Relative data access.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> T<span style="color:#f92672">*</span> Array<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span>get() {
+    <span style="color:#66d9ef">if</span> ( relative ) {
+        <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> address <span style="color:#f92672">=</span> ( ( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> )<span style="color:#f92672">&amp;</span>size ) <span style="color:#f92672">+</span> capacity;
+        <span style="color:#66d9ef">return</span> capacity <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> ( T<span style="color:#f92672">*</span> )address : <span style="color:#66d9ef">nullptr</span>;
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nullptr</span>;
+}
+</code></pre></div><h1 id="writing-serialization-code">Writing Serialization Code</h1>
 <p>In this section we will go through some examples of data structures to explain the read and write code written.</p>
 <p>But first, how do we write our custom serialization code ?</p>
 <h2 id="serializing-user-data-structures">Serializing user data structures</h2>
 <p>Let&rsquo;s see a very simple example, a <strong>vector2 struct</strong>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span><span style="color:#75715e">// Vec2s //////////////////////////////////////////////////////////////////
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">vec2s</span> {
-</span></span><span style="display:flex;"><span>    f32     x;
-</span></span><span style="display:flex;"><span>    f32     y;
-</span></span><span style="display:flex;"><span>};
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Serialization
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> MemoryBlob<span style="color:#f92672">::</span>serialize<span style="color:#f92672">&lt;</span>vec2s<span style="color:#f92672">&gt;</span>( vec2s<span style="color:#f92672">*</span> data ) {
-</span></span><span style="display:flex;"><span>    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>x );
-</span></span><span style="display:flex;"><span>    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>y );
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>In the <strong>MemoryBlob</strong> struct, we have a method that we will use with <em>template specialization</em> to actually specialize the serialization code path.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">// Vec2s //////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">vec2s</span> {
+    f32     x;
+    f32     y;
+};
+
+<span style="color:#75715e">// Serialization
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
+<span style="color:#66d9ef">void</span> MemoryBlob<span style="color:#f92672">::</span>serialize<span style="color:#f92672">&lt;</span>vec2s<span style="color:#f92672">&gt;</span>( vec2s<span style="color:#f92672">*</span> data ) {
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>x );
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>y );
+}
+</code></pre></div><p>In the <strong>MemoryBlob</strong> struct, we have a method that we will use with <em>template specialization</em> to actually specialize the serialization code path.</p>
 <p>Remember, <strong>there is no schema</strong> so we use the <strong>data structure itself</strong> to guide the serialization.</p>
 <p>The method that we use with template specialization is this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> MemoryBlob<span style="color:#f92672">::</span>serialize( T<span style="color:#f92672">*</span> data ) {
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Should not arrive here!
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    hy_assert( false );
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>Thus we need to implement our own version.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">
+<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> MemoryBlob<span style="color:#f92672">::</span>serialize( T<span style="color:#f92672">*</span> data ) {
+    <span style="color:#75715e">// Should not arrive here!
+</span><span style="color:#75715e"></span>    hy_assert( false );
+}
+</code></pre></div><p>Thus we need to implement our own version.</p>
 <h3 id="template-specialization-caveat">Template Specialization Caveat</h3>
 <p>The correct way to use template specialization without template errors, is to define in an <em>header</em> the following method:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> hydra<span style="color:#f92672">::</span>MemoryBlob<span style="color:#f92672">::</span>serialize<span style="color:#f92672">&lt;</span>vec2s<span style="color:#f92672">&gt;</span>( vec2s<span style="color:#f92672">*</span> data );
-</span></span></code></pre></div><p>And then in a cpp the specialized version.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
+<span style="color:#66d9ef">void</span> hydra<span style="color:#f92672">::</span>MemoryBlob<span style="color:#f92672">::</span>serialize<span style="color:#f92672">&lt;</span>vec2s<span style="color:#f92672">&gt;</span>( vec2s<span style="color:#f92672">*</span> data );
+</code></pre></div><p>And then in a cpp the specialized version.</p>
 <h3 id="versioning-1">Versioning</h3>
 <p>Let&rsquo;s see the serialization code of a <em>data structure with versioning</em>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span><span style="color:#75715e">//
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">EntityBlueprint</span> {
-</span></span><span style="display:flex;"><span>    RelativeString          name;
-</span></span><span style="display:flex;"><span>    u32                     v1_padding;     <span style="color:#75715e">// Added to test different versions.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    RelativePointer<span style="color:#f92672">&lt;</span>RenderingBlueprint<span style="color:#f92672">&gt;</span>  rendering;
-</span></span><span style="display:flex;"><span>    RelativePointer<span style="color:#f92672">&lt;</span>AnimationBlueprint<span style="color:#f92672">&gt;</span>  animation;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    vec2s                   position;
-</span></span><span style="display:flex;"><span>    f32                     offset_z;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>}; <span style="color:#75715e">// struct EntityBlueprint
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> hydra<span style="color:#f92672">::</span>MemoryBlob<span style="color:#f92672">::</span>serialize<span style="color:#f92672">&lt;</span>EntityBlueprint<span style="color:#f92672">&gt;</span>( EntityBlueprint<span style="color:#f92672">*</span> data ) {
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>name );
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> ( serializer_version <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span> )
-</span></span><span style="display:flex;"><span>        serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>v1_padding );
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>rendering );
-</span></span><span style="display:flex;"><span>    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>animation );
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> ( serializer_version <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span> ) {
-</span></span><span style="display:flex;"><span>        serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>position );
-</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// When reading, we should still initialize variables to a &#39;valid&#39; state.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        data<span style="color:#f92672">-&gt;</span>position <span style="color:#f92672">=</span> { <span style="color:#ae81ff">0.f</span>, <span style="color:#ae81ff">0.f</span> };
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>offset_z );
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>This is a test data structure I was using to try the serialization system itself.<br>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">//
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">EntityBlueprint</span> {
+    RelativeString          name;
+    u32                     v1_padding;     <span style="color:#75715e">// Added to test different versions.
+</span><span style="color:#75715e"></span>    RelativePointer<span style="color:#f92672">&lt;</span>RenderingBlueprint<span style="color:#f92672">&gt;</span>  rendering;
+    RelativePointer<span style="color:#f92672">&lt;</span>AnimationBlueprint<span style="color:#f92672">&gt;</span>  animation;
+
+    vec2s                   position;
+    f32                     offset_z;
+
+}; <span style="color:#75715e">// struct EntityBlueprint
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;&gt;</span>
+<span style="color:#66d9ef">void</span> hydra<span style="color:#f92672">::</span>MemoryBlob<span style="color:#f92672">::</span>serialize<span style="color:#f92672">&lt;</span>EntityBlueprint<span style="color:#f92672">&gt;</span>( EntityBlueprint<span style="color:#f92672">*</span> data ) {
+
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>name );
+
+    <span style="color:#66d9ef">if</span> ( serializer_version <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span> )
+        serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>v1_padding );
+
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>rendering );
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>animation );
+
+    <span style="color:#66d9ef">if</span> ( serializer_version <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span> ) {
+        serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>position );
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// When reading, we should still initialize variables to a &#39;valid&#39; state.
+</span><span style="color:#75715e"></span>        data<span style="color:#f92672">-&gt;</span>position <span style="color:#f92672">=</span> { <span style="color:#ae81ff">0.f</span>, <span style="color:#ae81ff">0.f</span> };
+    }
+
+    serialize( <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>offset_z );
+}
+</code></pre></div><p>This is a test data structure I was using to try the serialization system itself.<br>
 It serializes an Entity into a Scene.<br>
 I&rsquo;ve added some padding as test, but then the position as real need for a second version.</p>
 <p>Like the <a href="https://yave.handmade.network/blog/p/2723-how_media_molecule_does_serialization">Little Big Planet serialization system</a>, the data structure will contain all the members of all its <em>history</em>.<br>
 It is the serializer code itself that will jump the members not needed.</p>
 <h2 id="serializing-relative-pointers">Serializing relative pointers</h2>
 <p>Let&rsquo;s see the writing code of the <strong>Relative Pointers</strong>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> MemoryBlob<span style="color:#f92672">::</span>serialize( RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;*</span> data ) {
-</span></span><span style="display:flex;"><span>  <span style="color:#75715e">//...
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  {
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// WRITING!
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// Data --&gt; Blob
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// Calculate offset used by RelativePointer.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// Remember this:
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// char* address = ( ( char* )&amp;this-&gt;offset ) + offset;
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// Serialized offset points to what will be the &#34;this-&gt;offset&#34;
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// Allocated offset points to the still not allocated memory,
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// Where we will allocate from.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      i32 data_offset <span style="color:#f92672">=</span> allocated_offset <span style="color:#f92672">-</span> serialized_offset;
-</span></span><span style="display:flex;"><span>      serialize( <span style="color:#f92672">&amp;</span>data_offset );
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// To jump anywhere and correctly restore the serialization process,
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// cache the current serialization offset
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      u32 cached_serialized <span style="color:#f92672">=</span> serialized_offset;
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Move serialization to the newly allocated memory at the end of the blob.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// Serialization is where we WRITE code!
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      serialized_offset <span style="color:#f92672">=</span> allocated_offset;
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Allocate memory in the blob
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      allocate_static<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>();
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Serialize/visit the pointed data structure
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      serialize( data<span style="color:#f92672">-&gt;</span>get() );
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Restore serialized
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      serialized_offset <span style="color:#f92672">=</span> cached_serialized;
-</span></span><span style="display:flex;"><span>  }
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>Code is heavily commented to help understanding what is happening.<br>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> T<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> MemoryBlob<span style="color:#f92672">::</span>serialize( RelativePointer<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;*</span> data ) {
+  <span style="color:#75715e">//...
+</span><span style="color:#75715e"></span>  {
+      <span style="color:#75715e">// WRITING!
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Data --&gt; Blob
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Calculate offset used by RelativePointer.
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Remember this:
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// char* address = ( ( char* )&amp;this-&gt;offset ) + offset;
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Serialized offset points to what will be the &#34;this-&gt;offset&#34;
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Allocated offset points to the still not allocated memory,
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Where we will allocate from.
+</span><span style="color:#75715e"></span>      i32 data_offset <span style="color:#f92672">=</span> allocated_offset <span style="color:#f92672">-</span> serialized_offset;
+      serialize( <span style="color:#f92672">&amp;</span>data_offset );
+      <span style="color:#75715e">// To jump anywhere and correctly restore the serialization process,
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// cache the current serialization offset
+</span><span style="color:#75715e"></span>      u32 cached_serialized <span style="color:#f92672">=</span> serialized_offset;
+      <span style="color:#75715e">// Move serialization to the newly allocated memory at the end of the blob.
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// Serialization is where we WRITE code!
+</span><span style="color:#75715e"></span>      serialized_offset <span style="color:#f92672">=</span> allocated_offset;
+      <span style="color:#75715e">// Allocate memory in the blob
+</span><span style="color:#75715e"></span>      allocate_static<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>();
+      <span style="color:#75715e">// Serialize/visit the pointed data structure
+</span><span style="color:#75715e"></span>      serialize( data<span style="color:#f92672">-&gt;</span>get() );
+      <span style="color:#75715e">// Restore serialized
+</span><span style="color:#75715e"></span>      serialized_offset <span style="color:#f92672">=</span> cached_serialized;
+  }
+}
+</code></pre></div><p>Code is heavily commented to help understanding what is happening.<br>
 The reading code is as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span>  <span style="color:#75715e">// READING!
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#75715e">// Blob --&gt; Data
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  i32 source_data_offset;
-</span></span><span style="display:flex;"><span>  serialize( <span style="color:#f92672">&amp;</span>source_data_offset );
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Early out to not follow null pointers.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> ( source_data_offset <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> ) {
-</span></span><span style="display:flex;"><span>      data<span style="color:#f92672">-&gt;</span>offset <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
-</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">return</span>;
-</span></span><span style="display:flex;"><span>  }
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// This is the important bit.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#75715e">// Use the offset to the passed member variable to calculate the DESTINATION offset
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#75715e">// to write to.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  data<span style="color:#f92672">-&gt;</span>offset <span style="color:#f92672">=</span> get_relative_data_offset( data );
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Allocate memory and set pointer
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  allocate_static<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>();
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Cache source serialized offset.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  u32 cached_serialized <span style="color:#f92672">=</span> serialized_offset;
-</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Move serialization offset.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#75715e">// The offset is still &#34;this-&gt;offset&#34;, and the serialized offset
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#75715e">// points just right AFTER it, thus move back by sizeof(offset).
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#75715e">// Serialization is where READ from in the blob!
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  serialized_offset <span style="color:#f92672">=</span> cached_serialized <span style="color:#f92672">+</span> source_data_offset <span style="color:#f92672">-</span> <span style="color:#66d9ef">sizeof</span>(u32);
-</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Serialize/visit the pointed data structure, using the offset calculated above.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  serialize( data<span style="color:#f92672">-&gt;</span>get() );
-</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Restore serialization offset
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  serialized_offset <span style="color:#f92672">=</span> cached_serialized;
-</span></span></code></pre></div><p>There is a method here that is very important: <em>get_relative_data_offset</em>.<br>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">  <span style="color:#75715e">// READING!
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// Blob --&gt; Data
+</span><span style="color:#75715e"></span>  i32 source_data_offset;
+  serialize( <span style="color:#f92672">&amp;</span>source_data_offset );
+
+  <span style="color:#75715e">// Early out to not follow null pointers.
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> ( source_data_offset <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> ) {
+      data<span style="color:#f92672">-&gt;</span>offset <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+      <span style="color:#66d9ef">return</span>;
+  }
+
+  <span style="color:#75715e">// This is the important bit.
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// Use the offset to the passed member variable to calculate the DESTINATION offset
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// to write to.
+</span><span style="color:#75715e"></span>  data<span style="color:#f92672">-&gt;</span>offset <span style="color:#f92672">=</span> get_relative_data_offset( data );
+
+  <span style="color:#75715e">// Allocate memory and set pointer
+</span><span style="color:#75715e"></span>  allocate_static<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>();
+
+  <span style="color:#75715e">// Cache source serialized offset.
+</span><span style="color:#75715e"></span>  u32 cached_serialized <span style="color:#f92672">=</span> serialized_offset;
+  <span style="color:#75715e">// Move serialization offset.
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// The offset is still &#34;this-&gt;offset&#34;, and the serialized offset
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// points just right AFTER it, thus move back by sizeof(offset).
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// Serialization is where READ from in the blob!
+</span><span style="color:#75715e"></span>  serialized_offset <span style="color:#f92672">=</span> cached_serialized <span style="color:#f92672">+</span> source_data_offset <span style="color:#f92672">-</span> <span style="color:#66d9ef">sizeof</span>(u32);
+  <span style="color:#75715e">// Serialize/visit the pointed data structure, using the offset calculated above.
+</span><span style="color:#75715e"></span>  serialize( data<span style="color:#f92672">-&gt;</span>get() );
+  <span style="color:#75715e">// Restore serialization offset
+</span><span style="color:#75715e"></span>  serialized_offset <span style="color:#f92672">=</span> cached_serialized;
+
+</code></pre></div><p>There is a method here that is very important: <em>get_relative_data_offset</em>.<br>
 This highlights how we can use the struct itself to guide the serialization:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>i32 MemoryBlob<span style="color:#f92672">::</span>get_relative_data_offset( <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> data ) {
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// data_memory points to the newly allocated data structure to be used at runtime.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> i32 data_offset_from_start <span style="color:#f92672">=</span> ( i32 )( ( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> )data <span style="color:#f92672">-</span> data_memory );
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> i32 data_offset <span style="color:#f92672">=</span> allocated_offset <span style="color:#f92672">-</span> data_offset_from_start;
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> data_offset;
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>When we read, we are writing into some data structure, that can <strong>differ from the binarized data</strong>.<br>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">
+i32 MemoryBlob<span style="color:#f92672">::</span>get_relative_data_offset( <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> data ) {
+    <span style="color:#75715e">// data_memory points to the newly allocated data structure to be used at runtime.
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> i32 data_offset_from_start <span style="color:#f92672">=</span> ( i32 )( ( <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> )data <span style="color:#f92672">-</span> data_memory );
+    <span style="color:#66d9ef">const</span> i32 data_offset <span style="color:#f92672">=</span> allocated_offset <span style="color:#f92672">-</span> data_offset_from_start;
+    <span style="color:#66d9ef">return</span> data_offset;
+}
+</code></pre></div><p>When we read, we are writing into some data structure, that can <strong>differ from the binarized data</strong>.<br>
 Let&rsquo;s say the binary has some missing fields (an older version), we need to calculate the <strong>writing offset</strong> based on our code.</p>
 <p>So first we get the offset of the passed variable from the start of the memory, then we calculate the offset to the data memory that will be allocated shortly after.</p>
 <p>With this code, we actually showed the algorithm that, with little modifications, can be adapted to any data structure.</p>
@@ -927,15 +929,16 @@ The fact is that they change meaning when we are reading and when we are writing
 I tried to add comments to help remembering this.</p>
 <h2 id="serializing-relative-arrays-and-dynamic-arrays">Serializing relative arrays and dynamic arrays</h2>
 <p>Relative Arrays are very similar to Relative Pointers, but they just store more data and contain a <strong>size</strong> member.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span>  ...
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>  allocate_static( data<span style="color:#f92672">-&gt;</span>size <span style="color:#f92672">*</span> <span style="color:#66d9ef">sizeof</span>( T ) );
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> ( u32 i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> data<span style="color:#f92672">-&gt;</span>size; <span style="color:#f92672">++</span>i ) {
-</span></span><span style="display:flex;"><span>      T<span style="color:#f92672">*</span> data <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>get()[ i ];
-</span></span><span style="display:flex;"><span>      serialize( data );
-</span></span><span style="display:flex;"><span>  }
-</span></span></code></pre></div><p>The only real difference is that we iterate through all the members by calling their <em>serialize</em> method.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">  ...
+
+  allocate_static( data<span style="color:#f92672">-&gt;</span>size <span style="color:#f92672">*</span> <span style="color:#66d9ef">sizeof</span>( T ) );
+
+  <span style="color:#66d9ef">for</span> ( u32 i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> data<span style="color:#f92672">-&gt;</span>size; <span style="color:#f92672">++</span>i ) {
+      T<span style="color:#f92672">*</span> data <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>data<span style="color:#f92672">-&gt;</span>get()[ i ];
+      serialize( data );
+  }
+
+</code></pre></div><p>The only real difference is that we iterate through all the members by calling their <em>serialize</em> method.</p>
 <h1 id="special-writing-blob-from-a-json-file">Special: writing blob from a json file</h1>
 <p>Something we might need to do, especially in a <em>build step</em>, is to convert from a non-binary format to our blob.<br>
 This is something done a lot in games, so that the final binary format is as fast to use as possible, compared to always parsing a json (or other formats) and doing some work on the loaded data.</p>
@@ -943,90 +946,90 @@ This is something done a lot in games, so that the final binary format is as fas
 <p>So far we&rsquo;ve only seen the passing of an already binary version of data, to be compacted in a blob.<br>
 In this case we are performing a real conversion.</p>
 <p>Let&rsquo;s start with the json (available under data\articles\SerializationDemo\cutscene.json) describing the cutscene:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;new_game&#34;</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;scene&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;commands&#34;</span> : [
-</span></span><span style="display:flex;"><span>    {
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;fade&#34;</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;start&#34;</span> : <span style="color:#ae81ff">0.0</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;end&#34;</span> : <span style="color:#ae81ff">1.0</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;duration&#34;</span> : <span style="color:#ae81ff">0.0</span>
-</span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    {
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;move_entity&#34;</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;x&#34;</span> : <span style="color:#ae81ff">-16</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;y&#34;</span> : <span style="color:#ae81ff">-8</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;instant&#34;</span> : <span style="color:#66d9ef">true</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;entity_name&#34;</span> : <span style="color:#e6db74">&#34;cronos_mum&#34;</span>
-</span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    {
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;dialogue&#34;</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;text&#34;</span> : <span style="color:#e6db74">&#34;{SPEED=0.025}Crono...{PAGE}Crono!{PAGE}Crono, are you still sleeping?{PAGE} &#34;</span>
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>  ]
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>We have different commands that needs to be parsed and converted in a binary format.<br>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;new_game&#34;</span>,
+  <span style="color:#f92672">&#34;scene&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+  <span style="color:#f92672">&#34;commands&#34;</span> : [
+    {
+      <span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;fade&#34;</span>,
+      <span style="color:#f92672">&#34;start&#34;</span> : <span style="color:#ae81ff">0.0</span>,
+      <span style="color:#f92672">&#34;end&#34;</span> : <span style="color:#ae81ff">1.0</span>,
+      <span style="color:#f92672">&#34;duration&#34;</span> : <span style="color:#ae81ff">0.0</span>
+    },
+    {
+      <span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;move_entity&#34;</span>,
+      <span style="color:#f92672">&#34;x&#34;</span> : <span style="color:#ae81ff">-16</span>,
+      <span style="color:#f92672">&#34;y&#34;</span> : <span style="color:#ae81ff">-8</span>,
+      <span style="color:#f92672">&#34;instant&#34;</span> : <span style="color:#66d9ef">true</span>,
+      <span style="color:#f92672">&#34;entity_name&#34;</span> : <span style="color:#e6db74">&#34;cronos_mum&#34;</span>
+    },
+    {
+      <span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;dialogue&#34;</span>,
+      <span style="color:#f92672">&#34;text&#34;</span> : <span style="color:#e6db74">&#34;{SPEED=0.025}Crono...{PAGE}Crono!{PAGE}Crono, are you still sleeping?{PAGE} &#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>We have different commands that needs to be parsed and converted in a binary format.<br>
 As you probably spotted, I was using this serialization system with Chrono Trigger in mind as something to clone, and even if I did not cloned the whole game, I could test a cutscene and some gameplay informations to be used.<br>
 Anyway, let&rsquo;s see the <strong>conversion code</strong>.<br>
 First, the main data structures:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span><span style="color:#75715e">//
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CutsceneEntry</span> {
-</span></span><span style="display:flex;"><span>    CutsceneCommandType         type;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    RelativeArray<span style="color:#f92672">&lt;</span>u8<span style="color:#f92672">&gt;</span>           data;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>}; <span style="color:#75715e">// struct CutsceneEntry
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CutsceneBlueprint</span> {
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    RelativeArray<span style="color:#f92672">&lt;</span>CutsceneEntry<span style="color:#f92672">&gt;</span> entries;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">constexpr</span> u32        k_version <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>}; <span style="color:#75715e">// struct CutsceneBlueprint
-</span></span></span></code></pre></div><p>I should change the names maybe, but the <em>root data structure</em> is the <em>CutsceneBlueprint</em>. It contians just an array of <em>entries</em>, each one with some data associated and a type.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">//
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CutsceneEntry</span> {
+    CutsceneCommandType         type;
+
+    RelativeArray<span style="color:#f92672">&lt;</span>u8<span style="color:#f92672">&gt;</span>           data;
+
+}; <span style="color:#75715e">// struct CutsceneEntry
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CutsceneBlueprint</span> {
+
+    RelativeArray<span style="color:#f92672">&lt;</span>CutsceneEntry<span style="color:#f92672">&gt;</span> entries;
+
+    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">constexpr</span> u32        k_version <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+}; <span style="color:#75715e">// struct CutsceneBlueprint
+</span></code></pre></div><p>I should change the names maybe, but the <em>root data structure</em> is the <em>CutsceneBlueprint</em>. It contians just an array of <em>entries</em>, each one with some data associated and a type.</p>
 <p>First, we create the blob and allocate a fixed size (yes, it should be dynamic, I know!):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span>MemoryBlob blob;
-</span></span><span style="display:flex;"><span>blob.write<span style="color:#f92672">&lt;</span>CutsceneBlueprint<span style="color:#f92672">&gt;</span>( allocator, <span style="color:#ae81ff">0</span>, blob_size, <span style="color:#66d9ef">nullptr</span> );
-</span></span></code></pre></div><p>Passing a &rsquo;nullptr&rsquo; as last argument means we don&rsquo;t have any <em>root data structure</em> ready to be serialized.<br>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++">MemoryBlob blob;
+blob.write<span style="color:#f92672">&lt;</span>CutsceneBlueprint<span style="color:#f92672">&gt;</span>( allocator, <span style="color:#ae81ff">0</span>, blob_size, <span style="color:#66d9ef">nullptr</span> );
+</code></pre></div><p>Passing a &lsquo;nullptr&rsquo; as last argument means we don&rsquo;t have any <em>root data structure</em> ready to be serialized.<br>
 We instead proceed manually to build the blob.<br>
 In this case we heavily use <strong>allocate</strong> and <strong>allocate and set</strong> methods.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#75715e">// Reserve memory for root data structure
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>CutsceneBlueprint<span style="color:#f92672">*</span> root <span style="color:#f92672">=</span> blob.allocate_static<span style="color:#f92672">&lt;</span>CutsceneBlueprint<span style="color:#f92672">&gt;</span>();
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Allocate array data and set its offset:
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>blob.allocate_and_set( root<span style="color:#f92672">-&gt;</span>entries, num_entries );
-</span></span></code></pre></div><p>With this code we can already write into the single entries, like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Declare an empty std::string to convert json strings
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>std<span style="color:#f92672">::</span>string name_string;
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Read the json entries
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>json entries <span style="color:#f92672">=</span> parsed_json[ <span style="color:#e6db74">&#34;commands&#34;</span> ];
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> ( u32 i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> entries.size; <span style="color:#f92672">++</span>i ) {
-</span></span><span style="display:flex;"><span>    json element <span style="color:#f92672">=</span> entries[ i ];
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Convert field &#39;type&#39; to std::string
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    element[ <span style="color:#e6db74">&#34;type&#34;</span> ].get_to( name_string );
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Access the allocated array to write into its entries.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    CutsceneEntry<span style="color:#f92672">&amp;</span> entry <span style="color:#f92672">=</span> root<span style="color:#f92672">-&gt;</span>entries[ i ];
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Yes yes, this can be improved!
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ( name_string.compare( <span style="color:#e6db74">&#34;dialogue&#34;</span> ) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> ) {
-</span></span><span style="display:flex;"><span>        element[ <span style="color:#e6db74">&#34;text&#34;</span> ].get_to( name_string );
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Allocate memory for the string + null terminator!
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> memory <span style="color:#f92672">=</span> blob.allocate_static( name_string.size() <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> );
-</span></span><span style="display:flex;"><span>        memcpy( memory, name_string.c_str(), name_string.size() );
-</span></span><span style="display:flex;"><span>        memory[ name_string.size() ] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        entry.type <span style="color:#f92672">=</span> CutsceneCommandType<span style="color:#f92672">::</span>Dialogue;
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Calculate the offset for the data RelativeArray of the CutsceneEntry
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        entry.data.set( memory, ( u32 )name_string.size() );
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>    ...
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>With this simple code we can see a common pattern when writing into the blob from a non binary input.<br>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#75715e">// Reserve memory for root data structure
+</span><span style="color:#75715e"></span>CutsceneBlueprint<span style="color:#f92672">*</span> root <span style="color:#f92672">=</span> blob.allocate_static<span style="color:#f92672">&lt;</span>CutsceneBlueprint<span style="color:#f92672">&gt;</span>();
+<span style="color:#75715e">// Allocate array data and set its offset:
+</span><span style="color:#75715e"></span>blob.allocate_and_set( root<span style="color:#f92672">-&gt;</span>entries, num_entries );
+</code></pre></div><p>With this code we can already write into the single entries, like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">
+<span style="color:#75715e">// Declare an empty std::string to convert json strings
+</span><span style="color:#75715e"></span>std<span style="color:#f92672">::</span>string name_string;
+<span style="color:#75715e">// Read the json entries
+</span><span style="color:#75715e"></span>json entries <span style="color:#f92672">=</span> parsed_json[ <span style="color:#e6db74">&#34;commands&#34;</span> ];
+
+<span style="color:#66d9ef">for</span> ( u32 i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> entries.size; <span style="color:#f92672">++</span>i ) {
+    json element <span style="color:#f92672">=</span> entries[ i ];
+    <span style="color:#75715e">// Convert field &#39;type&#39; to std::string
+</span><span style="color:#75715e"></span>    element[ <span style="color:#e6db74">&#34;type&#34;</span> ].get_to( name_string );
+    <span style="color:#75715e">// Access the allocated array to write into its entries.
+</span><span style="color:#75715e"></span>    CutsceneEntry<span style="color:#f92672">&amp;</span> entry <span style="color:#f92672">=</span> root<span style="color:#f92672">-&gt;</span>entries[ i ];
+    <span style="color:#75715e">// Yes yes, this can be improved!
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ( name_string.compare( <span style="color:#e6db74">&#34;dialogue&#34;</span> ) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> ) {
+        element[ <span style="color:#e6db74">&#34;text&#34;</span> ].get_to( name_string );
+
+        <span style="color:#75715e">// Allocate memory for the string + null terminator!
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> memory <span style="color:#f92672">=</span> blob.allocate_static( name_string.size() <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> );
+        memcpy( memory, name_string.c_str(), name_string.size() );
+        memory[ name_string.size() ] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+        entry.type <span style="color:#f92672">=</span> CutsceneCommandType<span style="color:#f92672">::</span>Dialogue;
+        <span style="color:#75715e">// Calculate the offset for the data RelativeArray of the CutsceneEntry
+</span><span style="color:#75715e"></span>        entry.data.set( memory, ( u32 )name_string.size() );
+    }
+    ...
+}
+</code></pre></div><p>With this simple code we can see a common pattern when writing into the blob from a non binary input.<br>
 We allocate the root data structure, and we use it to fill the blob.<br>
 Every time we need to allocate memory, we do it and then use the newly allocated memory.</p>
 <p>I will leave more examples in the source code, also with pointers and arrays of arrays, but the mindset is this one!</p>
@@ -1241,7 +1244,7 @@ Personally I already converted <strong>hydra fx</strong> to use this system and 
     
     
     
-    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

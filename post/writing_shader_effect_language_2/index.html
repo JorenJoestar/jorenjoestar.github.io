@@ -29,8 +29,7 @@
     
   
   <meta name="description" content="Overview Data Driven Rendering Series:
-https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/ In Part 1 of this series we created a simple language to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features. The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.
-(Personal though: part of me would like to help in contributing to the creation of a standard through these articles and code.">
+ https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  In Part 1 of this series we created a simple language to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features.The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.">
 
   
   <link rel="alternate" hreflang="en-us" href="https://jorenjoestar.github.io/post/writing_shader_effect_language_2/">
@@ -82,7 +81,7 @@ https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jo
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -114,8 +113,7 @@ https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jo
   <meta property="og:url" content="https://jorenjoestar.github.io/post/writing_shader_effect_language_2/">
   <meta property="og:title" content="Writing a Shader Effect Language Part 2 | Joren&#39;s">
   <meta property="og:description" content="Overview Data Driven Rendering Series:
-https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/ In Part 1 of this series we created a simple language to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features. The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions.
-(Personal though: part of me would like to help in contributing to the creation of a standard through these articles and code."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
+ https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  In Part 1 of this series we created a simple language to work as &lsquo;shader effect&rsquo; - a shader language superset to make our life easier, by adding missing features.The fact that there is not an industry standard for a shader effect language leads to either hand-crafted (and secret) languages, or to hardcoded permutations, or to other gray-area solutions."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
   <meta property="article:published_time" content="2019-09-11T00:42:13-04:00">
@@ -805,7 +803,7 @@ A quick code could be something like this:</p>
 
 ...
 
-char* text = ReadEntireFileIntoMemory( &#34;..\\data\\SimpleFullscreen.hfx&#34;, nullptr );
+char* text = ReadEntireFileIntoMemory( &quot;..\\data\\SimpleFullscreen.hfx&quot;, nullptr );
 initLexer( &amp;lexer, (char*)text, data_buffer );
 
 hfx::initParser( &amp;effect_parser, &amp;lexer );
@@ -814,7 +812,7 @@ hfx::generateAST( &amp;effect_parser );
     
 hfx::initCodeGenerator( &amp;hfx_code_generator, &amp;effect_parser, 4096, 5 );
 
-hfx::compileShaderEffectFile( &amp;hfx_code_generator, &#34;..\\data\\&#34;, &#34;SimpleFullscreen.bhfx&#34; );
+hfx::compileShaderEffectFile( &amp;hfx_code_generator, &quot;..\\data\\&quot;, &quot;SimpleFullscreen.bhfx&quot; );
 </code></pre><p>Here we are parsing the file (generateAST) and then using that to <em>compile</em> our shader effect file. This is where the magic happens.</p>
 <pre tabindex="0"><code>// C++
 //
@@ -829,10 +827,10 @@ void compileShaderEffectFile( CodeGenerator* code_generator, const char* path, c
     filename_buffer.clear();
     filename_buffer.append( path );
     filename_buffer.append( filename );
-    fopen_s( &amp;output_file, filename_buffer.data, &#34;wb&#34; );
+    fopen_s( &amp;output_file, filename_buffer.data, &quot;wb&quot; );
 
     if ( !output_file ) {
-        printf( &#34;Error opening file. Aborting. \n&#34; );
+        printf( &quot;Error opening file. Aborting. \n&quot; );
         return;
     }
 </code></pre><p>Typical file creation preamble.<!-- raw HTML omitted -->
@@ -1016,9 +1014,9 @@ Let&rsquo;s solve this first: <strong>give artists a simple way of creating a ma
 properties {
 
     // Using Unity ShaderLab syntax:
-    // AORemapMin0(&#34;AORemapMin0&#34;, Range(0.0, 1.0)) = 0.0
-    scale(&#34;Scale&#34;, Float) = 32.00
-    modulo(&#34;Modulo&#34;, Float) = 2.0
+    // AORemapMin0(&quot;AORemapMin0&quot;, Range(0.0, 1.0)) = 0.0
+    scale(&quot;Scale&quot;, Float) = 32.00
+    modulo(&quot;Modulo&quot;, Float) = 2.0
 }
 </code></pre><p>We added a new section in the language, named &ldquo;<em>properties</em>&rdquo;.<!-- raw HTML omitted -->
 Why this name ?<!-- raw HTML omitted -->
@@ -1040,12 +1038,12 @@ struct LocalConstantsUI {
     float                    modulo                = 2.000000f;
 
     void reflectMembers() {
-        ImGui::InputScalar( &#34;Scale&#34;, ImGuiDataType_Float, &amp;scale);
-        ImGui::InputScalar( &#34;Modulo&#34;, ImGuiDataType_Float, &amp;modulo);
+        ImGui::InputScalar( &quot;Scale&quot;, ImGuiDataType_Float, &amp;scale);
+        ImGui::InputScalar( &quot;Modulo&quot;, ImGuiDataType_Float, &amp;modulo);
     }
 
     void reflectUI() {
-        ImGui::Begin( &#34;LocalConstants&#34; );
+        ImGui::Begin( &quot;LocalConstants&quot; );
         reflectMembers();
         ImGui::End();
     }
@@ -1079,7 +1077,7 @@ layout (std140, binding=7) uniform LocalConstants {
 
     graphics::BufferCreation constants_creation = {};
     constants_creation.type = graphics::BufferType::Constant;
-    constants_creation.name = &#34;LocalConstants&#34;;
+    constants_creation.name = &quot;LocalConstants&quot;;
     constants_creation.usage = graphics::ResourceUsageType::Dynamic;
 
     // NOTE: using LocalConstants struct - is the GPU ready one with padding and such!
@@ -1125,7 +1123,7 @@ identifier(string, identifier[(arguments)]) [= default_value]
 <pre tabindex="0"><code>// HFX
 //
 properties {
-    scale(&#34;Scale&#34;, Float) = 32.0
+    scale(&quot;Scale&quot;, Float) = 32.0
 }
 </code></pre><p>We will add a simple backtracking to the parsing because of the optional parameters.<!-- raw HTML omitted -->
 Let&rsquo;s check the code!</p>
@@ -1185,7 +1183,7 @@ For the length of code and article, I skip this part and will add it in next art
 </code></pre><p>At this point we can either be at the end of the property or we could have a &lsquo;=&rsquo; token to add a default value.
 Being that the Lexer class is small, we can backtrack by saving the current Lexer status:</p>
 <pre tabindex="0"><code>    // Cache lexer status and advance to next token.
-    // If the token is &#39;=&#39; then we parse the default value.
+    // If the token is '=' then we parse the default value.
     // Otherwise backtrack by one token.
     Lexer cached_lexer = *parser-&gt;lexer;
 </code></pre><p>Now we can advance to the next token and:</p>
@@ -1228,27 +1226,27 @@ The only thing to be concerned is the padding: on the GPU normally the alignment
 //
 // Beginning
 
-fprintf( output_file, &#34;\n#pragma once\n#include &lt;stdint.h&gt;\n#include \&#34;hydra_graphics.h\&#34;\n\n// This file is autogenerated!\nnamespace &#34; );
+fprintf( output_file, &quot;\n#pragma once\n#include &lt;stdint.h&gt;\n#include \&quot;hydra_graphics.h\&quot;\n\n// This file is autogenerated!\nnamespace &quot; );
 
 fwrite( shader.name.text, shader.name.length, 1, output_file );
-fprintf( output_file, &#34; {\n\n&#34; );
+fprintf( output_file, &quot; {\n\n&quot; );
 
 // Preliminary sections
-constants_ui.append( &#34;struct LocalConstantsUI {\n\n&#34; );
+constants_ui.append( &quot;struct LocalConstantsUI {\n\n&quot; );
 
-cpu_constants.append( &#34;struct LocalConstants {\n\n&#34; );
+cpu_constants.append( &quot;struct LocalConstants {\n\n&quot; );
 
-constants_ui_method.append(&#34;\tvoid reflectMembers() {\n&#34;);
+constants_ui_method.append(&quot;\tvoid reflectMembers() {\n&quot;);
 
-buffer_class.append( &#34;struct LocalConstantsBuffer {\n\n\thydra::graphics::BufferHandle\tbuffer;\n&#34; );
-buffer_class.append( &#34;\tLocalConstants\t\t\t\t\tconstants;\n\tLocalConstantsUI\t\t\t\tconstantsUI;\n\n&#34; );
-buffer_class.append( &#34;\tvoid create( hydra::graphics::Device&amp; device ) {\n\t\tusing namespace hydra;\n\n&#34; );
-buffer_class.append( &#34;\t\tgraphics::BufferCreation constants_creation = { graphics::BufferType::Constant, graphics::ResourceUsageType::Dynamic, sizeof( LocalConstants ), &amp;constants, \&#34;LocalConstants\&#34; };\n&#34; );
-buffer_class.append( &#34;\t\tbuffer = device.create_buffer( constants_creation );\n\t}\n\n&#34; );
-buffer_class.append( &#34;\tvoid destroy( hydra::graphics::Device&amp; device ) {\n\t\tdevice.destroy_buffer( buffer );\n\t}\n\n&#34; );
-buffer_class.append( &#34;\tvoid updateUI( hydra::graphics::Device&amp; device ) {\n\t\t// Draw UI\n\t\tconstantsUI.reflectUI();\n\t\t// Update constants from UI\n&#34; );
-buffer_class.append( &#34;\t\thydra::graphics::MapBufferParameters map_parameters = { buffer.handle, 0, 0 };\n&#34; );
-buffer_class.append( &#34;\t\tLocalConstants* buffer_data = (LocalConstants*)device.map_buffer( map_parameters );\n\t\tif (buffer_data) {\n&#34; );
+buffer_class.append( &quot;struct LocalConstantsBuffer {\n\n\thydra::graphics::BufferHandle\tbuffer;\n&quot; );
+buffer_class.append( &quot;\tLocalConstants\t\t\t\t\tconstants;\n\tLocalConstantsUI\t\t\t\tconstantsUI;\n\n&quot; );
+buffer_class.append( &quot;\tvoid create( hydra::graphics::Device&amp; device ) {\n\t\tusing namespace hydra;\n\n&quot; );
+buffer_class.append( &quot;\t\tgraphics::BufferCreation constants_creation = { graphics::BufferType::Constant, graphics::ResourceUsageType::Dynamic, sizeof( LocalConstants ), &amp;constants, \&quot;LocalConstants\&quot; };\n&quot; );
+buffer_class.append( &quot;\t\tbuffer = device.create_buffer( constants_creation );\n\t}\n\n&quot; );
+buffer_class.append( &quot;\tvoid destroy( hydra::graphics::Device&amp; device ) {\n\t\tdevice.destroy_buffer( buffer );\n\t}\n\n&quot; );
+buffer_class.append( &quot;\tvoid updateUI( hydra::graphics::Device&amp; device ) {\n\t\t// Draw UI\n\t\tconstantsUI.reflectUI();\n\t\t// Update constants from UI\n&quot; );
+buffer_class.append( &quot;\t\thydra::graphics::MapBufferParameters map_parameters = { buffer.handle, 0, 0 };\n&quot; );
+buffer_class.append( &quot;\t\tLocalConstants* buffer_data = (LocalConstants*)device.map_buffer( map_parameters );\n\t\tif (buffer_data) {\n&quot; );
 
 // For GPU the struct must be 16 bytes aligned. Track alignment
 uint32_t gpu_struct_alignment = 0;
@@ -1261,35 +1259,35 @@ for ( size_t i = 0; i &lt; shader.properties.size(); i++ ) {
     switch ( property-&gt;type ) {
         case Property::Float:
         {
-            constants_ui.append(&#34;\tfloat\t\t\t\t\t&#34;);
+            constants_ui.append(&quot;\tfloat\t\t\t\t\t&quot;);
             constants_ui.append( property-&gt;name );
 
-            cpu_constants.append( &#34;\tfloat\t\t\t\t\t&#34; );
+            cpu_constants.append( &quot;\tfloat\t\t\t\t\t&quot; );
             cpu_constants.append( property-&gt;name );
             
             if ( property-&gt;data_index != 0xffffffff ) {
                 float value = 0.0f;
                 getData( data_buffer, property-&gt;data_index, value );
-                constants_ui.append( &#34;\t\t\t\t= %ff&#34;, value );
-                cpu_constants.append( &#34;\t\t\t\t= %ff&#34;, value );
+                constants_ui.append( &quot;\t\t\t\t= %ff&quot;, value );
+                cpu_constants.append( &quot;\t\t\t\t= %ff&quot;, value );
             }
 
-            constants_ui.append( &#34;;\n&#34; );
+            constants_ui.append( &quot;;\n&quot; );
 
-            cpu_constants.append( &#34;;\n&#34; );
+            cpu_constants.append( &quot;;\n&quot; );
 
-            constants_ui_method.append(&#34;\t\tImGui::InputScalar( \&#34;&#34;);
+            constants_ui_method.append(&quot;\t\tImGui::InputScalar( \&quot;&quot;);
             constants_ui_method.append( property-&gt;ui_name );
-            constants_ui_method.append( &#34;\&#34;, ImGuiDataType_Float, &amp;&#34; );
+            constants_ui_method.append( &quot;\&quot;, ImGuiDataType_Float, &amp;&quot; );
             constants_ui_method.append( property-&gt;name );
-            constants_ui_method.append( &#34;);\n&#34; );
+            constants_ui_method.append( &quot;);\n&quot; );
 
             // buffer_data-&gt;scale = constantsUI.scale;
-            buffer_class.append(&#34;\t\t\tbuffer_data-&gt;&#34;);
+            buffer_class.append(&quot;\t\t\tbuffer_data-&gt;&quot;);
             buffer_class.append( property-&gt;name );
-            buffer_class.append( &#34; = constantsUI.&#34; );
+            buffer_class.append( &quot; = constantsUI.&quot; );
             buffer_class.append( property-&gt;name );
-            buffer_class.append( &#34;;\n&#34; );
+            buffer_class.append( &quot;;\n&quot; );
 
             ++gpu_struct_alignment;
 
@@ -1299,20 +1297,20 @@ for ( size_t i = 0; i &lt; shader.properties.size(); i++ ) {
 }
 
 // Post-property sections
-constants_ui.append( &#34;\n&#34; );
+constants_ui.append( &quot;\n&quot; );
 
-constants_ui_method.append( &#34;\t}\n\n&#34; );
-constants_ui_method.append( &#34;\tvoid reflectUI() {\n\t\tImGui::Begin( \&#34;LocalConstants\&#34; );\n&#34; );
-constants_ui_method.append( &#34;\t\treflectMembers();\n\t\tImGui::End();\n\t}\n\n&#34; );
-constants_ui_method.append( &#34;}; // struct LocalConstantsUI\n\n&#34; );
+constants_ui_method.append( &quot;\t}\n\n&quot; );
+constants_ui_method.append( &quot;\tvoid reflectUI() {\n\t\tImGui::Begin( \&quot;LocalConstants\&quot; );\n&quot; );
+constants_ui_method.append( &quot;\t\treflectMembers();\n\t\tImGui::End();\n\t}\n\n&quot; );
+constants_ui_method.append( &quot;}; // struct LocalConstantsUI\n\n&quot; );
 
 // Add tail padding data
 uint32_t tail_padding_size = 4 - (gpu_struct_alignment % 4);
-cpu_constants.append( &#34;\tfloat\t\t\t\t\tpad_tail[%u];\n\n&#34;, tail_padding_size );
+cpu_constants.append( &quot;\tfloat\t\t\t\t\tpad_tail[%u];\n\n&quot;, tail_padding_size );
 
-cpu_constants.append( &#34;}; // struct LocalConstants\n\n&#34; );
+cpu_constants.append( &quot;}; // struct LocalConstants\n\n&quot; );
 
-buffer_class.append( &#34;\t\t\tdevice.unmap_buffer( map_parameters );\n\t\t}\n\t}\n}; // struct LocalConstantBuffer\n\n&#34; );
+buffer_class.append( &quot;\t\t\tdevice.unmap_buffer( map_parameters );\n\t\t}\n\t}\n}; // struct LocalConstantBuffer\n\n&quot; );
 
 fwrite( constants_ui.data, constants_ui.current_size, 1, output_file );
 fwrite( constants_ui_method.data, constants_ui_method.current_size, 1, output_file );
@@ -1321,9 +1319,9 @@ fwrite( buffer_class.data, buffer_class.current_size, 1, output_file );
 
 
 // End
-fprintf( output_file, &#34;} // namespace &#34; );
+fprintf( output_file, &quot;} // namespace &quot; );
 fwrite( shader.name.text, shader.name.length, 1, output_file );
-fprintf( output_file, &#34;\n\n&#34; );
+fprintf( output_file, &quot;\n\n&quot; );
 
 fclose( output_file );
 </code></pre><p>This piece of code will generate a constant buffer from the properties:</p>
@@ -1335,7 +1333,7 @@ static void generateConstantsCode( const Shader&amp; shader, StringBuffer&amp; o
     }
 
     // Add the local constants into the code.
-    out_buffer.append( &#34;\n\t\tlayout (std140, binding=7) uniform LocalConstants {\n\n&#34; );
+    out_buffer.append( &quot;\n\t\tlayout (std140, binding=7) uniform LocalConstants {\n\n&quot; );
 
     // For GPU the struct must be 16 bytes aligned. Track alignment
     uint32_t gpu_struct_alignment = 0;
@@ -1347,9 +1345,9 @@ static void generateConstantsCode( const Shader&amp; shader, StringBuffer&amp; o
         switch ( property-&gt;type ) {
             case Property::Float:
             {
-                out_buffer.append( &#34;\t\t\tfloat\t\t\t\t\t&#34; );
+                out_buffer.append( &quot;\t\t\tfloat\t\t\t\t\t&quot; );
                 out_buffer.append( property-&gt;name );
-                out_buffer.append( &#34;;\n&#34; );
+                out_buffer.append( &quot;;\n&quot; );
 
                 ++gpu_struct_alignment;
                 break;
@@ -1358,8 +1356,8 @@ static void generateConstantsCode( const Shader&amp; shader, StringBuffer&amp; o
     }
 
     uint32_t tail_padding_size = 4 - (gpu_struct_alignment % 4);
-    out_buffer.append( &#34;\t\t\tfloat\t\t\t\t\tpad_tail[%u];\n\n&#34;, tail_padding_size );
-    out_buffer.append( &#34;\t\t} local_constants;\n\n&#34; );
+    out_buffer.append( &quot;\t\t\tfloat\t\t\t\t\tpad_tail[%u];\n\n&quot;, tail_padding_size );
+    out_buffer.append( &quot;\t\t} local_constants;\n\n&quot; );
 }
 </code></pre><h3 id="expert-constants-an-interesting-problem">Expert constants: an interesting problem</h3>
 <p>A problem many times surfaces is that the material interface does not correspond to the buffer sent to the GPU, because the programmers will do the following:</p>
@@ -1379,12 +1377,12 @@ struct LocalConstantsUI {
     float                    modulo                = 2.000000f;
 
     void reflectMembers() {
-        ImGui::InputScalar( &#34;Scale&#34;, ImGuiDataType_Float, &amp;scale);
-        ImGui::InputScalar( &#34;Modulo&#34;, ImGuiDataType_Float, &amp;modulo);
+        ImGui::InputScalar( &quot;Scale&quot;, ImGuiDataType_Float, &amp;scale);
+        ImGui::InputScalar( &quot;Modulo&quot;, ImGuiDataType_Float, &amp;modulo);
     }
 
     void reflectUI() {
-        ImGui::Begin( &#34;LocalConstants&#34; );
+        ImGui::Begin( &quot;LocalConstants&quot; );
         reflectMembers();
         ImGui::End();
     }
@@ -1405,13 +1403,13 @@ struct LocalConstants {
 properties {
 
     // Using Unity ShaderLab syntax:
-    scale(&#34;Scale&#34;, Range(0.0, 100.0)) = 100.0
-    modulo(&#34;Modulo&#34;, Float) = 2.0
+    scale(&quot;Scale&quot;, Range(0.0, 100.0)) = 100.0
+    modulo(&quot;Modulo&quot;, Float) = 2.0
 }
 
 layout {
     CBuffer LocalConstants {
-        float4x4            world_view_projection;    // &#39;System&#39; variable
+        float4x4            world_view_projection;    // 'System' variable
 
         float               scale01 = (scale);       // Silly normalized version of scale interface property
         float               modulo;
@@ -1460,7 +1458,7 @@ if ( token.type == Token::Token_Hash ) {
 else if ( token.type == Token::Token_Identifier ) {        &lt;------------  New Code!
 
     // Parse uniforms to add resource dependencies if not explicit in the HFX file.
-    if ( expectKeyword( token.text, 7, &#34;uniform&#34; ) ) {
+    if ( expectKeyword( token.text, 7, &quot;uniform&quot; ) ) {
         nextToken( parser-&gt;lexer, token );
 
         uniformIdentifier( parser, token, code_fragment );
@@ -1472,9 +1470,9 @@ else if ( token.type == Token::Token_Identifier ) {        &lt;------------  New
         char c = *(token.text.text + i);
 
         switch ( c ) {
-            case &#39;i&#39;:
+            case 'i':
             {
-                if ( expectKeyword( token.text, 7, &#34;image2D&#34; ) ) {
+                if ( expectKeyword( token.text, 7, &quot;image2D&quot; ) ) {
                     // Advance to next token to get the name
                     Token name_token;
                     nextToken( parser-&gt;lexer, name_token );
@@ -1485,9 +1483,9 @@ else if ( token.type == Token::Token_Identifier ) {        &lt;------------  New
                 break;
             }
 
-            case &#39;s&#39;:
+            case 's':
             {
-                if ( expectKeyword( token.text, 9, &#34;sampler2D&#34; ) ) {
+                if ( expectKeyword( token.text, 9, &quot;sampler2D&quot; ) ) {
                     // Advance to next token to get the name
                     Token name_token;
                     nextToken( parser-&gt;lexer, name_token );
@@ -1525,7 +1523,7 @@ layout {
     }
 }
 </code></pre><p>This is a rather simple layout, but let&rsquo;s see it.<!-- raw HTML omitted -->
-First of all, for each &rsquo;list&rsquo; keyword we define a single list with a unique name.<!-- raw HTML omitted -->
+First of all, for each &lsquo;list&rsquo; keyword we define a single list with a unique name.<!-- raw HTML omitted -->
 With that, we can reference in the pass which list to use.<!-- raw HTML omitted --></p>
 <p>The code that does the parsing is (at this point) pretty straight-forward, both in <code>void declarationResourceList( Parser* parser, ResourceList&amp; resource_list )</code> and  <code>void resourceBindingIdentifier( Parser* parser, const Token&amp; token, ResourceBinding&amp; binding )</code>.<!-- raw HTML omitted -->
 I will not go over it, but basically it will parse the resource lists and add them to the shader.<!-- raw HTML omitted -->
@@ -1561,7 +1559,7 @@ If it is not present, then all the informations will be gathered automatically a
     using namespace hydra::graphics;
 
     // Add the local constant buffer obtained from all the properties in the layout.
-    hydra::graphics::ResourceSetLayoutCreation::Binding binding = { hydra::graphics::ResourceType::Constants, 0, 1, &#34;LocalConstants&#34; };
+    hydra::graphics::ResourceSetLayoutCreation::Binding binding = { hydra::graphics::ResourceType::Constants, 0, 1, &quot;LocalConstants&quot; };
 
     pass_buffer.append( (void*)&amp;binding, sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding) );
     pass_offset += sizeof( hydra::graphics::ResourceSetLayoutCreation::Binding );
@@ -1827,7 +1825,7 @@ Gabriel</p>
     
     
     
-    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 

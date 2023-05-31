@@ -28,8 +28,8 @@
   
     
   
-  <meta name="description" content="Overview Model used in the demo. Data Driven Rendering Series:
-https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/ We finally arrived in the Rendering Pipeline realm. Some can write that it is useless, some can hate it. Many have some sort of abstraction for it since ages, and others have to now that new APIs like Vulkan and DX12 have it as an explicit part of their design (finally!).
+  <meta name="description" content="Overview Model used in the demo.Data Driven Rendering Series:
+ https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  We finally arrived in the Rendering Pipeline realm.Some can write that it is useless, some can hate it.Many have some sort of abstraction for it since ages, and others have to now that new APIs like Vulkan and DX12 have it as an explicit part of their design (finally!).
 After we built a basic Material System in the previous article (https://jorenjoestar.">
 
   
@@ -82,7 +82,7 @@ After we built a basic Material System in the previous article (https://jorenjoe
   
   
   
-  <link rel="stylesheet" href="/css/academic.min.457183ca569c870f69ed07462753176a.css">
+  <link rel="stylesheet" href="/css/academic.min.3c1397731166a1801db28da8c18494e1.css">
 
   
 
@@ -113,8 +113,8 @@ After we built a basic Material System in the previous article (https://jorenjoe
   <meta property="og:site_name" content="Joren&#39;s">
   <meta property="og:url" content="https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/">
   <meta property="og:title" content="Data Driven Rendering: Pipelines | Joren&#39;s">
-  <meta property="og:description" content="Overview Model used in the demo. Data Driven Rendering Series:
-https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/ We finally arrived in the Rendering Pipeline realm. Some can write that it is useless, some can hate it. Many have some sort of abstraction for it since ages, and others have to now that new APIs like Vulkan and DX12 have it as an explicit part of their design (finally!).
+  <meta property="og:description" content="Overview Model used in the demo.Data Driven Rendering Series:
+ https://jorenjoestar.github.io/post/writing_shader_effect_language_1/ https://jorenjoestar.github.io/post/writing_shader_effect_language_2/ https://jorenjoestar.github.io/post/writing_shader_effect_language_3/ https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/  We finally arrived in the Rendering Pipeline realm.Some can write that it is useless, some can hate it.Many have some sort of abstraction for it since ages, and others have to now that new APIs like Vulkan and DX12 have it as an explicit part of their design (finally!).
 After we built a basic Material System in the previous article (https://jorenjoestar."><meta property="og:image" content="https://jorenjoestar.github.io/img/icon-192.png">
   <meta property="twitter:image" content="https://jorenjoestar.github.io/img/icon-192.png"><meta property="og:locale" content="en-us">
   
@@ -612,7 +612,7 @@ We will see the code of each component and arrive at the actual data definition 
 <h2 id="render-view-1">Render View</h2>
 <p>First element is the Render View:</p>
 <pre tabindex="0"><code>//
-// Render view is a &#39;contextualized&#39; camera - a way of using the camera in the render pipeline.
+// Render view is a 'contextualized' camera - a way of using the camera in the render pipeline.
 //
 struct RenderView {
 
@@ -621,6 +621,7 @@ struct RenderView {
     array( RenderScene )            visible_render_scenes;
 
 }; // struct RenderView
+
 </code></pre><p>Using STB&rsquo;s array (the macro is just an aid to know it is not just a pointer) we have a list of visible render scenes from that camera.<!-- raw HTML omitted -->
 It should be pretty straighforward.</p>
 <h2 id="render-manager-1">Render Manager</h2>
@@ -752,6 +753,7 @@ struct ShaderResourcesDatabase {
     SamplerHandle                   find_sampler( char* name );
 
 }; // struct ShaderResourcesDatabase
+
 </code></pre><p>Simply put, any resource used by rendering is here.<!-- raw HTML omitted -->
 Both Materials, Pipelines and Render Managers register and use the database to create the <em>resource lists</em> used in rendering.</p>
 <p>Next and more convoluted is the <em>shader resources lookup</em> class:</p>
@@ -794,7 +796,7 @@ struct ShaderResourcesLookup {
 }; // struct ShaderResourcesLookup
 </code></pre><p>This class specify the binding between a <em>shader resource</em> and an <em>actual resource</em>.<!-- raw HTML omitted -->
 As a simple example to clarify, a shader could have an <em>&lsquo;albedo&rsquo;</em> texture defined in the code, but the <em>actual</em> texture is defined by the material.<!-- raw HTML omitted -->
-Or for a Render Stage, like a Post-Processing one, its input could be defined in the shader code as <em>&lsquo;input 0, input 1&hellip;&rsquo;</em> and the render pipeline creates the binding.</p>
+Or for a Render Stage, like a Post-Processing one, its input could be defined in the shader code as <em>&lsquo;input 0, input 1&hellip;'</em> and the render pipeline creates the binding.</p>
 <p>With those in place, we can finalize any resource used by any shader/material/pipeline.</p>
 <p>The actual usage is into the Shader Instance class. Let&rsquo;s have a quick look.</p>
 <pre tabindex="0"><code>//
@@ -821,6 +823,7 @@ Again with the new Vulkan/DX12 mentality, Pipeline + Resource Lists + Geometry i
         // Get resource layout description
         ResourceListLayoutDescription layout;
         device.query_resource_list_layout( pipeline_creation.resource_list_layout[l], layout );
+
 </code></pre><p>We know that a pipeline can have 1 or more resource lists, thus we just iterate through them.<!-- raw HTML omitted -->
 Next we look into each resource of the current list:</p>
 <pre tabindex="0"><code>
@@ -883,6 +886,7 @@ struct RenderStage {
     array( TextureHandle )          output_textures                     = nullptr;
 
     TextureHandle                   depth_texture;
+
 </code></pre><p>When we create the pipeline, we save all inputs and outputs textures.<!-- raw HTML omitted -->
 Depth/Stencil is a put in its own part.</p>
 <pre tabindex="0"><code>    float                           scale_x                             = 1.0f;
@@ -979,130 +983,131 @@ We will define a simple-silly-non-effective PBR deferred rendering.<!-- raw HTML
 Probably the worst shaders you saw, but it will still work.</p>
 <p>First we define the Render Targets:</p>
 <pre tabindex="0"><code>{
-    &#34;name&#34;: &#34;PBR_Deferred&#34;,
-    &#34;RenderTargets&#34;: [
+    &quot;name&quot;: &quot;PBR_Deferred&quot;,
+    &quot;RenderTargets&quot;: [
         {
-            &#34;name&#34;: &#34;GBufferAlbedo&#34;,
-            &#34;format&#34;: &#34;R8G8B8A8_UNORM&#34;
+            &quot;name&quot;: &quot;GBufferAlbedo&quot;,
+            &quot;format&quot;: &quot;R8G8B8A8_UNORM&quot;
         },
         {
-            &#34;name&#34;: &#34;GBufferNormals&#34;,
-            &#34;format&#34;: &#34;R16G16B16A16_SNORM&#34;
+            &quot;name&quot;: &quot;GBufferNormals&quot;,
+            &quot;format&quot;: &quot;R16G16B16A16_SNORM&quot;
         },
         {
-            &#34;name&#34;: &#34;GBufferProperties0&#34;,
-            &#34;format&#34;: &#34;R8G8B8A8_UNORM&#34;
+            &quot;name&quot;: &quot;GBufferProperties0&quot;,
+            &quot;format&quot;: &quot;R8G8B8A8_UNORM&quot;
         },
         {
-            &#34;name&#34;: &#34;MainDepth&#34;,
-            &#34;format&#34;: &#34;D24_UNORM_S8_UINT&#34;
+            &quot;name&quot;: &quot;MainDepth&quot;,
+            &quot;format&quot;: &quot;D24_UNORM_S8_UINT&quot;
         },
         {
-            &#34;name&#34;: &#34;BackBufferColor&#34;,
-            &#34;format&#34;: &#34;R16G16B16A16_FLOAT&#34;
+            &quot;name&quot;: &quot;BackBufferColor&quot;,
+            &quot;format&quot;: &quot;R16G16B16A16_FLOAT&quot;
         }
     ],
 </code></pre><p>by default they will have the same size as the window framebuffer, unless otherwise written (scale_x/y, width/height).</p>
 <p>Next are the actual render stages.<!-- raw HTML omitted -->
 The first is the GBufferOpaque one:</p>
-<pre tabindex="0"><code>    &#34;RenderStages&#34;: [
+<pre tabindex="0"><code>    &quot;RenderStages&quot;: [
         {
-            &#34;name&#34;: &#34;GBufferOpaque&#34;,
-            &#34;type&#34;: &#34;Geometry&#34;,
-            &#34;render_view&#34;: &#34;main&#34;,
-            &#34;depth_stencil&#34;: &#34;Main&#34;,
-            &#34;inputs&#34;: [
+            &quot;name&quot;: &quot;GBufferOpaque&quot;,
+            &quot;type&quot;: &quot;Geometry&quot;,
+            &quot;render_view&quot;: &quot;main&quot;,
+            &quot;depth_stencil&quot;: &quot;Main&quot;,
+            &quot;inputs&quot;: [
 
             ],
-            &#34;outputs&#34;: {
-                &#34;rts&#34;: [ &#34;GBufferAlbedo&#34;, &#34;GBufferNormals&#34;, &#34;GBufferProperties0&#34; ],
-                &#34;depth&#34;: &#34;MainDepth&#34;,
-                &#34;flags&#34;: &#34;Common&#34;,
-                &#34;clear_color&#34;: &#34;000000ff&#34;,
-                &#34;clear_depth&#34;: 1.0,
-                &#34;clear_stencil&#34;: 0
+            &quot;outputs&quot;: {
+                &quot;rts&quot;: [ &quot;GBufferAlbedo&quot;, &quot;GBufferNormals&quot;, &quot;GBufferProperties0&quot; ],
+                &quot;depth&quot;: &quot;MainDepth&quot;,
+                &quot;flags&quot;: &quot;Common&quot;,
+                &quot;clear_color&quot;: &quot;000000ff&quot;,
+                &quot;clear_depth&quot;: 1.0,
+                &quot;clear_stencil&quot;: 0
             }
         },
 </code></pre><p>As you see it outputs to 3 Render Targets + Depth.<!-- raw HTML omitted -->
 It also specify clear color, depth and stencil.</p>
 <p>Next is the silliest compute shader to calculate light:</p>
 <pre tabindex="0"><code>        {
-            &#34;name&#34;: &#34;DeferredLights&#34;,
-            &#34;type&#34;: &#34;PostCompute&#34;,
-            &#34;material_name&#34;: &#34;SimpleFullscreen&#34;,
-            &#34;material_pass_index&#34;: 2,
-            &#34;inputs&#34;: [
+            &quot;name&quot;: &quot;DeferredLights&quot;,
+            &quot;type&quot;: &quot;PostCompute&quot;,
+            &quot;material_name&quot;: &quot;SimpleFullscreen&quot;,
+            &quot;material_pass_index&quot;: 2,
+            &quot;inputs&quot;: [
                 {
-                    &#34;name&#34;: &#34;GBufferAlbedo&#34;,
-                    &#34;sampler&#34;: &#34;Point&#34;,
-                    &#34;binding&#34;: &#34;gbuffer_albedo&#34;
+                    &quot;name&quot;: &quot;GBufferAlbedo&quot;,
+                    &quot;sampler&quot;: &quot;Point&quot;,
+                    &quot;binding&quot;: &quot;gbuffer_albedo&quot;
                 },
                 {
-                    &#34;name&#34;: &#34;GBufferNormals&#34;,
-                    &#34;sampler&#34;: &#34;Point&#34;,
-                    &#34;binding&#34;: &#34;gbuffer_normals&#34;
+                    &quot;name&quot;: &quot;GBufferNormals&quot;,
+                    &quot;sampler&quot;: &quot;Point&quot;,
+                    &quot;binding&quot;: &quot;gbuffer_normals&quot;
                 },
                 {
-                    &#34;name&#34;: &#34;GBufferProperties0&#34;,
-                    &#34;sampler&#34;: &#34;Point&#34;,
-                    &#34;binding&#34;: &#34;gbuffer_properties0&#34;
+                    &quot;name&quot;: &quot;GBufferProperties0&quot;,
+                    &quot;sampler&quot;: &quot;Point&quot;,
+                    &quot;binding&quot;: &quot;gbuffer_properties0&quot;
                 },
                 {
-                    &#34;name&#34;: &#34;MainDepth&#34;,
-                    &#34;sampler&#34;: &#34;Point&#34;,
-                    &#34;binding&#34;: &#34;depth_texture&#34;
+                    &quot;name&quot;: &quot;MainDepth&quot;,
+                    &quot;sampler&quot;: &quot;Point&quot;,
+                    &quot;binding&quot;: &quot;depth_texture&quot;
                 }
             ],
-            &#34;outputs&#34;: {
-                &#34;images&#34;: [
+            &quot;outputs&quot;: {
+                &quot;images&quot;: [
                     {
-                        &#34;name&#34;: &#34;BackBufferColor&#34;,
-                        &#34;binding&#34;: &#34;destination_texture&#34;
+                        &quot;name&quot;: &quot;BackBufferColor&quot;,
+                        &quot;binding&quot;: &quot;destination_texture&quot;
                     }
                 ],
-                &#34;flags&#34;: &#34;Common&#34;
+                &quot;flags&quot;: &quot;Common&quot;
             }
         },
+
 </code></pre><p>It will read all the previously generated textures and run a compute shader to calculate the final lighting.<!-- raw HTML omitted -->
 Worth noting &lsquo;material&rsquo; and &lsquo;material pass index&rsquo; - to retrieve the shader from the material. If you open SimpleFullscreen.hfx and go to the third defined pass, you will see the code.</p>
 <p>Next is an example of reusing a Render Target to add informations (like transparent objects).<!-- raw HTML omitted -->
 It will add debug rendering on top of the other objects and write in the BackBufferColor render target.<!-- raw HTML omitted -->
 The absence of clear parameters dictates that we don&rsquo;t want to clear.</p>
 <pre tabindex="0"><code>        {
-            &#34;name&#34;: &#34;DebugRendering&#34;,
-            &#34;type&#34;: &#34;Geometry&#34;,
-            &#34;render_view&#34;: &#34;main&#34;,
-            &#34;inputs&#34;: [
+            &quot;name&quot;: &quot;DebugRendering&quot;,
+            &quot;type&quot;: &quot;Geometry&quot;,
+            &quot;render_view&quot;: &quot;main&quot;,
+            &quot;inputs&quot;: [
 
             ],
-            &#34;outputs&#34;: {
-                &#34;rts&#34;: [ &#34;BackBufferColor&#34; ],
-                &#34;depth&#34;: &#34;MainDepth&#34;,
-                &#34;flags&#34;: &#34;Common&#34;
+            &quot;outputs&quot;: {
+                &quot;rts&quot;: [ &quot;BackBufferColor&quot; ],
+                &quot;depth&quot;: &quot;MainDepth&quot;,
+                &quot;flags&quot;: &quot;Common&quot;
             }
         },
 </code></pre><p>Last step is the swapchain.<!-- raw HTML omitted -->
 It is simply using a simple shader to write to the window framebuffer as the last step of the frame.</p>
 <pre tabindex="0"><code>        {
-            &#34;name&#34;: &#34;Swapchain&#34;,
-            &#34;type&#34;: &#34;Swapchain&#34;,
-            &#34;mask&#34;: &#34;FRAMEBUFFER&#34;,
-            &#34;material_name&#34;: &#34;Swapchain&#34;,
-            &#34;render_view&#34;: &#34;&#34;,
-            &#34;depth_stencil&#34;: &#34;Post&#34;,
-            &#34;inputs&#34;: [
+            &quot;name&quot;: &quot;Swapchain&quot;,
+            &quot;type&quot;: &quot;Swapchain&quot;,
+            &quot;mask&quot;: &quot;FRAMEBUFFER&quot;,
+            &quot;material_name&quot;: &quot;Swapchain&quot;,
+            &quot;render_view&quot;: &quot;&quot;,
+            &quot;depth_stencil&quot;: &quot;Post&quot;,
+            &quot;inputs&quot;: [
                 {
-                    &#34;name&#34;: &#34;BackBufferColor&#34;,
-                    &#34;sampler&#34;: &#34;Point&#34;,
-                    &#34;binding&#34;: &#34;input_texture&#34;
+                    &quot;name&quot;: &quot;BackBufferColor&quot;,
+                    &quot;sampler&quot;: &quot;Point&quot;,
+                    &quot;binding&quot;: &quot;input_texture&quot;
                 }
             ],
-            &#34;outputs&#34;: {
-                &#34;rts&#34;: [
+            &quot;outputs&quot;: {
+                &quot;rts&quot;: [
                 ],
-                &#34;depth&#34;: &#34;&#34;,
-                &#34;flags&#34;: &#34;Common&#34;,
-                &#34;clear_color&#34;: &#34;000000ff&#34;
+                &quot;depth&quot;: &quot;&quot;,
+                &quot;flags&quot;: &quot;Common&quot;,
+                &quot;clear_color&quot;: &quot;000000ff&quot;
             }
         }
     ]
@@ -1359,7 +1364,7 @@ Thanks for reading!</p>
     
     
     
-    <script src="/js/academic.min.59ebf34902d7a2a1bb85a85422b3e846.js"></script>
+    <script src="/js/academic.min.5fde6b67896bd1833c4041260289785f.js"></script>
 
     
 
