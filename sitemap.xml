@@ -2,14 +2,35 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://jorenjoestar.github.io/tags/book/</loc>
+    <lastmod>2023-02-07T15:46:28+01:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/categories/</loc>
+    <lastmod>2023-02-07T15:46:28+01:00</lastmod>
+  </url><url>
     <loc>https://jorenjoestar.github.io/</loc>
     <lastmod>2023-02-07T15:46:28+01:00</lastmod>
   </url><url>
     <loc>https://jorenjoestar.github.io/post/</loc>
     <lastmod>2023-02-07T15:46:28+01:00</lastmod>
   </url><url>
+    <loc>https://jorenjoestar.github.io/categories/publishing/</loc>
+    <lastmod>2023-02-07T15:46:28+01:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/tags/</loc>
+    <lastmod>2023-02-07T15:46:28+01:00</lastmod>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/year_of_the_vulkan_book/</loc>
     <lastmod>2023-02-07T15:46:28+01:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/tags/vulkan/</loc>
+    <lastmod>2023-02-07T15:46:28+01:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/tags/bindless/</loc>
+    <lastmod>2021-12-19T21:36:41+01:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/categories/coding/</loc>
+    <lastmod>2021-12-19T21:36:41+01:00</lastmod>
   </url><url>
     <loc>https://jorenjoestar.github.io/post/modern_sprite_batch/</loc>
     <lastmod>2021-12-19T21:36:41+01:00</lastmod>
@@ -17,11 +38,23 @@
     <loc>https://jorenjoestar.github.io/post/vulkan_bindless_texture/</loc>
     <lastmod>2021-11-01T18:44:17+01:00</lastmod>
   </url><url>
+    <loc>https://jorenjoestar.github.io/tags/gpu-driven/</loc>
+    <lastmod>2021-10-26T19:34:19+02:00</lastmod>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/gpu_driven_text/gpu_driven_text/</loc>
     <lastmod>2021-10-26T19:34:19+02:00</lastmod>
   </url><url>
+    <loc>https://jorenjoestar.github.io/tags/rendering/</loc>
+    <lastmod>2021-10-26T19:34:19+02:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/tags/serialization/</loc>
+    <lastmod>2021-08-09T10:05:38+02:00</lastmod>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/serialization_for_games/</loc>
     <lastmod>2021-08-09T10:05:38+02:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/tags/pixel-art/</loc>
+    <lastmod>2021-04-12T19:56:56+02:00</lastmod>
   </url><url>
     <loc>https://jorenjoestar.github.io/post/pixel_art_filtering/</loc>
     <lastmod>2021-04-12T19:56:56+02:00</lastmod>
@@ -29,11 +62,23 @@
     <loc>https://jorenjoestar.github.io/post/realistic_stars/</loc>
     <lastmod>2020-12-26T11:54:39+01:00</lastmod>
   </url><url>
+    <loc>https://jorenjoestar.github.io/tags/stars/</loc>
+    <lastmod>2020-12-26T11:54:39+01:00</lastmod>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/productivity_terminal/productivity_terminal/</loc>
+    <lastmod>2020-04-13T10:43:00-04:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/tags/utils/</loc>
     <lastmod>2020-04-13T10:43:00-04:00</lastmod>
   </url><url>
     <loc>https://jorenjoestar.github.io/post/shader_augment_for_pipelines/shader_augment_for_pipelines/</loc>
     <lastmod>2020-03-16T12:11:37-04:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/tags/shaders/</loc>
+    <lastmod>2020-03-16T12:11:37-04:00</lastmod>
+  </url><url>
+    <loc>https://jorenjoestar.github.io/tags/code-generation/</loc>
+    <lastmod>2020-02-22T10:58:49-04:00</lastmod>
   </url><url>
     <loc>https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/</loc>
     <lastmod>2020-02-22T10:58:49-04:00</lastmod>
@@ -53,6 +98,9 @@
     <loc>https://jorenjoestar.github.io/post/emulation_where_to_start/</loc>
     <lastmod>2019-07-27T18:45:35-04:00</lastmod>
   </url><url>
+    <loc>https://jorenjoestar.github.io/tags/emulator/</loc>
+    <lastmod>2019-07-27T18:45:35-04:00</lastmod>
+  </url><url>
     <loc>https://jorenjoestar.github.io/post/flatbuffers_reflection_data_driven_rendering/</loc>
     <lastmod>2019-07-26T07:37:26-04:00</lastmod>
   </url><url>
@@ -63,14 +111,10 @@
   </url><url>
     <loc>https://jorenjoestar.github.io/authors/</loc>
   </url><url>
-    <loc>https://jorenjoestar.github.io/categories/</loc>
-  </url><url>
     <loc>https://jorenjoestar.github.io/publication_types/</loc>
   </url><url>
     <loc>https://jorenjoestar.github.io/publication/</loc>
   </url><url>
     <loc>https://jorenjoestar.github.io/talk/</loc>
-  </url><url>
-    <loc>https://jorenjoestar.github.io/tags/</loc>
   </url>
 </urlset>

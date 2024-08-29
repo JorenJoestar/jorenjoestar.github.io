@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>utils on Gabriel&#39;s Virtual Tavern</title>
+    <link>https://jorenjoestar.github.io/tags/utils/</link>
+    <description>Recent content in utils on Gabriel&#39;s Virtual Tavern</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 13 Apr 2020 10:43:00 -0400</lastBuildDate>
+    
+	    <atom:link href="https://jorenjoestar.github.io/tags/utils/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Improving Productivity in Terminals with Aliases</title>
+      <link>https://jorenjoestar.github.io/post/productivity_terminal/productivity_terminal/</link>
+      <pubDate>Mon, 13 Apr 2020 10:43:00 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/productivity_terminal/productivity_terminal/</guid>
+      <description>&lt;p&gt;After reading the &lt;a href=&#34;https://www.netlify.com/blog/2020/04/12/speed-up-productivity-with-terminal-aliases/&#34;&gt;great article by Sarah Drasner&lt;/a&gt; on productivity I wanted to share some other improvements that I use in my daily work and personal coding life.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;I am developing mostly rendering and other game-related code, so my OS is Windows 10.&lt;!-- raw HTML omitted --&gt;
+I have a background in using Linux-only for work at the beginning of my career, so bash customization and Vim were too useful to be overlooked!&lt;/p&gt;
+&lt;p&gt;For Windows I started using &lt;a href=&#34;https://cmder.net/&#34;&gt;Cmder&lt;/a&gt; few years ago, but I should check also the revamped powershell.&lt;!-- raw HTML omitted --&gt;
+What I love about Cmder is that it gives you most of Unix/Linux scripts into Windows.&lt;!-- raw HTML omitted --&gt;
+And with that it comes also an &amp;lsquo;alias&amp;rsquo; file, in the path &lt;em&gt;%CMDER_ROOT%\config\user_aliases.cmd&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Here are some group of aliases I use to speed up my productivity!&lt;/p&gt;
+&lt;h1 id=&#34;knowing-your-aliases&#34;&gt;Knowing your aliases&lt;/h1&gt;
+&lt;p&gt;First of all some commands to know and edit your aliases.&lt;/p&gt;
+&lt;p&gt;I tend to write aliases with acronyms for faster typing.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ma=cat %CMDER_ROOT%\config\user_aliases.cmd
+
+ea=vim %CMDER_ROOT%\config\user_aliases.cmd
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;M.A. stands for &lt;em&gt;My Aliases&lt;/em&gt;, while E.A. &lt;em&gt;Edit Aliases&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;This is the base - when I forget an alias I just type &lt;em&gt;ma&lt;/em&gt; and I have all my list!&lt;/p&gt;
+&lt;h1 id=&#34;jumping-around&#34;&gt;Jumping around&lt;/h1&gt;
+&lt;p&gt;Navigation is the first type of enhancement I recommend.&lt;!-- raw HTML omitted --&gt;
+This is HUGE for me and incredibly simple:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;..=cd ..
+..2=cd ../..
+..3=cd ../../..
+..4=cd ../../../..
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Navigate to parent folders in a much faster way!&lt;/p&gt;
+&lt;p&gt;The second one is actually&amp;hellip;&lt;em&gt;jumps&lt;/em&gt; (thinking of ASM instructions)!&lt;!-- raw HTML omitted --&gt;
+When I identify some folders that I access often, I add these kind of lines:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;jc= cd /D C:\Coding
+jp= cd /D C:\Users\Gabriel\Documents\Visual Studio 2017\Projects
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Again aliases.
+&lt;em&gt;Jump Coding&lt;/em&gt; and &lt;em&gt;Jump Projects&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Notice the argument /D to use the absolute path - needed when you have paths in other folders.&lt;/p&gt;
+&lt;h1 id=&#34;file-listing&#34;&gt;File listing&lt;/h1&gt;
+&lt;p&gt;Again another simple trick, and you can add more variations to your needs.&lt;!-- raw HTML omitted --&gt;
+&lt;em&gt;ls&lt;/em&gt; is the &lt;em&gt;dir&lt;/em&gt; command of Linux/Unix, and is another foundation.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ls=ls --show-control-chars -F --color $*
+ll=ls --show-control-chars -F -l --color $*
+lr=ls --show-control-chars -F -lrt --color $*
+la=ls --show-control-chars -F -a --color $*
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Coloring is necessary to know what is a folder and what a file, something that should be enabled by default in my opinion.
+Also notice the &amp;lsquo;$*&amp;rsquo; at the end - it means to append all the argument that you want to pass &lt;em&gt;after&lt;/em&gt; the alias!&lt;/p&gt;
+&lt;h1 id=&#34;text-editing&#34;&gt;Text editing&lt;/h1&gt;
+&lt;p&gt;I mainly use Sublime Text and occasionally VIM, so here are some &lt;em&gt;aliases&lt;/em&gt; as well:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;vi=vim $*
+vimrc=vim %CMDER_ROOT%\vendor\msysgit\share\vim\vimrc
+
+subl=&amp;quot;C:\Program Files\Sublime Text 3\sublime_text.exe&amp;quot; $*
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With the alias &lt;em&gt;subl&lt;/em&gt; you can open any file into Sublime Text. Very handy combination Cmder + Sublime Text!&lt;/p&gt;
+&lt;p&gt;Also quickly editing your &lt;em&gt;vimrc&lt;/em&gt; file is a need for VIM users.&lt;/p&gt;
+&lt;h1 id=&#34;grepping&#34;&gt;Grepping&lt;/h1&gt;
+&lt;p&gt;I honestly completely forgot to add the &lt;em&gt;color&lt;/em&gt; option&amp;hellip;learning through sharing. Thank you &lt;a href=&#34;https://twitter.com/sarah_edo&#34;&gt;Sarah&lt;/a&gt; :)&lt;/p&gt;
+&lt;p&gt;Added the color option, these are the two variations of grep I use the most:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;grep=grep --color $*
+
+gric=grep --color -Iir $*
+gril=grep --color -Iirl $*
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;em&gt;gric&lt;/em&gt; stands for &lt;em&gt;Grep Ignore Case Ignore Binary Recursive&lt;/em&gt; - more or less.&lt;!-- raw HTML omitted --&gt;
+&lt;em&gt;gril&lt;/em&gt; is like &lt;em&gt;gric&lt;/em&gt;, but just lists file instead of content per file in the search. I use it to just check files.&lt;/p&gt;
+&lt;p&gt;Quickly going through the options for &lt;em&gt;grep&lt;/em&gt;:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;-I: let you ignore binary files. Speed up searching quite a bit.&lt;/li&gt;
+&lt;li&gt;-i: ignore case.&lt;/li&gt;
+&lt;li&gt;-r: recursively search directories.&lt;/li&gt;
+&lt;li&gt;-l: only list files, not content.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I&amp;rsquo;ll show you the difference.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s search for &lt;em&gt;&amp;lsquo;blipbuffer&amp;rsquo;&lt;/em&gt; into my HydraNes/src folder:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;grep --color -Iir blipbuffer *&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;We&amp;rsquo;ll loose color in the post, but this is the result:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;src/main.cpp:            if (nes-&amp;gt;apu.blipBuffer-&amp;gt;samples_avail()) {
+src/main.cpp:                int32 readSamples = nes-&amp;gt;apu.blipBuffer-&amp;gt;read_samples(sampleBuffer, kBufferSize, false);
+src/main.cpp:            const int32 availableSamples = nes-&amp;gt;apu.blipBuffer-&amp;gt;samples_avail();
+src/main.cpp:                const int32 readSamples = nes-&amp;gt;apu.blipBuffer-&amp;gt;read_samples( bufferAddress, kBufferSize, false );
+src/Nes.cpp:    if ( !blipBuffer ) {
+src/Nes.cpp:        blipBuffer = new Blip_Buffer();
+src/Nes.cpp:        blipBuffer-&amp;gt;clock_rate( CpuClockRate );
+src/Nes.cpp:        blipBuffer-&amp;gt;sample_rate( SampleRate );
+src/Nes.cpp:        externalApu-&amp;gt;output( blipBuffer );
+src/Nes.cpp:    blipBuffer-&amp;gt;clear();
+src/Nes.cpp:    blipBuffer-&amp;gt;clear();
+src/Nes.cpp:        blipBuffer-&amp;gt;end_frame( count );
+src/Nes.cpp:    //    //blipBuffer-&amp;gt;end_frame( remainingCycles );
+src/Nes.h:#include &amp;quot;BlipBuffer/blip_buf.h&amp;quot;
+src/Nes.h:            Blip_Buffer*            blipBuffer = nullptr;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Instead using the list only option:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;grep --color -Iirl blipbuffer *&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Gives you this result:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;src/main.cpp
+src/Nes.cpp
+src/Nes.h
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;git&#34;&gt;Git&lt;/h1&gt;
+&lt;p&gt;This is another big one.
+Git can have very verbose commands, so aliases save a lot of typing!&lt;!-- raw HTML omitted --&gt;
+Again I add generic and very specific version of commands:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;gs=git status
+gl=git log --oneline --all --graph --decorate $*
+
+ga=git add &amp;quot;$*&amp;quot;
+gcm=git commit -m &amp;quot;$*&amp;quot;
+grmdir=git rm -r &amp;quot;$*&amp;quot;
+grmf=git rm &amp;quot;$*&amp;quot;
+
+gpso=git push -u origin &amp;quot;$*&amp;quot;
+gpsom=git push -u origin master
+
+gplo=git pull origin &amp;quot;$*&amp;quot;
+gplom=git pull origin master
+
+gru=git remote update
+
+gsr=git status -uno -u
+
+gt=git stash
+gts=git stash show -p
+gtl=git stash list
+gta=git stash apply
+
+gsps=git subtree push --previs= $*
+gspl=git subtree pull --previs= $*
+gspsh=git subtree push --prefix=source/hydra hydra master
+gspsl=git subtree pull --prefix=source/hydra hydra master
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;See the difference between &lt;em&gt;gpso&lt;/em&gt; and &lt;em&gt;gpsom&lt;/em&gt; - the second one just using the &lt;em&gt;master&lt;/em&gt; branch.&lt;!-- raw HTML omitted --&gt;
+&lt;em&gt;gpsom&lt;/em&gt; and &lt;em&gt;gplom&lt;/em&gt; are the ones I use the most and this again saves a lot of time.&lt;/p&gt;
+&lt;p&gt;Same for the &lt;em&gt;subtree&lt;/em&gt; commands, showing how I update my code using the common libraries names as &lt;em&gt;hydra&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+In this case - and this is more a git concept - when working with subtree I use a remote alias, added with &lt;code&gt;git remote add -f &#39;name&#39; https://....git&lt;/code&gt; .&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;gs&lt;/em&gt; is great to see what is the status of the current repository you are in.
+&lt;em&gt;gl&lt;/em&gt; logs all the commits.
+&lt;em&gt;ga&lt;/em&gt; adds the files and folders you write after the command.&lt;/p&gt;
+&lt;h1 id=&#34;visual-studio-compiler&#34;&gt;Visual Studio Compiler&lt;/h1&gt;
+&lt;p&gt;Some different aliases I use for Visual Studio:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;vs=&amp;quot;%VS140COMNTOOLS%..\IDE\devenv.exe&amp;quot; /edit &amp;quot;$*&amp;quot;
+
+;= Needed to find MSBuild executable.
+vcvars=&amp;quot;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat&amp;quot;
+
+msb=MSBuild $1 /property:Configuration=$2 /property:Platform=$3
+msbd=MSBuild $1 /property:Configuration=Debug /property:Platform=x64
+msbr=MSBuild $1 /property:Configuration=Release /property:Platform=x64
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Again something as &lt;em&gt;msb&lt;/em&gt; can be used to build code from a Visual Studio Solution.
+&lt;em&gt;msbd&lt;/em&gt; and &lt;em&gt;msbr&lt;/em&gt; are useful shortcuts for again commonly used configurations and platforms.&lt;/p&gt;
+&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+&lt;p&gt;There are many ways to improve productivity - and reducing the amount of stuff you have to write, for repetitive tasks, is very powerful.
+Hope this helps and again thanks to &lt;a href=&#34;https://twitter.com/sarah_edo&#34;&gt;Sarah Drasner&lt;/a&gt; for the article that sparked the idea of writing this one!&lt;/p&gt;
+&lt;p&gt;If anybody wants to add more, comment, feedback please write to me!
+Gabriel&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>gpu driven on Gabriel&#39;s Virtual Tavern</title>
+    <link>https://jorenjoestar.github.io/tags/gpu-driven/</link>
+    <description>Recent content in gpu driven on Gabriel&#39;s Virtual Tavern</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 26 Oct 2021 19:34:19 +0200</lastBuildDate>
+    
+	    <atom:link href="https://jorenjoestar.github.io/tags/gpu-driven/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Gpu Driven Text</title>
+      <link>https://jorenjoestar.github.io/post/gpu_driven_text/gpu_driven_text/</link>
+      <pubDate>Tue, 26 Oct 2021 19:34:19 +0200</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/gpu_driven_text/gpu_driven_text/</guid>
+      <description>&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+&lt;p&gt;Recently on Twitter there was an interesting conversation about &lt;a href=&#34;https://twitter.com/BelgianRenderer/status/1451990908757372929&#34;&gt;&lt;em&gt;GPU-Driven line rendering&lt;/em&gt;&lt;/a&gt;.&lt;br&gt;
+This reminded me of a system that I use to render values that live only on the GPU, like GPU VFX: it gives you the possibility to output text and values from shaders!&lt;/p&gt;
+&lt;p&gt;Normally these values can be mapped and read back into the GPU, but sometimes can be easier to just write them from a shader.&lt;/p&gt;
+&lt;p&gt;I remember seeing this incredible &lt;a href=&#34;https://www.shadertoy.com/view/wdSSD1&#34;&gt;shadertoy&lt;/a&gt; and being in awe: a never-done pet project of mine was to create a game only on the GPU, but instead I use it in standard ways many times.&lt;br&gt;
+Here we are rendering&amp;hellip;text straight from a shader ? WHAT ?&lt;/p&gt;
+&lt;p&gt;The idea comes from &lt;a href=&#34;https://glslsandbox.com/e#35231.0&#34;&gt;this article&lt;/a&gt; as far as I understood, but the idea is the following: &lt;strong&gt;compress each character data into an array of 4 floats (vec4/float4), with each component being the packed bits of one quadrant&lt;/strong&gt;, and given an UV reconstruct the shape of the character.&lt;/p&gt;
+&lt;p&gt;Taken straight from that website as deeper explanation:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;/*
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;--------
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;-███----
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██-██---
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██-██---
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;-███----
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;█████-█-
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██-████-
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██--██--
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██-███--
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;-███-██-
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;--------
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;--------
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11111010
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011110
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11001100
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011100
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110110
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//Broken up into 4 8x3 (24 bit) chunks for each component of the vec4.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//Hexadecimal is being used to reduce clutter in the code but decimal still works.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110000 -&amp;gt; 00000000 01110000 11011000 -&amp;gt; 0x0070D8
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110000 -&amp;gt; 11011000 01110000 11111010 -&amp;gt; 0xD870FA
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11111010
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011110
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11001100 -&amp;gt; 11011110 11001100 11011100 -&amp;gt; 0xDECCDC
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011100
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110110
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000 -&amp;gt; 01110110 00000000 00000000 -&amp;gt; 0x760000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;vec4(0x0070D8,0xD870FA,0xDECCDC,0x760000)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;*/&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;There is quite some bit trickery involved that I will not dwelve into, but the gist of it is simple, even though the process to arrive there must have been interesting!&lt;/p&gt;
+&lt;p&gt;Given these compressed fonts, we can use GPU buffers to store all the informations needed to write anything we want on the screen.&lt;/p&gt;
+&lt;h1 id=&#34;the-solution&#34;&gt;The Solution&lt;/h1&gt;
+&lt;p&gt;From a higher level view, what we will do is the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Reserve some memory to write our text&lt;/li&gt;
+&lt;li&gt;Choose and save the position of the string, cache the reserved memory offset and count&lt;/li&gt;
+&lt;li&gt;Write a per-character dispatch information&lt;/li&gt;
+&lt;li&gt;Draw sprites with all those informations.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;the-buffers&#34;&gt;The Buffers&lt;/h2&gt;
+&lt;p&gt;We will use 4 different buffers to have this working. It can be improved honestly, but this is good enough for a debug only feature!&lt;/p&gt;
+&lt;h3 id=&#34;data-and-atomics-buffer&#34;&gt;Data and atomics buffer&lt;/h3&gt;
+&lt;p&gt;This buffer will contain the atomics and the data to be filled with each character of each string.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// Common buffers used to render gpu driven font
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;layout (std430, binding&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;) buffer DebugGpuFontBuffer {
+    uint        current_data_index;
+    uint        current_entry_index;
+    uint        padding1;
+    uint        padding2;
+
+    vec4        data[];
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;entry-buffer&#34;&gt;Entry buffer&lt;/h3&gt;
+&lt;p&gt;For each string we want to render, we need a position and where in the global data memory we need to read, thus offset and count.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; DebugGPUStringEntry {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;       x;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;       y;
+    uint        offset;
+    uint        count;
+};
+
+layout (std430, binding&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;) buffer DebugGpuFontEntries {
+    DebugGPUStringEntry entries[];
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;dispatch-buffer&#34;&gt;Dispatch buffer&lt;/h3&gt;
+&lt;p&gt;This buffer is used to generate draw for each character in the global data.&lt;br&gt;
+We need this so that each character knows where it belongs in a string.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;layout(std430, binding&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;) buffer DebugGPUFontDispatch {
+    uvec4               dispatches[];
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;indirect-buffer&#34;&gt;Indirect buffer&lt;/h3&gt;
+&lt;p&gt;Final buffer is the one driving how many total characters we will draw.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;layout(std430, binding&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;) buffer DebugGPUIndirect {
+    uint            vertex_count;
+    uint            instance_count;
+    uint            first_vertex;
+    uint            first_instance;
+
+    uint            pad00;
+    uint            pad01;
+    uint            pad02;
+    uint            pad03;
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now that we know the data used, let&amp;rsquo;s see the algorithm itself.&lt;/p&gt;
+&lt;h2 id=&#34;reserving-memory-and-writing-text-to-gpu-buffers&#34;&gt;Reserving memory and writing text to GPU buffers&lt;/h2&gt;
+&lt;p&gt;The main ingredient for this solution is the possibility to write to StructuredBuffers/SSBOs (depending on the API of your choice) PLUS the usage of &lt;em&gt;atomic operations&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;These operations are possible since OpenGL 4+ (actually my initial implementation is on an OpenGL-backed engine), so all newer APIs are supported.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s have a look at some code, from the &lt;strong&gt;vertex shader of a sprite&lt;/strong&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// 1. Reserve memory
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// Reserve 1 entry, that will include position and where in the data buffer we will write our text.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;uint entry_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; atomicAdd(current_entry_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+&lt;span style=&#34;color:#75715e&#34;&gt;// Reserve 16 characters
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;uint data_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; atomicAdd(current_data_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;);
+
+&lt;span style=&#34;color:#75715e&#34;&gt;// 2. Cache string entry
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// Cache data offset and count. We will use this to drive the text rendering.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;entries[entry_index].x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; STRWIDTH(&lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;);
+entries[entry_index].y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; STRHEIGHT(&lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;);
+entries[entry_index].offset &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; data_index;
+entries[entry_index].count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;;
+
+&lt;span style=&#34;color:#75715e&#34;&gt;// 3. Write actual text
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// MAVERICK: I did not found a better way to write this...
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;data[data_index] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_p;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_o;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_s;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.x, &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.x, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.x, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;7&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_per;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.x, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_com;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.y, &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;11&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.y, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.y, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;13&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_per;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;14&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.y, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;15&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;As we can see the way of writing the text is horrible, but it works.&lt;/p&gt;
+&lt;p&gt;We are first reserving memory using &lt;em&gt;atomic operations&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;We then cache the string informations, like position and where to access the global data.&lt;/p&gt;
+&lt;p&gt;Finally we write the text!&lt;/p&gt;
+&lt;h2 id=&#34;generating-the-dispatch&#34;&gt;Generating the dispatch&lt;/h2&gt;
+&lt;p&gt;Once we collected all the characters around, we need to generate the per-character dispatches and the indirect draw.&lt;br&gt;
+I wrote a compute shader for that, optimizable, but good for the purpose here.&lt;br&gt;
+It also writes another string with GPU data about the system itself:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;layout (local_size_x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, local_size_y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, local_size_z &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) in;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+    &lt;span style=&#34;color:#75715e&#34;&gt;// Write global label with gpu font system data
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    uint entry_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; atomicAdd(current_entry_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+    uint data_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; atomicAdd(current_data_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;);
+
+    data[data_index] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_t;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_e;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_s;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_t;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_h;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_g;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;7&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_per;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_4;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(current_data_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;11&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(current_data_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;13&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(current_entry_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;14&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(current_entry_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
+
+    vec2 print_pos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; floor(vec2(STRWIDTH(&lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;), STRHEIGHT(&lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;)));
+    entries[entry_index].x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; print_pos.x;
+    entries[entry_index].y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; print_pos.y;
+    entries[entry_index].offset &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; data_index;
+    entries[entry_index].count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Here we are &amp;ldquo;simply&amp;rdquo; writing a string containing the indices used by the system, just to keep track of them.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Write single character dispatch informations
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    uint global_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; (uint e &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;; e &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt; current_entry_index; &lt;span style=&#34;color:#f92672&#34;&gt;++&lt;/span&gt;e) {
+      uint entry_data_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; entries[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;].offset;
+      &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; (uint i &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;; i &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt; entries[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;].count; &lt;span style=&#34;color:#f92672&#34;&gt;++&lt;/span&gt;i) {
+        dispatches[global_index].x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; e;
+        dispatches[global_index].y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; i;
+
+        &lt;span style=&#34;color:#f92672&#34;&gt;++&lt;/span&gt;global_index;
+      }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This is where we create the per character data.&lt;br&gt;
+We can optimize this, probably using one uint instead of 4.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Write indirect draw values
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    vertex_count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;;
+    instance_count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; global_index;
+    first_vertex &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+    first_instance &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+    pad00 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Finally we draw 2 triangles for each character data.&lt;/p&gt;
+&lt;h2 id=&#34;indirect-rendering-of-the-gpu-driven-text&#34;&gt;(Indirect) Rendering of the GPU Driven Text&lt;/h2&gt;
+&lt;p&gt;We are now ready to write the actual text on the screen!&lt;/p&gt;
+&lt;p&gt;Here is the final shader:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#if defined VERTEX
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) out vec2 uv;
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) flat out uint global_data_index;
+
+  &lt;span style=&#34;color:#75715e&#34;&gt;// Per vertex positions and uvs of a quad
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;  vec3 positions[&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;]       &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec3[&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;]( vec3(&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) );
+  vec2 uvs[&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;]             &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec2[&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;]( vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;),    vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;),   vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;), vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;), vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;), vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;) );
+
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+
+      &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; uint vertex_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; gl_VertexID &lt;span style=&#34;color:#f92672&#34;&gt;%&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;;
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Calculate UVs
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      uv.xy &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; uvs[vertex_index];
+
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Sprite size
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; vec2 sprite_size &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; CHAR_SIZE;
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Calculate world position
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      vec4 world_position &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4( vec2(positions[ vertex_index ].xy &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; sprite_size ), &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; );
+
+      uint global_char_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; gl_InstanceIndex;
+      uint entry_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; dispatches[global_char_index].x;
+      uint entry_char_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; dispatches[global_char_index].y;
+
+      DebugGPUStringEntry entry &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; entries[entry_index];
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Calculate actual position from the start of the string
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      world_position.xy &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; vec2(entry.x &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; entry_char_index &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; sprite_size.x, entry.y);
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Move position to upper left corner
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      world_position.xy &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; sprite_size &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.5f&lt;/span&gt;;
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Pass entry data to read the final compressed font character
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      global_data_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; entry.offset &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; entry_char_index;
+
+      gl_Position &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; locals.projection_matrix_2d &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; world_position;
+
+  }
+  
+  &lt;span style=&#34;color:#75715e&#34;&gt;#endif &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// VERTEX
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+
+  &lt;span style=&#34;color:#75715e&#34;&gt;#if defined FRAGMENT
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) in vec2 uv;
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) flat in uint global_data_index;
+
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) out vec4 out_color;
+
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+
+    vec4 char_data &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; data[global_data_index];
+    vec2 duv &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; uv &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; CHAR_SIZE;
+    vec2 print_pos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;);
+    &lt;span style=&#34;color:#75715e&#34;&gt;// Decompress char and color pixel!
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; textPixel &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; print_char(char_data, duv, print_pos);
+      
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (textPixel &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.01f&lt;/span&gt;)
+          discard;
+      
+    vec3 col &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+    col &lt;span style=&#34;color:#f92672&#34;&gt;*=&lt;/span&gt; mix(vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.2&lt;/span&gt;),vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;),textPixel);
+    out_color &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(col.rgb, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+  }
+
+  &lt;span style=&#34;color:#75715e&#34;&gt;#endif &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// FRAGMENT
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;It should be pretty straighforward, but basically what is happening is this:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Read the dispatch information, to know where the sprite will be located&lt;/li&gt;
+&lt;li&gt;Expand the quad to the correct location&lt;/li&gt;
+&lt;li&gt;Read the information packed font character based on the character&lt;/li&gt;
+&lt;li&gt;Color the pixel!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The real magic happens in the &amp;lsquo;print_char&amp;rsquo; method, and here I will post all the code that comes from the shadertoy example I wrote before!&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; DOWN_SCALE &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0f&lt;/span&gt;;
+
+&lt;span style=&#34;color:#75715e&#34;&gt;#define MAX_INT_DIGITS 4
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//#define FLIP_Y
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; vec2 CHAR_SIZE &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;);
+&lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; vec2 CHAR_SPACING &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;);
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;STRWIDTH&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; c) {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; c &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; CHAR_SPACING.x;
+}
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;STRHEIGHT&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; c) {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; c &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; CHAR_SPACING.y;
+}
+
+&lt;span style=&#34;color:#75715e&#34;&gt;#define NORMAL 0
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#define INVERT 1
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#define UNDERLINE 2
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; TEXT_MODE &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; NORMAL;
+
+vec4 ch_spc &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_exc &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003078&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x787830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_quo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x662400&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_hsh &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006C6C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE6C6C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6CFE6C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C0000&lt;/span&gt;);
+vec4 ch_dol &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x30307C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C078&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0CF8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303000&lt;/span&gt;);
+vec4 ch_pct &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC4CC18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x8C0000&lt;/span&gt;);
+vec4 ch_amp &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0070D8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD870FA&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDECCDC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x760000&lt;/span&gt;);
+vec4 ch_apo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x306000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_lbr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000C18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x306060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x603018&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0000&lt;/span&gt;);
+vec4 ch_rbr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x180C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C1830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x600000&lt;/span&gt;);
+vec4 ch_ast &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x663CFF&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C6600&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_crs &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x18187E&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181800&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_com &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000038&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x386000&lt;/span&gt;);
+vec4 ch_dsh &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0000FE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_per &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000038&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x380000&lt;/span&gt;);
+vec4 ch_lsl &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000002&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x060C18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x800000&lt;/span&gt;);
+vec4 ch_0 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007CC6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD6D6D6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD6D6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7C0000&lt;/span&gt;);
+vec4 ch_1 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF03030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFC0000&lt;/span&gt;);
+vec4 ch_2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0C18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFC0000&lt;/span&gt;);
+vec4 ch_3 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C38&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0CCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_4 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000C1C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C6CCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x1E0000&lt;/span&gt;);
+vec4 ch_5 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FCC0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C0F8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0CCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_6 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003860&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C0F8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_7 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FEC6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6060C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x183030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_8 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCEC78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_9 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC7C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x700000&lt;/span&gt;);
+vec4 ch_col &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x383800&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003838&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_scl &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x383800&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003838&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x183000&lt;/span&gt;);
+vec4 ch_les &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000C18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x603018&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0000&lt;/span&gt;);
+vec4 ch_equ &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007E00&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7E0000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_grt &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x180C06&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C1830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x600000&lt;/span&gt;);
+vec4 ch_que &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C1830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_ats &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007CC6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6DEDE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDEC0C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7C0000&lt;/span&gt;);
+vec4 ch_A &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003078&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0000&lt;/span&gt;);
+vec4 ch_B &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FC66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66667C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFC0000&lt;/span&gt;);
+vec4 ch_C &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C0C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C0000&lt;/span&gt;);
+vec4 ch_D &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00F86C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66666C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF80000&lt;/span&gt;);
+vec4 ch_E &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FE62&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x60647C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x646062&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE0000&lt;/span&gt;);
+vec4 ch_F &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FE66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x62647C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x646060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF00000&lt;/span&gt;);
+vec4 ch_G &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C0C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCEC666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3E0000&lt;/span&gt;);
+vec4 ch_H &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCFC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0000&lt;/span&gt;);
+vec4 ch_I &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_J &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001E0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_K &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C6C78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C6C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE60000&lt;/span&gt;);
+vec4 ch_L &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00F060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x606060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x626666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE0000&lt;/span&gt;);
+vec4 ch_M &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C6EE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFEFED6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;);
+vec4 ch_N &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE6F6FE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDECEC6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;);
+vec4 ch_O &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C66C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x380000&lt;/span&gt;);
+vec4 ch_P &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FC66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66667C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x606060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF00000&lt;/span&gt;);
+vec4 ch_Q &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCEDE7C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C1E00&lt;/span&gt;);
+vec4 ch_R &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FC66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66667C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C6666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE60000&lt;/span&gt;);
+vec4 ch_S &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCC070&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x18CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_T &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FCB4&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_U &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_V &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_W &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6D6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD66C6C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C0000&lt;/span&gt;);
+vec4 ch_X &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC7830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x78CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0000&lt;/span&gt;);
+vec4 ch_Y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_Z &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FECE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x981830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6062C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE0000&lt;/span&gt;);
+vec4 ch_lsb &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C30&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C0000&lt;/span&gt;);
+vec4 ch_rsl &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000080&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC06030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x180C06&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x020000&lt;/span&gt;);
+vec4 ch_rsb &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C0000&lt;/span&gt;);
+vec4 ch_pow &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x10386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_usc &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FF00&lt;/span&gt;);
+vec4 ch_a &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00780C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7CCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x760000&lt;/span&gt;);
+vec4 ch_b &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x607C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDC0000&lt;/span&gt;);
+vec4 ch_c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C0CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_d &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C7CCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x760000&lt;/span&gt;);
+vec4 ch_e &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFCC0CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6060F8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x606060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF00000&lt;/span&gt;);
+vec4 ch_g &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0076CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC7C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0CCC78&lt;/span&gt;);
+vec4 ch_h &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x606C76&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE60000&lt;/span&gt;);
+vec4 ch_i &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7E0000&lt;/span&gt;);
+vec4 ch_j &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC78&lt;/span&gt;);
+vec4 ch_k &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x60666C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x786C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE60000&lt;/span&gt;);
+vec4 ch_l &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7E0000&lt;/span&gt;);
+vec4 ch_m &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FCD6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD6D6D6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;);
+vec4 ch_n &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00F8CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0000&lt;/span&gt;);
+vec4 ch_o &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_p &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00DC66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7C60F0&lt;/span&gt;);
+vec4 ch_q &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0076CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7C0C1E&lt;/span&gt;);
+vec4 ch_r &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00EC6E&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x766060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF00000&lt;/span&gt;);
+vec4 ch_s &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6018CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_t &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000020&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x60FC60&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x60606C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x380000&lt;/span&gt;);
+vec4 ch_u &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x760000&lt;/span&gt;);
+vec4 ch_v &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_w &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD6D66C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C0000&lt;/span&gt;);
+vec4 ch_x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C66C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x38386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;);
+vec4 ch_y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66663C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C18F0&lt;/span&gt;);
+vec4 ch_z &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FC8C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x1860C4&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFC0000&lt;/span&gt;);
+vec4 ch_lpa &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001C30&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x603030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x1C0000&lt;/span&gt;);
+vec4 ch_bar &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181800&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x180000&lt;/span&gt;);
+vec4 ch_rpa &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x30180C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x183030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE00000&lt;/span&gt;);
+vec4 ch_tid &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0073DA&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCE0000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_lar &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x10386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6FE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Extracts bit b from the given number.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//Shifts bits right (num / 2^bit) then ANDs the result with 1 (mod(result,2.0)).
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;extract_bit&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; n, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; b)
+{
+    b &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; clamp(b,&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;24.0&lt;/span&gt;);
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; floor(mod(floor(n &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;2.0&lt;/span&gt;,floor(b))),&lt;span style=&#34;color:#ae81ff&#34;&gt;2.0&lt;/span&gt;));
+}
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Returns the pixel at uv in the given bit-packed sprite.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;sprite&lt;/span&gt;(vec4 spr, vec2 size, vec2 uv)
+{
+    uv &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; floor(uv);
+
+&lt;span style=&#34;color:#75715e&#34;&gt;#if defined(FLIP_Y)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Invert y uv coordinate
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    uv.y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; uv.y;
+&lt;span style=&#34;color:#75715e&#34;&gt;#endif &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// FLIP_Y
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;//Calculate the bit to extract (x + y * width) (flipped on x-axis)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; bit &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (size.x&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;uv.x&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; uv.y &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; size.x;
+
+    &lt;span style=&#34;color:#75715e&#34;&gt;//Clipping bound to remove garbage outside the sprite&amp;#39;s boundaries.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; bounds &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; all(greaterThanEqual(uv,vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;))) &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; all(lessThan(uv,size));
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; pixels &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;;
+    pixels &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; extract_bit(spr.x, bit &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;72.0&lt;/span&gt;);
+    pixels &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; extract_bit(spr.y, bit &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;48.0&lt;/span&gt;);
+    pixels &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; extract_bit(spr.z, bit &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;24.0&lt;/span&gt;);
+    pixels &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; extract_bit(spr.w, bit &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;00.0&lt;/span&gt;);
+
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; bounds &lt;span style=&#34;color:#f92672&#34;&gt;?&lt;/span&gt; pixels : &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;;
+}
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Prints a character and moves the print position forward by 1 character width.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;print_char&lt;/span&gt;(vec4 ch, vec2 uv, inout vec2 print_pos)
+{
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;( TEXT_MODE &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; INVERT )
+    {
+        &lt;span style=&#34;color:#75715e&#34;&gt;//Inverts all of the bits in the character.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        ch &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;2.0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;24.0&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;ch;
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;( TEXT_MODE &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; UNDERLINE )
+    {
+        &lt;span style=&#34;color:#75715e&#34;&gt;//Makes the bottom 8 bits all 1.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;//Shifts the bottom chunk right 8 bits to drop the lowest 8 bits,
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;//then shifts it left 8 bits and adds 255 (binary 11111111).
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        ch.w &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; floor(ch.w&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;256.0&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;256.0&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;255.0&lt;/span&gt;;
+    }
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; px &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; sprite(ch, CHAR_SIZE, uv &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; print_pos);
+    print_pos.x &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; CHAR_SPACING.x;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; px;
+}
+
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Returns the digit sprite for the given number.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;vec4 &lt;span style=&#34;color:#a6e22e&#34;&gt;get_digit&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; d)
+{
+    d &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; floor(d);
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_0;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_1;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_2;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;3.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_3;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_4;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;5.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_5;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_6;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;7.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_7;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_8;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;9.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_9;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;);
+}
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Prints out the given number starting at pos.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;print_number&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; number, vec2 uv, inout vec2 print_pos)
+{
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; i &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;;i &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;i&lt;span style=&#34;color:#f92672&#34;&gt;--&lt;/span&gt;)
+    {
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; digit &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mod( number &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(i)) , &lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;);
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(i &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) &lt;span style=&#34;color:#75715e&#34;&gt;//Add a decimal point.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        {
+            result &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; print_char(ch_per,uv, print_pos);
+        }
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(abs(number) &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(i)) &lt;span style=&#34;color:#f92672&#34;&gt;||&lt;/span&gt; i &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) &lt;span style=&#34;color:#75715e&#34;&gt;//Clip off leading zeros.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        {
+            result &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; print_char(get_digit(digit),uv, print_pos);
+        }
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; result;
+}
+
+vec4 &lt;span style=&#34;color:#a6e22e&#34;&gt;get_digit&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; number, &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; position) {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; digit &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mod( number &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(position)) , &lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;);
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; get_digit( digit );
+}
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;print_integer&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; number, &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; zeros, vec2 uv, inout vec2 print_pos)
+{
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; i &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; MAX_INT_DIGITS;i &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;i&lt;span style=&#34;color:#f92672&#34;&gt;--&lt;/span&gt;)
+    {
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; digit &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mod( number &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(i)) , &lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;);
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(abs(number) &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(i)) &lt;span style=&#34;color:#f92672&#34;&gt;||&lt;/span&gt; zeros &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; i  &lt;span style=&#34;color:#f92672&#34;&gt;||&lt;/span&gt; i &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) &lt;span style=&#34;color:#75715e&#34;&gt;//Clip off leading zeros.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        {
+            result &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; print_char(get_digit(digit),uv, print_pos);
+        }
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; result;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;It is a little code intensitve, but the gist is the same: decompress the packed infomration to know if the current pixel falls into the compressed font character or not!&lt;/p&gt;
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+&lt;p&gt;I will probably add the code to my &lt;a href=&#34;https://github.com/jorenjoestar/datadrivenrendering&#34;&gt;DataDrivenRendering&lt;/a&gt; repository, but in the meantime I wanted to write this article.&lt;br&gt;
+The general idea should be simple, the execution can be improved a lot but the help can be great to debug GPU only systems, that are becoming more and more used.&lt;br&gt;
+Maybe this is the start of a GPU-Driven ImGui system ? :p&lt;/p&gt;
+&lt;p&gt;Hope you enjoy!&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>bindless on Gabriel&#39;s Virtual Tavern</title>
+    <link>https://jorenjoestar.github.io/tags/bindless/</link>
+    <description>Recent content in bindless on Gabriel&#39;s Virtual Tavern</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 19 Dec 2021 21:36:41 +0100</lastBuildDate>
+    
+	    <atom:link href="https://jorenjoestar.github.io/tags/bindless/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Modern (Bindless) Sprite Batch for Vulkan (and more!)</title>
+      <link>https://jorenjoestar.github.io/post/modern_sprite_batch/</link>
+      <pubDate>Sun, 19 Dec 2021 21:36:41 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/modern_sprite_batch/</guid>
+      <description>
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;bindless_spritebatch.png&#34; &gt;
+
+&lt;img src=&#34;bindless_spritebatch.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;The sprites rendered with 1 draw call using the techniques described in this article.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+&lt;p&gt;Sprite batching is one of the fundamental techniques used in almost all pixel art games (that are lovingly back in town after the first era of 3D), and yet I never found any recent documentation.&lt;br&gt;
+Since the &lt;a href=&#34;https://jorenjoestar.github.io/post/vulkan_bindless_texture/&#34;&gt;Bindless Age has started&lt;/a&gt; old algorithms can be implemented in new ways.&lt;/p&gt;
+&lt;p&gt;In this short article I would like to talk about how easy is to manage sprites, including UI, with the &lt;em&gt;bindless&lt;/em&gt; model.&lt;/p&gt;
+&lt;h1 id=&#34;sprite-batching-how-&#34;&gt;Sprite Batching: how ?&lt;/h1&gt;
+&lt;p&gt;Sprite batching is a way of reducing the number of draw calls (still something to not abuse) by grouping them based on similar properties.&lt;/p&gt;
+&lt;p&gt;Normally when batching sprites, we would submit a batch of sprites when any texture would change, an operation that could be reduced by using texture atlases.&lt;br&gt;
+For tiles this can be more easily done, but for characters with a lot of complex sprite sheets it is harder.&lt;/p&gt;
+&lt;p&gt;We would have something like (pseudocode):&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for each sprite
+   sprite_batch.set( sprite.texture )
+   sprite_batch.draw( x, y, width, height )
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &amp;lsquo;set&amp;rsquo; method would check if the current texture is differen than the sprite one, and if so then it would submit the accumulated sprites, then cache the sprite texture and start filling the new sprites.&lt;/p&gt;
+&lt;p&gt;A good code to check is the one for &lt;a href=&#34;https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/graphics/g2d/SpriteBatch.java&#34;&gt;libGDX sprite batching&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Can we do better ? The answer is yes!&lt;/p&gt;
+&lt;h1 id=&#34;sprite-batch-caching&#34;&gt;Sprite Batch: caching&lt;/h1&gt;
+&lt;p&gt;To have an effective Sprite Batch we need to cache some informations in order to know when to group sprites and when not.
+A possible list is the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Render States (depth, blend, &amp;hellip;)&lt;/li&gt;
+&lt;li&gt;Vertex Layouts&lt;/li&gt;
+&lt;li&gt;Shader&lt;/li&gt;
+&lt;li&gt;Textures&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In &lt;em&gt;Vulkan&lt;/em&gt; world, render states, shader and vertex layouts are all included into a &lt;em&gt;pipeline&lt;/em&gt;.
+But Textures ?&lt;br&gt;
+They are in used in &lt;em&gt;descriptor sets&lt;/em&gt;, but with bindless we can simply ignore them, because they are passed down as integers into constants.&lt;/p&gt;
+&lt;p&gt;Render states, vertex layouts and shaders are all inside a &lt;em&gt;Pipeline State Object&lt;/em&gt;, so the only caching really needed here is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Pipeline&lt;/li&gt;
+&lt;li&gt;Descriptor Set&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;We still need to differentiate shaders that use different constant/structured buffers, but otherwise we can share a common shader!&lt;/p&gt;
+&lt;p&gt;The core of the caching is in &lt;strong&gt;sprite_batch.cpp&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void SpriteBatch::set( hydra::gfx::PipelineHandle pipeline, hydra::gfx::ResourceListHandle resource_list ) {
+    using namespace hydra::gfx;
+
+    if ( current_pipeline.index != k_invalid_pipeline.index &amp;amp;&amp;amp; current_resource_list.index != k_invalid_list.index &amp;amp;&amp;amp;
+         ( current_pipeline.index != pipeline.index )) {
+        // Add a batch
+        DrawBatch batch { current_pipeline, current_resource_list, previous_offset, num_sprites - previous_offset };
+        draw_batches.push( batch );
+    }
+
+    previous_offset = num_sprites;
+
+    current_pipeline = pipeline;
+    current_resource_list = resource_list;
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We use the &lt;em&gt;pipeline&lt;/em&gt; and the &lt;em&gt;resource list&lt;/em&gt; as informations to know when a batch should be changed.&lt;/p&gt;
+&lt;h2 id=&#34;passing-texture-index-to-the-gpu&#34;&gt;Passing texture index to the GPU&lt;/h2&gt;
+&lt;p&gt;As we saw in the previous article, with bindless we define a global array of textures and we simply index into it using shader constants or other tricks (more on that later).&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// (glsl code), Platform.h:
+#if defined(HYDRA_BINDLESS)
+
+#extension GL_EXT_nonuniform_qualifier : enable
+
+layout ( set = 1, binding = 10 ) uniform sampler2D textures[];
+// Use aliasing to sample any kind of texture using one single bindless texture array:
+layout ( set = 1, binding = 10 ) uniform sampler3D textures_3d[];
+
+#endif // HYDRA_BINDLESS
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;In our implementation we will use &lt;strong&gt;per-instance sprite data&lt;/strong&gt; to encode the texture id.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+//
+struct SpriteGPUData {
+
+    vec4s                           position;
+
+    vec2s                           uv_size;
+    vec2s                           uv_offset;
+
+    vec2s                           size;
+    u32                             flag0;
+    u32                             flag1;
+
+    void                            set_albedo_id( u32 albedo_id )  { flag1 = albedo_id; }
+    u32                             get_albedo_id() const           { return flag1; }
+
+}; // struct SpriteGPUData
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;In this case we use &lt;em&gt;flag1&lt;/em&gt; as the index containing the texture to read.&lt;br&gt;
+In Hydra I have a freelist for all rendering resources, so I can always use the texture index without worrying about index collisions and such.&lt;/p&gt;
+&lt;h2 id=&#34;sprite-shader&#34;&gt;Sprite Shader&lt;/h2&gt;
+&lt;p&gt;The sprite shader can be modified to include uints as vertex layout inputs, and pass the a flat uint to the fragment program:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;#if defined VERTEX
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec4 uv_size_offset;
+layout (location = 2) in vec2 size;
+layout (location = 3) in uvec2 flags; 
+
+layout (location = 0) out vec4 uv_alpha;
+// NOTE: flat attribute!
+layout (location = 1) flat out uint out_albedo_id;
+
+void main() {
+
+    const uint vertex_index = gl_VertexID % 6;
+    
+    ...
+
+    // Pass through albedo id
+    out_albedo_id = flags.y;
+
+    ...
+
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We can now sample the texture in the fragment program easily.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE&lt;/strong&gt; in Vulkan we need an additional keyword to properly sample a texture in the bindless model without incurring in problems, and this is the &lt;strong&gt;nonuniformEXT&lt;/strong&gt; keyword.&lt;br&gt;
+Thanks to Christian Forfang for the email, I totally forgot about that!&lt;br&gt;
+I&amp;rsquo;ve added a toggle so you can see the problems that could happen when you don&amp;rsquo;t include that keyword.&lt;br&gt;
+The correct shader is this:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; #if defined FRAGMENT
+
+  #pragma include &amp;quot;platform.h&amp;quot;
+
+  layout (location = 0) in vec4 uv_alpha;
+  // NOTE: flat attribute!
+  layout (location = 1) flat in uint albedo_id;
+
+  layout (location = 0) out vec4 out_color;
+
+void main() {
+
+      vec4 color = texture( textures[nonuniformEXT(albedo_id)], uv_alpha.xy );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;By simply passing the uint in the instance data we have what we need to render any sprite.&lt;/p&gt;
+&lt;h2 id=&#34;non-uniform-ext-keyword-importance&#34;&gt;Non-Uniform-EXT keyword importance&lt;/h2&gt;
+&lt;p&gt;There is an incredibly informative blog post about the &lt;strong&gt;nonuniformEXT&lt;/strong&gt; on &lt;a href=&#34;https://anki3d.org/resource-uniformity-bindless-access-in-vulkan/&#34;&gt;Anki 3D blog&lt;/a&gt;, as well as the &lt;a href=&#34;https://github.com/KhronosGroup/Vulkan-Samples/tree/master/samples/extensions/descriptor_indexing#non-uniform-indexing&#34;&gt;spec itself&lt;/a&gt;.&lt;br&gt;
+Again thanks a lot to Christian Forfang to point out the missing keyword. I could see the problem without the keyword only on my integrated AMD card from my AMD 5900HX CPU, not on my Nvidia 2070, but it is great to be aware of these kind of problems.&lt;/p&gt;
+&lt;p&gt;Here I highlighted the problem as you can see without that keyword:&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;bindless_spritebatch_nonuniform_missing.png&#34; &gt;
+
+&lt;img src=&#34;bindless_spritebatch_nonuniform_missing.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Non synchronized pixels for missing nonuniformEXT keyword&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;I also updated the code so you can choose when to disable it and see the problem yourself.&lt;/p&gt;
+&lt;h2 id=&#34;one-draw-call&#34;&gt;One draw call&lt;/h2&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;bindless_spritebatch_renderdoc.png&#34; &gt;
+
+&lt;img src=&#34;bindless_spritebatch_renderdoc.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;RenderDoc truth: 1 draw call for the background, 1 for all those sprites!&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;As we can see from this RenderDoc capture we are using an instanced draw call with bindless to render all the sprites on the screen in this demo, even though they are coming from 5 different files!&lt;br&gt;
+If we can have similar shaders (and many times for pixel art games we CAN), then it is guaranteed that draw calls will be kept at minimum.&lt;/p&gt;
+&lt;p&gt;We can use SSBO/StructuredBuffer with more per instance data to further specialize the shader without changing the sprites (like &lt;a href=&#34;https://wickedengine.net/2017/06/05/should-we-get-rid-of-vertex-buffers/&#34;&gt;manual vertex pulling&lt;/a&gt;) but as always, numbers will tell what is better for your application, and finding a balance between draw calls, permutations and shader complexity is paramount!&lt;/p&gt;
+&lt;h1 id=&#34;bonus-post-process-bindless-trick&#34;&gt;Bonus: post-process bindless trick&lt;/h1&gt;
+&lt;p&gt;A trick I started using with bindless for post-process shaders is to use the &lt;strong&gt;instance id&lt;/strong&gt; as texture index to be retrieved into the shader!&lt;br&gt;
+You can use &lt;em&gt;push constants&lt;/em&gt; as well, but I figured something even simpler would work.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Pass through from main rt to swapchain
+cb-&amp;gt;bind_pass( sort_key++, renderer-&amp;gt;gpu-&amp;gt;swapchain_pass );
+
+cb-&amp;gt;bind_pipeline( sort_key++, debug_gpu_font_material-&amp;gt;passes[ gpu_text::pass_through ].pipeline );
+cb-&amp;gt;bind_resource_list( sort_key++, &amp;amp;debug_gpu_font_material-&amp;gt;passes[ gpu_text::pass_through ].resource_list, 1, 0, 0 );
+// Use first_instance to retrieve texture ID for bindless use.
+cb-&amp;gt;draw( sort_key++, hydra::gfx::TopologyType::Triangle, 0, 3, main_texture-&amp;gt;handle.index, 1 );
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We have only 1 instance of the fullscreen triangle, and the instance index tells us the texture index.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;#if defined VERTEX
+
+layout (location = 0) out vec2 vTexCoord;
+layout (location = 1) flat out uint texture_id;
+
+void main() {
+
+    vTexCoord.xy = vec2((gl_VertexID &amp;lt;&amp;lt; 1) &amp;amp; 2, gl_VertexID &amp;amp; 2);
+    gl_Position = vec4(vTexCoord.xy * 2.0f - 1.0f, 0.0f, 1.0f);
+    // If rendering to a RenderTarget, flip Y
+    gl_Position.y = -gl_Position.y;
+
+    // Using instance index to simply read an uint
+    // storing the texture index in the bindless array.
+    texture_id = gl_InstanceIndex;
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;bonus2-imgui-rendering&#34;&gt;Bonus2: ImGUI rendering&lt;/h1&gt;
+&lt;p&gt;A similar trick can be found inside the &lt;strong&gt;Hydra ImGui backend&lt;/strong&gt;, using texture ids:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void ImGuiService::render( hydra::gfx::Renderer* renderer, hydra::gfx::CommandBuffer&amp;amp; commands ) {
+  ...
+
+  TextureHandle new_texture = *(TextureHandle*)( pcmd-&amp;gt;TextureId );
+  ...
+  commands.draw_indexed( sort_key++, hydra::gfx::TopologyType::Triangle, pcmd-&amp;gt;ElemCount, 1, index_buffer_offset + pcmd-&amp;gt;IdxOffset, vtx_buffer_offset + pcmd-&amp;gt;VtxOffset, new_texture.index );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With bindless there is no need to create different descriptor sets based on the texture used by the ImGUI window, and with the instance index we can again draw every texture in a simple way!&lt;/p&gt;
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+&lt;p&gt;In this article we saw a simple way to evolve a sprite batch to group sprites without the need to worry about texture changes.&lt;br&gt;
+For ages this was the main parameter to separate batches, but with bindless active is not anymore.&lt;br&gt;
+Furthermore, &lt;em&gt;Pipeline State Objects&lt;/em&gt; contains most of the informations needed to know if something has changed from a render state/layout perspective, and we can balance out dynamic parts of the pipeline to cache even more.&lt;/p&gt;
+&lt;p&gt;As awlays if you enjoyed this article please comment, share, send feedback!
+Gabriel&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Vulkan Pills 1: Bindless Textures</title>
+      <link>https://jorenjoestar.github.io/post/vulkan_bindless_texture/</link>
+      <pubDate>Mon, 01 Nov 2021 18:44:17 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/vulkan_bindless_texture/</guid>
+      <description>&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+&lt;p&gt;Here is a very short article on how to use Vulkan bindless features.&lt;/p&gt;
+&lt;p&gt;All the relevant &lt;em&gt;c++&lt;/em&gt; code is into &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/blob/master/source/hydra_next/source/graphics/gpu_device_vulkan.cpp&#34;&gt;gpu_device_vulkan.cpp&lt;/a&gt; and &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/blob/master/source/hydra_next/source/graphics/command_buffer.cpp&#34;&gt;command_buffer.cpp&lt;/a&gt;, and you can follow along &lt;strong&gt;HYDRA_BINDLESS&lt;/strong&gt; defines to see what changes.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;THIS IS THE FASTEST ROUTE TO START USING BINDLESS TEXTURES THAT I KNOW OF&lt;/strong&gt;.&lt;br&gt;
+This means also that is architecturally not optimal but it will serve its purposes!&lt;/p&gt;
+&lt;p&gt;There is a great article about the different features used here at &lt;a href=&#34;https://community.arm.com/arm-community-blogs/b/graphics-gaming-and-vr-blog/posts/vulkan-descriptor-indexing&#34;&gt;arm&lt;/a&gt;, check it out first!&lt;/p&gt;
+&lt;h1 id=&#34;1-querying-for-gpu-support&#34;&gt;1. Querying for GPU support&lt;/h1&gt;
+&lt;p&gt;In a pure Vulkan way, we want to query for the support of a couple of features, like this:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT, &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt; };
+VkPhysicalDeviceFeatures2 device_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;indexing_features };
+
+vkGetPhysicalDeviceFeatures2( vulkan_physical_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;device_features );
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; bindless_supported &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; indexing_features.descriptorBindingPartiallyBound &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; indexing_features.runtimeDescriptorArray;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;2-enabling-gpu-features&#34;&gt;2. Enabling GPU features&lt;/h1&gt;
+&lt;p&gt;I will put a little more context here.&lt;br&gt;
+With this code we enable all possible supported features, thus when we create the device we already have pNext used.&lt;br&gt;
+Being a linked list, to add more features to a device we need to add another link to our indexing features created above:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;// Enable all features: just pass the physical features 2 struct.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    VkPhysicalDeviceFeatures2 physical_features2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+    vkGetPhysicalDeviceFeatures2( vulkan_physical_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;physical_features2 );
+
+    VkDeviceCreateInfo device_create_info &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; {};
+    device_create_info.sType &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.queueCreateInfoCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;sizeof&lt;/span&gt;( queue_info ) &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;sizeof&lt;/span&gt;( queue_info[ &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; ] );
+    device_create_info.pQueueCreateInfos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; queue_info;
+    device_create_info.enabledExtensionCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; device_extension_count;
+    device_create_info.ppEnabledExtensionNames &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; device_extensions;
+    device_create_info.pNext &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;physical_features2;
+
+&lt;span style=&#34;color:#75715e&#34;&gt;#if defined(HYDRA_BINDLESS)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( bindless_supported ) {
+        &lt;span style=&#34;color:#75715e&#34;&gt;// This should be already set to VK_TRUE, as we queried before.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        indexing_features.descriptorBindingPartiallyBound &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_TRUE;
+        indexing_features.runtimeDescriptorArray &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_TRUE;
+
+        physical_features2.pNext &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;indexing_features;
+    }
+&lt;span style=&#34;color:#75715e&#34;&gt;#endif &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// HYDRA_BINDLESS
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+    result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vkCreateDevice( vulkan_physical_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;device_create_info, vulkan_allocation_callbacks, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_device );
+    check( result );
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;3-descriptor-pool-creation&#34;&gt;3. Descriptor Pool Creation&lt;/h1&gt;
+&lt;p&gt;When creating the Descriptor Pool, we need to add the &lt;em&gt;flag VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT&lt;/em&gt;.&lt;br&gt;
+This is needed so we can update textures in the bindless array without any problem or validation error.&lt;br&gt;
+Still we need to be sure to not change a used resource in command buffers that are running!&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; u32 k_max_bindless_resources &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;16536&lt;/span&gt;;
+  &lt;span style=&#34;color:#75715e&#34;&gt;// Create bindless descriptor pool
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;  VkDescriptorPoolSize pool_sizes_bindless[] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;
+  {
+      { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, k_max_bindless_resources }
+  };
+  
+  &lt;span style=&#34;color:#75715e&#34;&gt;// Update after bind is needed here, for each binding and in the descriptor set layout creation.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;  pool_info.flags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+  pool_info.maxSets &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_max_bindless_resources &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; ArraySize( pool_sizes_bindless );
+  pool_info.poolSizeCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ( u32 )ArraySize( pool_sizes_bindless );
+  pool_info.pPoolSizes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; pool_sizes_bindless;
+  result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vkCreateDescriptorPool( vulkan_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;pool_info, vulkan_allocation_callbacks, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_descriptor_pool_bindless );
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;4-global-descriptorsetdescriptor-layout-creation&#34;&gt;4. Global DescriptorSet/Descriptor Layout Creation&lt;/h1&gt;
+&lt;p&gt;At this point we create a &lt;em&gt;global&lt;/em&gt; descriptor layout and a &lt;em&gt;global&lt;/em&gt; descriptor set.&lt;br&gt;
+This is just because we want the fastest route to use bindless, but architecturally speaking is not the best.&lt;/p&gt;
+&lt;p&gt;First we create the Descriptor Set Layout with at least the flags &lt;em&gt;VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT&lt;/em&gt; and &lt;em&gt;VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT&lt;/em&gt; .&lt;br&gt;
+These are needed because we will not fill all the array elements of the bindless array (partially bound flag) and we will update when a new texture is added to the device (update after bind).&lt;br&gt;
+Also adding the Variable Descriptor Count in case we want more than one descriptor layout /set with a bindless array:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Create bindless global descriptor layout.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    {
+        VkDescriptorBindingFlags bindless_flags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+
+        VkDescriptorSetLayoutBinding vk_binding;
+        vk_binding.descriptorType &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        vk_binding.descriptorCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_max_bindless_resources;
+        vk_binding.binding &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_bindless_texture_binding;
+        
+        vk_binding.stageFlags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_SHADER_STAGE_ALL;
+        vk_binding.pImmutableSamplers &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt;;
+
+        VkDescriptorSetLayoutCreateInfo layout_info &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+        layout_info.bindingCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        layout_info.pBindings &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vk_binding;
+        layout_info.flags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+
+        VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extended_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT, &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt; };
+        extended_info.bindingCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        extended_info.pBindingFlags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;bindless_flags;
+
+        layout_info.pNext &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;extended_info;
+
+        vkCreateDescriptorSetLayout( vulkan_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;layout_info, vulkan_allocation_callbacks, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_bindless_descriptor_layout );
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;At this point we create the actual descriptor set from the bindless pool:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;        VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        alloc_info.descriptorPool &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vulkan_descriptor_pool_bindless;
+        alloc_info.descriptorSetCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        alloc_info.pSetLayouts &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_bindless_descriptor_layout;
+
+        VkDescriptorSetVariableDescriptorCountAllocateInfoEXT count_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT };
+        u32 max_binding &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_max_bindless_resources &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        count_info.descriptorSetCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        &lt;span style=&#34;color:#75715e&#34;&gt;// This number is the max allocatable count
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        count_info.pDescriptorCounts &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;max_binding;
+        alloc_info.pNext &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;count_info;
+
+        check_result( vkAllocateDescriptorSets( vulkan_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;alloc_info, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_bindless_descriptor_set ) );
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;5-texture-upload&#34;&gt;5. Texture Upload&lt;/h1&gt;
+&lt;p&gt;At this point whenever we create a new texture we can update the global bindless descriptor set.&lt;br&gt;
+I prefer to batch this and do it at the end of the frame, here it is:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( num_texture_updates ) {
+    &lt;span style=&#34;color:#75715e&#34;&gt;// Handle deferred writes to bindless textures.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// TODO: use dynamic array instead.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;constexpr&lt;/span&gt; u32 k_num_writes_per_frame &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;;
+    VkWriteDescriptorSet bindless_descriptor_writes[ k_num_writes_per_frame ];
+    VkDescriptorImageInfo bindless_image_info[ k_num_writes_per_frame ];
+
+    u32 current_write_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; ( i32 it &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; num_texture_updates &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;; it &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;; it&lt;span style=&#34;color:#f92672&#34;&gt;--&lt;/span&gt; ) {
+        ResourceUpdate&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt; texture_to_update &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture_to_update_bindless[ it ];
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( current_write_index &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; k_num_writes_per_frame )
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;break&lt;/span&gt;;
+
+        TextureVulkan&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; texture &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; access_texture( { texture_to_update.handle } );
+        VkWriteDescriptorSet&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt; descriptor_write &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; bindless_descriptor_writes[ current_write_index ];
+        descriptor_write &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        descriptor_write.descriptorCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        descriptor_write.dstArrayElement &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;handle.index;
+        descriptor_write.descriptorType &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_write.dstSet &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vulkan_bindless_descriptor_set;
+        descriptor_write.dstBinding &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_bindless_texture_binding;
+
+        SamplerVulkan&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; vk_default_sampler &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; access_sampler( default_sampler );
+        VkDescriptorImageInfo&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt; descriptor_image_info &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; bindless_image_info[ current_write_index ];
+        descriptor_image_info.sampler &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vk_default_sampler&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_sampler;
+        descriptor_image_info.imageView &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_image_view;
+        descriptor_image_info.imageLayout &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        descriptor_write.pImageInfo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;descriptor_image_info;
+
+        texture_to_update.current_frame &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; u32_max;
+
+        texture_to_update_bindless[ it ] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture_to_update_bindless[ &lt;span style=&#34;color:#f92672&#34;&gt;--&lt;/span&gt;num_texture_updates ];
+
+        &lt;span style=&#34;color:#f92672&#34;&gt;++&lt;/span&gt;current_write_index;
+    }
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( current_write_index ) {
+        vkUpdateDescriptorSets( vulkan_device, current_write_index, bindless_descriptor_writes, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt; );
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;6-adding-the-bindless-descriptor-layout-to-layouts&#34;&gt;6. Adding the Bindless Descriptor Layout to layouts&lt;/h1&gt;
+&lt;p&gt;Again a quick and dirty example of adding the bindless layout to every layout:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;
+u32 bindless_active &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+&lt;span style=&#34;color:#75715e&#34;&gt;#if defined(HYDRA_BINDLESS)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    vk_layouts[ creation.num_active_layouts ] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vulkan_bindless_descriptor_layout;
+    bindless_active &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+&lt;span style=&#34;color:#75715e&#34;&gt;#endif
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+    VkPipelineLayoutCreateInfo pipeline_layout_info &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+    pipeline_layout_info.pSetLayouts &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vk_layouts;
+    pipeline_layout_info.setLayoutCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; creation.num_active_layouts &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; bindless_active;
+
+    VkPipelineLayout pipeline_layout;
+    check( vkCreatePipelineLayout( vulkan_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;pipeline_layout_info, vulkan_allocation_callbacks, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;pipeline_layout ) );
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;7-descriptor-set-binding-at-draw&#34;&gt;7. Descriptor Set Binding at Draw&lt;/h1&gt;
+&lt;p&gt;The final (c++ wise) step is to bind the bindless set, here in command buffer code:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; CommandBuffer&lt;span style=&#34;color:#f92672&#34;&gt;::&lt;/span&gt;bind_resource_list( &lt;span style=&#34;color:#66d9ef&#34;&gt;uint64_t&lt;/span&gt; sort_key, ResourceListHandle&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; handles, &lt;span style=&#34;color:#66d9ef&#34;&gt;uint32_t&lt;/span&gt; num_lists, &lt;span style=&#34;color:#66d9ef&#34;&gt;uint32_t&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; offsets, &lt;span style=&#34;color:#66d9ef&#34;&gt;uint32_t&lt;/span&gt; num_offsets ) {
+&lt;span style=&#34;color:#75715e&#34;&gt;// ...
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; u32 k_first_set &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+vkCmdBindDescriptorSets( vk_command_buffer, current_pipeline&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_bind_point, current_pipeline&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_pipeline_layout, k_first_set,
+                         num_lists, vk_descriptor_sets, num_offsets, offsets_cache );
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( device&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;bindless_supported ) {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; u32 k_bindless_set &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+    vkCmdBindDescriptorSets( vk_command_buffer, current_pipeline&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_bind_point, current_pipeline&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_pipeline_layout, k_bindless_set,
+                             &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;device&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vulkan_bindless_descriptor_set, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt; );
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;8-glsl-shader&#34;&gt;8. GLSL shader!&lt;/h1&gt;
+&lt;p&gt;And here the modified code for the shader.&lt;br&gt;
+Albedo index can come from anywhere, for fullscreen triangle I use the trick of using the instance id for example!&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;#extension GL_EXT_nonuniform_qualifier : enable
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+layout (set &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, binding &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;) uniform sampler2D textures[];
+
+
+vec4 color &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture( textures[albedo_id], final_uv.xy );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+&lt;p&gt;We saw the minimal code needed to have a fully working bindless texture implementation in Vulkan.&lt;br&gt;
+API-Wise this is not the best, with hardcoded values, Vulkan only global descriptor and such, but it is a jumpstart to experiment with the feature.&lt;br&gt;
+I will cleanup this code and update the library in the future, but this should already be a way to start bindlessly coding.&lt;/p&gt;
+&lt;p&gt;Happy Bindless!&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

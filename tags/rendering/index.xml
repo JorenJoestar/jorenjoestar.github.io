@@ -1,0 +1,1779 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>rendering on Gabriel&#39;s Virtual Tavern</title>
+    <link>https://jorenjoestar.github.io/tags/rendering/</link>
+    <description>Recent content in rendering on Gabriel&#39;s Virtual Tavern</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 26 Oct 2021 19:34:19 +0200</lastBuildDate>
+    
+	    <atom:link href="https://jorenjoestar.github.io/tags/rendering/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Gpu Driven Text</title>
+      <link>https://jorenjoestar.github.io/post/gpu_driven_text/gpu_driven_text/</link>
+      <pubDate>Tue, 26 Oct 2021 19:34:19 +0200</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/gpu_driven_text/gpu_driven_text/</guid>
+      <description>&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+&lt;p&gt;Recently on Twitter there was an interesting conversation about &lt;a href=&#34;https://twitter.com/BelgianRenderer/status/1451990908757372929&#34;&gt;&lt;em&gt;GPU-Driven line rendering&lt;/em&gt;&lt;/a&gt;.&lt;br&gt;
+This reminded me of a system that I use to render values that live only on the GPU, like GPU VFX: it gives you the possibility to output text and values from shaders!&lt;/p&gt;
+&lt;p&gt;Normally these values can be mapped and read back into the GPU, but sometimes can be easier to just write them from a shader.&lt;/p&gt;
+&lt;p&gt;I remember seeing this incredible &lt;a href=&#34;https://www.shadertoy.com/view/wdSSD1&#34;&gt;shadertoy&lt;/a&gt; and being in awe: a never-done pet project of mine was to create a game only on the GPU, but instead I use it in standard ways many times.&lt;br&gt;
+Here we are rendering&amp;hellip;text straight from a shader ? WHAT ?&lt;/p&gt;
+&lt;p&gt;The idea comes from &lt;a href=&#34;https://glslsandbox.com/e#35231.0&#34;&gt;this article&lt;/a&gt; as far as I understood, but the idea is the following: &lt;strong&gt;compress each character data into an array of 4 floats (vec4/float4), with each component being the packed bits of one quadrant&lt;/strong&gt;, and given an UV reconstruct the shape of the character.&lt;/p&gt;
+&lt;p&gt;Taken straight from that website as deeper explanation:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;/*
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;--------
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;-███----
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██-██---
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██-██---
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;-███----
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;█████-█-
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██-████-
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██--██--
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;██-███--
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;-███-██-
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;--------
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;--------
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11111010
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011110
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11001100
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011100
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110110
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//Broken up into 4 8x3 (24 bit) chunks for each component of the vec4.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//Hexadecimal is being used to reduce clutter in the code but decimal still works.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110000 -&amp;gt; 00000000 01110000 11011000 -&amp;gt; 0x0070D8
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110000 -&amp;gt; 11011000 01110000 11111010 -&amp;gt; 0xD870FA
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11111010
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011110
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11001100 -&amp;gt; 11011110 11001100 11011100 -&amp;gt; 0xDECCDC
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;11011100
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;01110110
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000 -&amp;gt; 01110110 00000000 00000000 -&amp;gt; 0x760000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;00000000
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;vec4(0x0070D8,0xD870FA,0xDECCDC,0x760000)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;*/&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;There is quite some bit trickery involved that I will not dwelve into, but the gist of it is simple, even though the process to arrive there must have been interesting!&lt;/p&gt;
+&lt;p&gt;Given these compressed fonts, we can use GPU buffers to store all the informations needed to write anything we want on the screen.&lt;/p&gt;
+&lt;h1 id=&#34;the-solution&#34;&gt;The Solution&lt;/h1&gt;
+&lt;p&gt;From a higher level view, what we will do is the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Reserve some memory to write our text&lt;/li&gt;
+&lt;li&gt;Choose and save the position of the string, cache the reserved memory offset and count&lt;/li&gt;
+&lt;li&gt;Write a per-character dispatch information&lt;/li&gt;
+&lt;li&gt;Draw sprites with all those informations.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;the-buffers&#34;&gt;The Buffers&lt;/h2&gt;
+&lt;p&gt;We will use 4 different buffers to have this working. It can be improved honestly, but this is good enough for a debug only feature!&lt;/p&gt;
+&lt;h3 id=&#34;data-and-atomics-buffer&#34;&gt;Data and atomics buffer&lt;/h3&gt;
+&lt;p&gt;This buffer will contain the atomics and the data to be filled with each character of each string.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// Common buffers used to render gpu driven font
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;layout (std430, binding&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;) buffer DebugGpuFontBuffer {
+    uint        current_data_index;
+    uint        current_entry_index;
+    uint        padding1;
+    uint        padding2;
+
+    vec4        data[];
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;entry-buffer&#34;&gt;Entry buffer&lt;/h3&gt;
+&lt;p&gt;For each string we want to render, we need a position and where in the global data memory we need to read, thus offset and count.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; DebugGPUStringEntry {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;       x;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;       y;
+    uint        offset;
+    uint        count;
+};
+
+layout (std430, binding&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;) buffer DebugGpuFontEntries {
+    DebugGPUStringEntry entries[];
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;dispatch-buffer&#34;&gt;Dispatch buffer&lt;/h3&gt;
+&lt;p&gt;This buffer is used to generate draw for each character in the global data.&lt;br&gt;
+We need this so that each character knows where it belongs in a string.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;layout(std430, binding&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;) buffer DebugGPUFontDispatch {
+    uvec4               dispatches[];
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;indirect-buffer&#34;&gt;Indirect buffer&lt;/h3&gt;
+&lt;p&gt;Final buffer is the one driving how many total characters we will draw.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;layout(std430, binding&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;) buffer DebugGPUIndirect {
+    uint            vertex_count;
+    uint            instance_count;
+    uint            first_vertex;
+    uint            first_instance;
+
+    uint            pad00;
+    uint            pad01;
+    uint            pad02;
+    uint            pad03;
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now that we know the data used, let&amp;rsquo;s see the algorithm itself.&lt;/p&gt;
+&lt;h2 id=&#34;reserving-memory-and-writing-text-to-gpu-buffers&#34;&gt;Reserving memory and writing text to GPU buffers&lt;/h2&gt;
+&lt;p&gt;The main ingredient for this solution is the possibility to write to StructuredBuffers/SSBOs (depending on the API of your choice) PLUS the usage of &lt;em&gt;atomic operations&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;These operations are possible since OpenGL 4+ (actually my initial implementation is on an OpenGL-backed engine), so all newer APIs are supported.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s have a look at some code, from the &lt;strong&gt;vertex shader of a sprite&lt;/strong&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// 1. Reserve memory
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// Reserve 1 entry, that will include position and where in the data buffer we will write our text.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;uint entry_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; atomicAdd(current_entry_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+&lt;span style=&#34;color:#75715e&#34;&gt;// Reserve 16 characters
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;uint data_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; atomicAdd(current_data_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;);
+
+&lt;span style=&#34;color:#75715e&#34;&gt;// 2. Cache string entry
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// Cache data offset and count. We will use this to drive the text rendering.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;entries[entry_index].x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; STRWIDTH(&lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;);
+entries[entry_index].y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; STRHEIGHT(&lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;);
+entries[entry_index].offset &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; data_index;
+entries[entry_index].count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;;
+
+&lt;span style=&#34;color:#75715e&#34;&gt;// 3. Write actual text
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// MAVERICK: I did not found a better way to write this...
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;data[data_index] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_p;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_o;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_s;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.x, &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.x, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.x, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;7&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_per;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.x, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_com;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.y, &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;11&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.y, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.y, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;13&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_per;
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;14&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(position.y, &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;15&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;As we can see the way of writing the text is horrible, but it works.&lt;/p&gt;
+&lt;p&gt;We are first reserving memory using &lt;em&gt;atomic operations&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;We then cache the string informations, like position and where to access the global data.&lt;/p&gt;
+&lt;p&gt;Finally we write the text!&lt;/p&gt;
+&lt;h2 id=&#34;generating-the-dispatch&#34;&gt;Generating the dispatch&lt;/h2&gt;
+&lt;p&gt;Once we collected all the characters around, we need to generate the per-character dispatches and the indirect draw.&lt;br&gt;
+I wrote a compute shader for that, optimizable, but good for the purpose here.&lt;br&gt;
+It also writes another string with GPU data about the system itself:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;layout (local_size_x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, local_size_y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, local_size_z &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) in;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+    &lt;span style=&#34;color:#75715e&#34;&gt;// Write global label with gpu font system data
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    uint entry_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; atomicAdd(current_entry_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+    uint data_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; atomicAdd(current_data_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;);
+
+    data[data_index] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_t;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_e;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_s;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_t;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_h;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_g;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;7&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_per;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_4;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(current_data_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;11&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(current_data_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ch_spc;
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;13&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(current_entry_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+    data[data_index &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;14&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; get_digit(current_entry_index, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
+
+    vec2 print_pos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; floor(vec2(STRWIDTH(&lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;), STRHEIGHT(&lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;)));
+    entries[entry_index].x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; print_pos.x;
+    entries[entry_index].y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; print_pos.y;
+    entries[entry_index].offset &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; data_index;
+    entries[entry_index].count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Here we are &amp;ldquo;simply&amp;rdquo; writing a string containing the indices used by the system, just to keep track of them.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Write single character dispatch informations
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    uint global_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; (uint e &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;; e &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt; current_entry_index; &lt;span style=&#34;color:#f92672&#34;&gt;++&lt;/span&gt;e) {
+      uint entry_data_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; entries[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;].offset;
+      &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; (uint i &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;; i &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt; entries[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;].count; &lt;span style=&#34;color:#f92672&#34;&gt;++&lt;/span&gt;i) {
+        dispatches[global_index].x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; e;
+        dispatches[global_index].y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; i;
+
+        &lt;span style=&#34;color:#f92672&#34;&gt;++&lt;/span&gt;global_index;
+      }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This is where we create the per character data.&lt;br&gt;
+We can optimize this, probably using one uint instead of 4.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Write indirect draw values
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    vertex_count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;;
+    instance_count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; global_index;
+    first_vertex &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+    first_instance &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+    pad00 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Finally we draw 2 triangles for each character data.&lt;/p&gt;
+&lt;h2 id=&#34;indirect-rendering-of-the-gpu-driven-text&#34;&gt;(Indirect) Rendering of the GPU Driven Text&lt;/h2&gt;
+&lt;p&gt;We are now ready to write the actual text on the screen!&lt;/p&gt;
+&lt;p&gt;Here is the final shader:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#if defined VERTEX
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) out vec2 uv;
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) flat out uint global_data_index;
+
+  &lt;span style=&#34;color:#75715e&#34;&gt;// Per vertex positions and uvs of a quad
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;  vec3 positions[&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;]       &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec3[&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;]( vec3(&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;), vec3(&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) );
+  vec2 uvs[&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;]             &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec2[&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;]( vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;),    vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;),   vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;), vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;), vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;), vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;) );
+
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+
+      &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; uint vertex_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; gl_VertexID &lt;span style=&#34;color:#f92672&#34;&gt;%&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;;
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Calculate UVs
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      uv.xy &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; uvs[vertex_index];
+
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Sprite size
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; vec2 sprite_size &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; CHAR_SIZE;
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Calculate world position
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      vec4 world_position &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4( vec2(positions[ vertex_index ].xy &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; sprite_size ), &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; );
+
+      uint global_char_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; gl_InstanceIndex;
+      uint entry_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; dispatches[global_char_index].x;
+      uint entry_char_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; dispatches[global_char_index].y;
+
+      DebugGPUStringEntry entry &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; entries[entry_index];
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Calculate actual position from the start of the string
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      world_position.xy &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; vec2(entry.x &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; entry_char_index &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; sprite_size.x, entry.y);
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Move position to upper left corner
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      world_position.xy &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; sprite_size &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.5f&lt;/span&gt;;
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Pass entry data to read the final compressed font character
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      global_data_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; entry.offset &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; entry_char_index;
+
+      gl_Position &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; locals.projection_matrix_2d &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; world_position;
+
+  }
+  
+  &lt;span style=&#34;color:#75715e&#34;&gt;#endif &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// VERTEX
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+
+  &lt;span style=&#34;color:#75715e&#34;&gt;#if defined FRAGMENT
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) in vec2 uv;
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) flat in uint global_data_index;
+
+  layout (location &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) out vec4 out_color;
+
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+
+    vec4 char_data &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; data[global_data_index];
+    vec2 duv &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; uv &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; CHAR_SIZE;
+    vec2 print_pos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;);
+    &lt;span style=&#34;color:#75715e&#34;&gt;// Decompress char and color pixel!
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; textPixel &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; print_char(char_data, duv, print_pos);
+      
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (textPixel &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.01f&lt;/span&gt;)
+          discard;
+      
+    vec3 col &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+    col &lt;span style=&#34;color:#f92672&#34;&gt;*=&lt;/span&gt; mix(vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.2&lt;/span&gt;),vec3(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.5&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;),textPixel);
+    out_color &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(col.rgb, &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;);
+  }
+
+  &lt;span style=&#34;color:#75715e&#34;&gt;#endif &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// FRAGMENT
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;It should be pretty straighforward, but basically what is happening is this:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Read the dispatch information, to know where the sprite will be located&lt;/li&gt;
+&lt;li&gt;Expand the quad to the correct location&lt;/li&gt;
+&lt;li&gt;Read the information packed font character based on the character&lt;/li&gt;
+&lt;li&gt;Color the pixel!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The real magic happens in the &amp;lsquo;print_char&amp;rsquo; method, and here I will post all the code that comes from the shadertoy example I wrote before!&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; DOWN_SCALE &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0f&lt;/span&gt;;
+
+&lt;span style=&#34;color:#75715e&#34;&gt;#define MAX_INT_DIGITS 4
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//#define FLIP_Y
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; vec2 CHAR_SIZE &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;);
+&lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; vec2 CHAR_SPACING &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;);
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;STRWIDTH&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; c) {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; c &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; CHAR_SPACING.x;
+}
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;STRHEIGHT&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; c) {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; c &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; CHAR_SPACING.y;
+}
+
+&lt;span style=&#34;color:#75715e&#34;&gt;#define NORMAL 0
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#define INVERT 1
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#define UNDERLINE 2
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; TEXT_MODE &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; NORMAL;
+
+vec4 ch_spc &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_exc &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003078&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x787830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_quo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x662400&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_hsh &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006C6C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE6C6C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6CFE6C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C0000&lt;/span&gt;);
+vec4 ch_dol &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x30307C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C078&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0CF8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303000&lt;/span&gt;);
+vec4 ch_pct &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC4CC18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x8C0000&lt;/span&gt;);
+vec4 ch_amp &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0070D8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD870FA&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDECCDC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x760000&lt;/span&gt;);
+vec4 ch_apo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x306000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_lbr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000C18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x306060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x603018&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0000&lt;/span&gt;);
+vec4 ch_rbr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x180C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C1830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x600000&lt;/span&gt;);
+vec4 ch_ast &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x663CFF&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C6600&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_crs &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x18187E&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181800&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_com &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000038&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x386000&lt;/span&gt;);
+vec4 ch_dsh &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0000FE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_per &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000038&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x380000&lt;/span&gt;);
+vec4 ch_lsl &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000002&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x060C18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x800000&lt;/span&gt;);
+vec4 ch_0 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007CC6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD6D6D6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD6D6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7C0000&lt;/span&gt;);
+vec4 ch_1 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF03030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFC0000&lt;/span&gt;);
+vec4 ch_2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0C18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFC0000&lt;/span&gt;);
+vec4 ch_3 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C38&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0CCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_4 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000C1C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C6CCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x1E0000&lt;/span&gt;);
+vec4 ch_5 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FCC0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C0F8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0CCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_6 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003860&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C0F8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_7 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FEC6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6060C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x183030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_8 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCEC78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_9 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC7C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x700000&lt;/span&gt;);
+vec4 ch_col &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x383800&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003838&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_scl &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x383800&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003838&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x183000&lt;/span&gt;);
+vec4 ch_les &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000C18&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x603018&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0000&lt;/span&gt;);
+vec4 ch_equ &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007E00&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7E0000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_grt &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x180C06&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C1830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x600000&lt;/span&gt;);
+vec4 ch_que &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C1830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_ats &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007CC6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6DEDE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDEC0C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7C0000&lt;/span&gt;);
+vec4 ch_A &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003078&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0000&lt;/span&gt;);
+vec4 ch_B &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FC66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66667C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFC0000&lt;/span&gt;);
+vec4 ch_C &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C0C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C0000&lt;/span&gt;);
+vec4 ch_D &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00F86C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66666C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF80000&lt;/span&gt;);
+vec4 ch_E &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FE62&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x60647C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x646062&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE0000&lt;/span&gt;);
+vec4 ch_F &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FE66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x62647C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x646060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF00000&lt;/span&gt;);
+vec4 ch_G &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C0C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCEC666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3E0000&lt;/span&gt;);
+vec4 ch_H &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCFC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0000&lt;/span&gt;);
+vec4 ch_I &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_J &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001E0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_K &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C6C78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C6C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE60000&lt;/span&gt;);
+vec4 ch_L &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00F060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x606060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x626666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE0000&lt;/span&gt;);
+vec4 ch_M &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C6EE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFEFED6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;);
+vec4 ch_N &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE6F6FE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDECEC6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;);
+vec4 ch_O &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C66C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x380000&lt;/span&gt;);
+vec4 ch_P &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FC66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66667C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x606060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF00000&lt;/span&gt;);
+vec4 ch_Q &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCEDE7C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C1E00&lt;/span&gt;);
+vec4 ch_R &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FC66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66667C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C6666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE60000&lt;/span&gt;);
+vec4 ch_S &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCC070&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x18CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_T &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FCB4&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_U &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_V &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_W &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6D6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD66C6C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C0000&lt;/span&gt;);
+vec4 ch_X &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC7830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x78CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0000&lt;/span&gt;);
+vec4 ch_Y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_Z &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FECE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x981830&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6062C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFE0000&lt;/span&gt;);
+vec4 ch_lsb &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C30&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x303030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C0000&lt;/span&gt;);
+vec4 ch_rsl &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000080&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC06030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x180C06&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x020000&lt;/span&gt;);
+vec4 ch_rsb &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3C0000&lt;/span&gt;);
+vec4 ch_pow &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x10386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_usc &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FF00&lt;/span&gt;);
+vec4 ch_a &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00780C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7CCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x760000&lt;/span&gt;);
+vec4 ch_b &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x607C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xDC0000&lt;/span&gt;);
+vec4 ch_c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC0C0CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_d &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C7CCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x760000&lt;/span&gt;);
+vec4 ch_e &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFCC0CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6060F8&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x606060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF00000&lt;/span&gt;);
+vec4 ch_g &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0076CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC7C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0CCC78&lt;/span&gt;);
+vec4 ch_h &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x606C76&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE60000&lt;/span&gt;);
+vec4 ch_i &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7E0000&lt;/span&gt;);
+vec4 ch_j &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x003C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C0C0C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC78&lt;/span&gt;);
+vec4 ch_k &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x60666C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x786C66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE60000&lt;/span&gt;);
+vec4 ch_l &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x007818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7E0000&lt;/span&gt;);
+vec4 ch_m &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FCD6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD6D6D6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;);
+vec4 ch_n &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00F8CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCC0000&lt;/span&gt;);
+vec4 ch_o &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_p &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00DC66&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x666666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7C60F0&lt;/span&gt;);
+vec4 ch_q &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0076CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x7C0C1E&lt;/span&gt;);
+vec4 ch_r &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00EC6E&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x766060&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xF00000&lt;/span&gt;);
+vec4 ch_s &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0078CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6018CC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x780000&lt;/span&gt;);
+vec4 ch_t &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000020&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x60FC60&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x60606C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x380000&lt;/span&gt;);
+vec4 ch_u &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x760000&lt;/span&gt;);
+vec4 ch_v &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00CCCC&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCCCC78&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x300000&lt;/span&gt;);
+vec4 ch_w &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C6C6&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xD6D66C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C0000&lt;/span&gt;);
+vec4 ch_x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00C66C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x38386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC60000&lt;/span&gt;);
+vec4 ch_y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x006666&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x66663C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0C18F0&lt;/span&gt;);
+vec4 ch_z &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00FC8C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x1860C4&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xFC0000&lt;/span&gt;);
+vec4 ch_lpa &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001C30&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3060C0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x603030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x1C0000&lt;/span&gt;);
+vec4 ch_bar &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x001818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181800&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x181818&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x180000&lt;/span&gt;);
+vec4 ch_rpa &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00E030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x30180C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x183030&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xE00000&lt;/span&gt;);
+vec4 ch_tid &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0073DA&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xCE0000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+vec4 ch_lar &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x10386C&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0xC6C6FE&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;0x000000&lt;/span&gt;);
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Extracts bit b from the given number.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//Shifts bits right (num / 2^bit) then ANDs the result with 1 (mod(result,2.0)).
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;extract_bit&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; n, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; b)
+{
+    b &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; clamp(b,&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;24.0&lt;/span&gt;);
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; floor(mod(floor(n &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;2.0&lt;/span&gt;,floor(b))),&lt;span style=&#34;color:#ae81ff&#34;&gt;2.0&lt;/span&gt;));
+}
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Returns the pixel at uv in the given bit-packed sprite.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;sprite&lt;/span&gt;(vec4 spr, vec2 size, vec2 uv)
+{
+    uv &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; floor(uv);
+
+&lt;span style=&#34;color:#75715e&#34;&gt;#if defined(FLIP_Y)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Invert y uv coordinate
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    uv.y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; uv.y;
+&lt;span style=&#34;color:#75715e&#34;&gt;#endif &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// FLIP_Y
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;//Calculate the bit to extract (x + y * width) (flipped on x-axis)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; bit &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; (size.x&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;uv.x&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; uv.y &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; size.x;
+
+    &lt;span style=&#34;color:#75715e&#34;&gt;//Clipping bound to remove garbage outside the sprite&amp;#39;s boundaries.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; bounds &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; all(greaterThanEqual(uv,vec2(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;))) &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; all(lessThan(uv,size));
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; pixels &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;;
+    pixels &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; extract_bit(spr.x, bit &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;72.0&lt;/span&gt;);
+    pixels &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; extract_bit(spr.y, bit &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;48.0&lt;/span&gt;);
+    pixels &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; extract_bit(spr.z, bit &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;24.0&lt;/span&gt;);
+    pixels &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; extract_bit(spr.w, bit &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;00.0&lt;/span&gt;);
+
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; bounds &lt;span style=&#34;color:#f92672&#34;&gt;?&lt;/span&gt; pixels : &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;;
+}
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Prints a character and moves the print position forward by 1 character width.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;print_char&lt;/span&gt;(vec4 ch, vec2 uv, inout vec2 print_pos)
+{
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;( TEXT_MODE &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; INVERT )
+    {
+        &lt;span style=&#34;color:#75715e&#34;&gt;//Inverts all of the bits in the character.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        ch &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;2.0&lt;/span&gt;,&lt;span style=&#34;color:#ae81ff&#34;&gt;24.0&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;ch;
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;( TEXT_MODE &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; UNDERLINE )
+    {
+        &lt;span style=&#34;color:#75715e&#34;&gt;//Makes the bottom 8 bits all 1.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;//Shifts the bottom chunk right 8 bits to drop the lowest 8 bits,
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;//then shifts it left 8 bits and adds 255 (binary 11111111).
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        ch.w &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; floor(ch.w&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;256.0&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;256.0&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;255.0&lt;/span&gt;;
+    }
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; px &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; sprite(ch, CHAR_SIZE, uv &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; print_pos);
+    print_pos.x &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; CHAR_SPACING.x;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; px;
+}
+
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Returns the digit sprite for the given number.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;vec4 &lt;span style=&#34;color:#a6e22e&#34;&gt;get_digit&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; d)
+{
+    d &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; floor(d);
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_0;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_1;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_2;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;3.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_3;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_4;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;5.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_5;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;6.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_6;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;7.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_7;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_8;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(d &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;9.0&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ch_9;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; vec4(&lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;);
+}
+
+&lt;span style=&#34;color:#75715e&#34;&gt;//Prints out the given number starting at pos.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;print_number&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; number, vec2 uv, inout vec2 print_pos)
+{
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; i &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;;i &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;i&lt;span style=&#34;color:#f92672&#34;&gt;--&lt;/span&gt;)
+    {
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; digit &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mod( number &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(i)) , &lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;);
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(i &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) &lt;span style=&#34;color:#75715e&#34;&gt;//Add a decimal point.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        {
+            result &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; print_char(ch_per,uv, print_pos);
+        }
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(abs(number) &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(i)) &lt;span style=&#34;color:#f92672&#34;&gt;||&lt;/span&gt; i &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) &lt;span style=&#34;color:#75715e&#34;&gt;//Clip off leading zeros.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        {
+            result &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; print_char(get_digit(digit),uv, print_pos);
+        }
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; result;
+}
+
+vec4 &lt;span style=&#34;color:#a6e22e&#34;&gt;get_digit&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; number, &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; position) {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; digit &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mod( number &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(position)) , &lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;);
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; get_digit( digit );
+}
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;print_integer&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; number, &lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; zeros, vec2 uv, inout vec2 print_pos)
+{
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0.0&lt;/span&gt;;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; i &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; MAX_INT_DIGITS;i &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;i&lt;span style=&#34;color:#f92672&#34;&gt;--&lt;/span&gt;)
+    {
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt; digit &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mod( number &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(i)) , &lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;);
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;(abs(number) &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; pow(&lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;float&lt;/span&gt;(i)) &lt;span style=&#34;color:#f92672&#34;&gt;||&lt;/span&gt; zeros &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; i  &lt;span style=&#34;color:#f92672&#34;&gt;||&lt;/span&gt; i &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;) &lt;span style=&#34;color:#75715e&#34;&gt;//Clip off leading zeros.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        {
+            result &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; print_char(get_digit(digit),uv, print_pos);
+        }
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; result;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;It is a little code intensitve, but the gist is the same: decompress the packed infomration to know if the current pixel falls into the compressed font character or not!&lt;/p&gt;
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+&lt;p&gt;I will probably add the code to my &lt;a href=&#34;https://github.com/jorenjoestar/datadrivenrendering&#34;&gt;DataDrivenRendering&lt;/a&gt; repository, but in the meantime I wanted to write this article.&lt;br&gt;
+The general idea should be simple, the execution can be improved a lot but the help can be great to debug GPU only systems, that are becoming more and more used.&lt;br&gt;
+Maybe this is the start of a GPU-Driven ImGui system ? :p&lt;/p&gt;
+&lt;p&gt;Hope you enjoy!&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Rendering Astronomic Stars</title>
+      <link>https://jorenjoestar.github.io/post/realistic_stars/</link>
+      <pubDate>Sat, 26 Dec 2020 11:54:39 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/realistic_stars/</guid>
+      <description>&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+&lt;p&gt;Since growing up I&amp;rsquo;ve always been fascinated by stars, and being exposed to anime like Sainy Seiya and Hokuto No Ken just fueled the passion.
+My 4th year of high-school had a full year course on &amp;lsquo;geographical astronomy&amp;rsquo; - an in depth look at our planet and the stars from a scientific perspective.
+Many years has passed (20+!) and I&amp;rsquo;ve never dwelved into these kind of topic.&lt;/p&gt;
+&lt;p&gt;Then few years ago, while researching for rendering un Just Cause 4 I stumbled upon a couple of papers about realistic rendering of stars.
+I did a working prototype in Unity but did not understood many things, and I had no time to look back into this.&lt;/p&gt;
+&lt;p&gt;Then came Christmas time, with lockdown and such I finally had an excuse to dwelve deeper into this topic.
+Also I am searching for little rendering demos I can use to test and cleanup my libraries to write code.&lt;/p&gt;
+&lt;p&gt;A &lt;em&gt;HUGE&lt;/em&gt; shout to the author of &lt;a href=&#34;https://github.com/cgcostume/osghimmel&#34;&gt;SGHimmel&lt;/a&gt; - code that contains a much deeper and precise implementation.&lt;/p&gt;
+&lt;p&gt;Mine is more a starting point and a small subset of what is needed to render realistic stars - the ones &lt;em&gt;visible with naked eye&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;There is a seminal paper that put all these informations in one place:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://graphics.stanford.edu/~henrik/papers/nightsky/nightsky.pdf&#34;&gt;A Physically Based Night Sky Model&lt;/a&gt;.&lt;!-- raw HTML omitted --&gt;
+This paper contains all the stars rendering informations (and much more, like Moon and Sun) and it is the real deal.&lt;/p&gt;
+&lt;p&gt;A second paper also expanded that and gave us the SGHimmel code:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.researchgate.net/publication/287031803_Single-pass_Rendering_of_Day_and_Night_Sky_Phenomena&#34;&gt;Single Pass Rendering of Day and Night Sky Phenomena&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;My only contribution is to distill the very complex informations in a few files of code, and maybe help someone else to start looking into this amazing world.&lt;/p&gt;
+&lt;h1 id=&#34;astronomy&#34;&gt;Astronomy&lt;/h1&gt;
+&lt;p&gt;Where do we start ?&lt;/p&gt;
+&lt;h2 id=&#34;catalogs&#34;&gt;Catalogs&lt;/h2&gt;
+&lt;p&gt;We need DATA.
+In Astronomy, and for stars, there are the so called &amp;lsquo;&lt;em&gt;catalogs&lt;/em&gt;&amp;rsquo; - a collection of data relative to stars normally collected by hand (!) by astronomers from different sources.&lt;!-- raw HTML omitted --&gt;
+A list of catalogs can be found here:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://heasarc.gsfc.nasa.gov/docs/cgro/db-perl/W3Browse/w3table.pl?MissionHelp=star_catalog&#34;&gt;https://heasarc.gsfc.nasa.gov/docs/cgro/db-perl/W3Browse/w3table.pl?MissionHelp=star_catalog&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&amp;hellip; catalogs types and story ?&lt;/p&gt;
+&lt;p&gt;Amongst all the catalogs the most beginner friendly to use is the &lt;a href=&#34;http://tdc-www.harvard.edu/catalogs/bsc5.html&#34;&gt;&lt;em&gt;Yale Bright Stars Catalog&lt;/em&gt;&lt;/a&gt;.&lt;!-- raw HTML omitted --&gt;
+This catalog was created around 1908 and different was updated until &amp;lsquo;recently&amp;rsquo;.&lt;!-- raw HTML omitted --&gt;
+It contains all the stars that are visible with naked eye from Earth - 9100 objects - normally visible if the have a visual magnitude of more than 6.5.&lt;!-- raw HTML omitted --&gt;
+The online version is both a binary based one and a text based one.&lt;!-- raw HTML omitted --&gt;
+I decided to use the binary version, but possibly it will change in the future.&lt;/p&gt;
+&lt;h2 id=&#34;star-entry&#34;&gt;Star Entry&lt;/h2&gt;
+&lt;p&gt;Now that we chose a catalog let&amp;rsquo;s see what we really need to properly place and visualize a star.&lt;!-- raw HTML omitted --&gt;
+Using the binary version shows the minimum necessary data that can be used, and in this case following &lt;a href=&#34;http://tdc-www.harvard.edu/catalogs/bsc5.entry.html&#34;&gt;this&lt;/a&gt; link:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Right Ascension and Declination&lt;/li&gt;
+&lt;li&gt;Spectral Type&lt;/li&gt;
+&lt;li&gt;Visual Magnitude&lt;/li&gt;
+&lt;li&gt;Proper Motion&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Before dwelving into this, an &lt;em&gt;incredibly important&lt;/em&gt; thing to consider is &lt;em&gt;WHEN&lt;/em&gt; the catalog is compiled - more specifically what &lt;em&gt;time reference point&lt;/em&gt; is used in the catalog.&lt;/p&gt;
+&lt;h3 id=&#34;epoch-julian-dates-and-j2000&#34;&gt;Epoch, Julian Dates and J2000&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR&lt;/strong&gt;: convert from Gregorian Calendar to Julian Date to properly rotate stars.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;
+Between different astronomers different &lt;em&gt;epochs&lt;/em&gt; were used in different calendars, thus referencing different catalogs had problems in understanding which reference system was used.&lt;!-- raw HTML omitted --&gt;
+As some of you may know, depending on your culture you could use different calendars as well!&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;For astronomy related things, a common &amp;lsquo;time reference point&amp;rsquo; was decided by the &lt;a href=&#34;https://www.iau.org/&#34;&gt;International Astronomical Union&lt;/a&gt;, and this is the &lt;strong&gt;Julian Calendar&lt;/strong&gt; with the precise moment called &lt;em&gt;J2000&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Different &amp;lsquo;reference points&amp;rsquo; were used, and in 1984 the IAU switched from the J1950 to the J2000 epoch.&lt;/p&gt;
+&lt;p&gt;Specifically an &lt;strong&gt;epoch&lt;/strong&gt; is a moment in time that is used as central reference point to calculate positions and motions of celestial objects.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;J2000&lt;/strong&gt; thus is the date of January 1, 2000 at 12:00 Terrestrial Time in the Gregorian Calendar at the Greenwich meridian, and all the positional data in the catalog is relative to this moment.&lt;/p&gt;
+&lt;p&gt;There are plenty of conversions between Gregorian Calendar and Julian Calendar, and in the code provided there will be some links also to some pages with the math involved.&lt;/p&gt;
+&lt;h3 id=&#34;right-ascension-and-declination&#34;&gt;Right Ascension and Declination&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR&lt;/strong&gt;: stars &amp;lsquo;latitude and longitude&amp;rsquo; to place them.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Now that we have a reference time, we can finally use the Right Ascension and Declination data.&lt;/p&gt;
+&lt;p&gt;A very simple explanation of Right Ascension and Declination is that they are the celestial equivalent to latitude and longitude on earth, but they reference the &lt;strong&gt;celestial sphere&lt;/strong&gt; - an ideal sphere centered in the Earth center and &lt;strong&gt;not&lt;/strong&gt; following the Earth axis inclination.&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;https://upload.wikimedia.org/wikipedia/commons/9/95/JostBurgi-MechanisedCelestialGlobe1594.jpg&#34; &gt;
+
+&lt;img src=&#34;https://upload.wikimedia.org/wikipedia/commons/9/95/JostBurgi-MechanisedCelestialGlobe1594.jpg&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Jost Burgi Celestial Sphere. Source: Wikipedia.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;Both Right Ascension and Declination are relative to the &lt;strong&gt;Celestial Equator&lt;/strong&gt; - an ideal equator that has a different inclination than the natural Earth equator (due to its tilt axis).&lt;!-- raw HTML omitted --&gt;
+Right Ascension thus is the eastward angular distance relative to the Celestial Equator, expressed in hours, minutes and seconds.&lt;!-- raw HTML omitted --&gt;
+Declination instead is the north/south angle relative to the Celestial Equator, expressed in degrees (in the range -90, 90).&lt;/p&gt;
+&lt;p&gt;All this combined defines the &lt;strong&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/Equatorial_coordinate_system&#34;&gt;Equatorial Coordinate System&lt;/a&gt;&lt;/strong&gt;, used to locate celestial objects.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Right Ascension and Declination relative to J2000&lt;/strong&gt; are then the celestial &amp;lsquo;latitude and longitude&amp;rsquo; to locate a celestial object around the Earth, relative to a reference system that is not tilted with the axis but more &amp;lsquo;absolute&amp;rsquo;.&lt;/p&gt;
+&lt;h3 id=&#34;spectral-type&#34;&gt;Spectral Type&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR&lt;/strong&gt;: convert from Spectral Type to RGB color.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;To help organize stars they needed to categorize them based on some parameters.&lt;!-- raw HTML omitted --&gt;
+In 1817 already Josepth Von FraunHofer started analyzing the &lt;em&gt;spectrum&lt;/em&gt; of the visible stars and in the following years, but it is with the work of &lt;strong&gt;Annie Cannon&lt;/strong&gt;, that catalogued &lt;em&gt;hundreds of thousands&lt;/em&gt; of stars, that spectrum-based classification became more common.&lt;/p&gt;
+&lt;p&gt;There are two main spectral classifications, the &lt;a href=&#34;https://starparty.com/topics/astronomy/stars/the-morgan-keenan-system/&#34;&gt;Morgan-Keenan System&lt;/a&gt; and the &lt;a href=&#34;https://en.wikipedia.org/wiki/UBV_photometric_system&#34;&gt;UBV or Johnson-Morgan-system&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Interestingly enough the &lt;em&gt;Yale Bright Star Catalog&lt;/em&gt; contains the &lt;em&gt;MK Spectral Type&lt;/em&gt; in the binary format, and the &lt;em&gt;BV&lt;/em&gt; index in the text format.&lt;/p&gt;
+&lt;p&gt;I ended up creating a list of MK types to colors in the code, starting from these:&lt;/p&gt;
+&lt;p&gt;Spectral Type to temperature
+&lt;a href=&#34;https://www.handprint.com/ASTRO/specclass.html&#34;&gt;https://www.handprint.com/ASTRO/specclass.html&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Temperature to color
+&lt;a href=&#34;http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html&#34;&gt;http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;As an alternative I could have parse the text version and using the BV indices, possibly I&amp;rsquo;ll do that and cross reference colors to see if the are exact.&lt;/p&gt;
+&lt;p&gt;There is also this incredibly useful post about all this:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://stackoverflow.com/questions/21977786/star-b-v-color-index-to-apparent-rgb-color&#34;&gt;https://stackoverflow.com/questions/21977786/star-b-v-color-index-to-apparent-rgb-color&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The key information here&lt;/strong&gt; is that once we read the &lt;em&gt;Spectral Type&lt;/em&gt; of each star, we have a table that converts it to an RGB value.&lt;/p&gt;
+&lt;h3 id=&#34;visual-magnitude&#34;&gt;Visual Magnitude&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR:&lt;/strong&gt; magnitude shows how visible is a star.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;This is the part in which I still don&amp;rsquo;t feel confident about what is really happening, but I&amp;rsquo;ll try to give the better explanation of what I understood.&lt;!-- raw HTML omitted --&gt;
+It will possibly be subject to changes in the code!&lt;/p&gt;
+&lt;p&gt;In the seminal paper a correlation between the &lt;em&gt;Magnitude&lt;/em&gt; and the &lt;em&gt;Glaring&lt;/em&gt; is done, with the Glaring coming from another very important paper on visual perception, defining Glare as the sum of the flare and bloom optical phenomena happening to our eyes &lt;a href=&#34;https://www.researchgate.net/publication/2593999_Physically-Based_Glare_Effects_for_Digital_Images&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;We are trying to create a correlation between the Magnitude of a star and how big is seen in the screen, and this is a pretty accurate description of what happens to us when seeing &amp;lsquo;brighter stars&amp;rsquo;.&lt;/p&gt;
+&lt;p&gt;We have 2 ways to achieve this:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Output a pixel color intensity that works with tonemapping and engages the bloom&lt;/li&gt;
+&lt;li&gt;Make the star bigger based on magnitude.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The second approach is the one used here, but I would like to experiment also with the other option.&lt;/p&gt;
+&lt;p&gt;In the second paper (Single Pass &amp;hellip;) there are some equations that correlate pixel intensity with visual magnitude AND &amp;lsquo;how big&amp;rsquo; the stars appear to the same magnitude.&lt;/p&gt;
+&lt;p&gt;We will see more in detail in the code how to use those.&lt;/p&gt;
+&lt;h3 id=&#34;proper-motion&#34;&gt;Proper Motion&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;TLDR:&lt;/strong&gt; adjust right ascension and declination with this per-year changes.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Long explanation:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The final data relative to the stars is the proper motion.&lt;!-- raw HTML omitted --&gt;
+Proper motion can be simply defined as the yearly move of a star in Equatorial Coordinate System.&lt;!-- raw HTML omitted --&gt;
+Most of the stars visible with naked eye are so distant that their motion is not as diverse as the J2000 position specified, but few (the closest ones) need a more precise calculation.&lt;/p&gt;
+&lt;p&gt;Taking in account &lt;em&gt;proper motion&lt;/em&gt; will give the most precise star positioning of all.&lt;/p&gt;
+&lt;h1 id=&#34;coding&#34;&gt;Coding&lt;/h1&gt;
+&lt;p&gt;After this lenghty introduction in astronomy we can finally see the code!&lt;!-- raw HTML omitted --&gt;
+The repository is still &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering&#34;&gt;DataDrivenRendering&lt;/a&gt; - but all the code and data is contained under the StarApplication folders in source/articles and data/articles!&lt;!-- raw HTML omitted --&gt;
+I am working on improving my framework so I can experiment faster and faster.&lt;/p&gt;
+&lt;p&gt;As already wrote before, one of the biggest problem was retrieving the data and understanding its meaning!&lt;/p&gt;
+&lt;h2 id=&#34;project-structure&#34;&gt;Project Structure&lt;/h2&gt;
+&lt;p&gt;Data: &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/data/articles/StarRendering&#34;&gt;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/data/articles/StarRendering&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Source: &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/StarRendering&#34;&gt;https://github.com/JorenJoestar/DataDrivenRendering/tree/master/source/Articles/StarRendering&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;All the relevant code is in star_map_application.h/.cpp.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h2 id=&#34;star-data-parsing&#34;&gt;Star Data Parsing&lt;/h2&gt;
+&lt;p&gt;We chose the &lt;strong&gt;Yale Bright Star Catalog&lt;/strong&gt;, and there are two versions here (&lt;a href=&#34;http://tdc-www.harvard.edu/software/catalogs/bsc5.html)&#34;&gt;http://tdc-www.harvard.edu/software/catalogs/bsc5.html)&lt;/a&gt;: one binary and one text.&lt;!-- raw HTML omitted --&gt;
+I chose to use the binary one, even though I could change idea and revise this code and article.&lt;/p&gt;
+&lt;p&gt;The binary is pretty easy to parse, with a caveat: you need an alignment of 1 to correctly parse the data!&lt;!-- raw HTML omitted --&gt;
+The parsing structures are just 2, one for the header and one for each star entry:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://tdc-www.harvard.edu/software/catalogs/bsc5.header.html&#34;&gt;http://tdc-www.harvard.edu/software/catalogs/bsc5.header.html&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://tdc-www.harvard.edu/software/catalogs/bsc5.entry.html&#34;&gt;http://tdc-www.harvard.edu/software/catalogs/bsc5.entry.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Once we parse from the file we have all our stars with &lt;em&gt;right ascension, declination and visual magnitude&lt;/em&gt; ready for us!&lt;/p&gt;
+&lt;h2 id=&#34;constellation-data-parsing&#34;&gt;Constellation Data Parsing&lt;/h2&gt;
+&lt;p&gt;Constellations are another set of data that needs to be relative to a specific &lt;strong&gt;catalog&lt;/strong&gt;.&lt;!-- raw HTML omitted --&gt;
+I found this website that presents the constellation lines in a text format:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;http://cdsarc.u-strasbg.fr/viz-bin/Cat?VI/49&#34;&gt;http://cdsarc.u-strasbg.fr/viz-bin/Cat?VI/49&lt;/a&gt;&lt;!-- raw HTML omitted --&gt;
+&lt;a href=&#34;https://github.com/hemel-waarnemen-com/Constellation-lines&#34;&gt;https://github.com/hemel-waarnemen-com/Constellation-lines&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The problem is that the file contains the constellations as a series of line (line strips) that you need to continuously draw &lt;em&gt;like a pen not leaving the paper&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+I decided to convert this in a list of segments, so I have to parse the text file and make the conversion.&lt;/p&gt;
+&lt;p&gt;There are a couple of caveats here:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Constellations can be present more than once, the they have 2 non contiguous lines.&lt;/li&gt;
+&lt;li&gt;Parsing is done 2 times, first to calculate offsets of final segments (especially for the constellations with more lines), second to actually parse the data.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;This is also an interesting use of the hydra_lexer - backbone of the HFX language.&lt;!-- raw HTML omitted --&gt;
+In this demo it is already used but in following ones I&amp;rsquo;ll update it more and more.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    // Read constellation file
+    char* constellation_data = hydra::file_read_into_memory( &amp;quot;..\\data\\articles\\StarRendering\\constellations_lines.txt&amp;quot;, nullptr, false, *allocator );
+    // Allocate raw memory and entries for the data parsed.
+    // Not elegant, but functioning.
+    DataBuffer data_buffer;
+    data_buffer_init( &amp;amp;data_buffer, 10000, 10000 * 4 );
+
+    Lexer lexer;
+    lexer_init( &amp;amp;lexer, constellation_data, &amp;amp;data_buffer );
+
+    // First parse: calculate offsets and total size of indices array.
+    uint32_t data_size = 0;
+    bool parsing = true;
+
+    // An example entry:
+    // Ant   4 4273 4104 3871 3765
+    // Hash is used as line comment.
+    //
+    while ( parsing ) {
+
+        Token token;
+        lexer_next_token( &amp;amp;lexer, token );
+
+        switch ( token.type ) {
+
+            case Token::Token_Hash:
+            {
+                // Skip the line
+                lexer_goto_next_line( &amp;amp;lexer );
+
+                break;
+            }
+
+            case Token::Token_Identifier:
+            {
+                // Ant   4 4273 4104 3871 3765
+                // Read name
+                char name[ 4 ];
+                name[ 0 ] = toupper( token.text.text[ 0 ] );
+                name[ 1 ] = toupper( token.text.text[ 1 ] );
+                name[ 2 ] = toupper( token.text.text[ 2 ] );
+                name[ 3 ] = 0;
+
+                int32_t constellation_index = Constellations::get_index( &amp;amp;constellations, name );
+
+                // Read segment count
+                lexer_expect_token( &amp;amp;lexer, token, Token::Token_Number );
+
+                uint32_t count = atoi( token.text.text );
+                constellations.entries[ constellation_index ].count += count - 1; // This is segments count
+                data_size += count - 1; // Segments count
+
+                // Just advance the token to the next line.
+                for ( uint32_t i = 0; i &amp;lt; count; ++i ) {
+                    lexer_next_token( &amp;amp;lexer, token );
+                }
+
+                break;
+            }
+
+            case Token::Type::Token_EndOfStream:
+            {
+                parsing = false;
+                break;
+            }
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The most interesting part for me is seeing the parsing loop and having a lexer/tokenizer as a personal tool is a MUST!&lt;!-- raw HTML omitted --&gt;
+Constellations contains a map from the name to the entry.&lt;!-- raw HTML omitted --&gt;
+The second parse just reads the actual star numbers and puts them in the correct place.&lt;!-- raw HTML omitted --&gt;
+Not sure it is interesting code to read here.&lt;!-- raw HTML omitted --&gt;
+We now have a list of segments, and thus 2 points, for each constellation, in a contiguous block of memory.&lt;/p&gt;
+&lt;p&gt;Next is&amp;hellip;&lt;/p&gt;
+&lt;h2 id=&#34;temperature-to-color&#34;&gt;Temperature to Color&lt;/h2&gt;
+&lt;p&gt;In the binary data we parsed from the Catalog we have the &lt;strong&gt;Spectral Type&lt;/strong&gt; of a star, a letter+number identification system to classify a star.&lt;!-- raw HTML omitted --&gt;
+To properly calculate the color of a star we need to do the following:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Read the star &lt;em&gt;Spectral Type&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;Convert the &lt;em&gt;Spectral Type&lt;/em&gt; to &lt;em&gt;Temperature&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;Convert &lt;em&gt;Temperature&lt;/em&gt; to &lt;em&gt;RGB color&lt;/em&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Taking the data form the links in the MK part of the article, we parse the &lt;em&gt;Temperature to Color&lt;/em&gt; data from a file containing the &lt;strong&gt;black bodies color data&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Again some non-interesting parsing code, but the entries are like this:&lt;/p&gt;
+&lt;p&gt;1000 K   2deg  0.6499 0.3474  2.472e+06    1.0000 0.0337 0.0000  255  51   0  #ff3300
+1000 K  10deg  0.6472 0.3506  2.525e+06    1.0000 0.0401 0.0000  255  56   0  #ff3800&lt;/p&gt;
+&lt;p&gt;It uses 2 different CIE specifications for colors, and we use the 10deg (the second one) of each entry.&lt;/p&gt;
+&lt;p&gt;We then have a table (hand written from the links above) that links &lt;em&gt;Spectral Types&lt;/em&gt; to temperature:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;struct Range {
+    uint32_t        min;
+    uint32_t        max;
+};
+
+// Morgan-Keenan classification
+// https://starparty.com/topics/astronomy/stars/the-morgan-keenan-system/
+
+// Letters are for star categories.
+// Numbers (0..9) are for further subdivision: 0 hottest, 9 colder.
+
+static const uint32_t           k_max_star_types = &#39;z&#39; - &#39;a&#39;;
+
+// Temperature ranges (in Kelvin) of the different MK spectral types.
+static const Range              k_star_temperature_ranges[ k_max_star_types ] = {
+    // A0-A9            B                   C                 D                 E           F               G
+    { 7300, 10000 }, { 10000, 30000 }, { 2400, 3200 }, { 100000, 1000000 }, { 0, 0 }, { 6000, 7300 }, { 5300, 6000 }, { 0, 0 }, { 0, 0 },
+    //  J          K                    L           M                           O           P           Q        R          S               T
+    { 0, 0 }, { 3800, 5300 }, { 1300, 2100 }, { 2500, 3800 }, { 0, 0 }, { 30000, 40000 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 2400, 3500 }, { 600, 1300 },
+    // U         V          W              X            Y
+    { 0, 0 }, { 0, 0 }, { 25000, 40000 }, { 0, 0 }, { 0, 600 }
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We finally have all conversion from Spectral Types to Color! Ole&#39;!&lt;/p&gt;
+&lt;h2 id=&#34;gregorianjulian-date-conversion&#34;&gt;Gregorian/Julian date conversion&lt;/h2&gt;
+&lt;p&gt;Again some code that is mostly taking formulas from the net!&lt;!-- raw HTML omitted --&gt;
+In the &lt;em&gt;Catalog&lt;/em&gt; we are using the &lt;strong&gt;Right Ascension and Declination&lt;/strong&gt; of each star is expressed relative to the Julian Date 2000.&lt;/p&gt;
+&lt;p&gt;The only really interesting thing here is the fact that you need to use a double - a float will loose the difference for hour and less in the days!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// From https://en.wikipedia.org/wiki/Julian_day
+//
+// Gregorian Calendar Date to Julian Day Number conversion
+
+// This is the reference Julian Date used in current astronomy.
+static const int32_t j2000 = 2451545;
+
+//
+// Julian Day Number calculations.
+// https://en.wikipedia.org/wiki/Julian_day
+// https://aa.quae.nl/en/reken/juliaansedag.html
+// https://core2.gsfc.nasa.gov/time/julian.txt
+// http://www.cs.utsa.edu/~cs1063/projects/Spring2011/Project1/jdn-explanation.html
+static int32_t calculate_julian_day_number( int32_t year, int32_t month, int32_t day ) {
+
+    // Formula coming from Wikipedia.
+    int32_t a = ( month - 14 ) / 12;
+    int32_t jdn =  ( 1461 * (year + 4800 + a)) / 4 +
+                    ( 367 * ( month - 2 - 12 *  a ) ) / 12 - 
+                    ( 3 * ( ( year + 4900 + a ) / 100 ) ) / 4 +
+                    day - 32075;
+
+    // Other formula found online:
+    /*int m, y, leap_days;
+    a = ( ( 14 - month ) / 12 );
+    m = ( month - 3 ) + ( 12 * a );
+    y = year + 4800 - a;
+    leap_days = ( y / 4 ) - ( y / 100 ) + ( y / 400 );
+    int32_t jdn2 = day + ( ( ( 153 * m ) + 2 ) / 5 ) + ( 365 * y ) + leap_days - 32045;*/
+
+    return jdn;
+}
+
+//
+// Julian Date
+//
+static double calculate_julian_date( int32_t year, int32_t month, int32_t day, int32_t hour, int32_t minute, int32_t second ) {
+    int32_t jdn = calculate_julian_day_number( year, month, day );
+
+    double jd = jdn + (( hour - 12.0 ) / 24.0) + (minute / 1440.0) + (second / 86400.0);
+    return jd;
+}
+
+//
+// Julian centuries since January 1, 2000, used to rotate the stars.
+//
+static double calculate_julian_century_date( int32_t year, int32_t month, int32_t day, int32_t hour, int32_t minute, int32_t second ) {
+    double jd = calculate_julian_date( year, month, day, hour, minute, second );
+    return ( jd - j2000 ) / 36525.0;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;NOTE!!!&lt;/strong&gt;&lt;!-- raw HTML omitted --&gt;
+The Julian date we are calculating is &lt;strong&gt;RELATIVE TO J2000&lt;/strong&gt;! Super important!&lt;/p&gt;
+&lt;h2 id=&#34;star-placement&#34;&gt;Star Placement&lt;/h2&gt;
+&lt;p&gt;This is the real deal.&lt;!-- raw HTML omitted --&gt;
+I myself used the seminal papers on the subject that express the formulat to calculate the placement of a star in the &lt;em&gt;Celestial Sphere&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;There are two component on this:&lt;/p&gt;
+&lt;h3 id=&#34;conversion-from-right-ascension-and-declination-to-equatorial-coordinates&#34;&gt;Conversion from &lt;em&gt;Right Ascension and Declination&lt;/em&gt; to Equatorial Coordinates.&lt;/h3&gt;
+&lt;p&gt;The most important thing to remember here is that the &lt;strong&gt;data coming from the catalog&lt;/strong&gt; is expressed at &lt;strong&gt;J2000&lt;/strong&gt; date.&lt;!-- raw HTML omitted --&gt;
+Let&amp;rsquo;s convert RA and D:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Convert to euclidean coordinates
+//
+static void convert_to_euclidean( float right_ascension, float declination, float radial_distance, float&amp;amp; out_x, float&amp;amp; out_y, float&amp;amp; out_z ) {
+    const float cosd = cosf( declination );
+
+    out_x = radial_distance * sinf( right_ascension ) * cosd;
+    out_y = radial_distance * cosf( right_ascension ) * cosd;
+    out_z = radial_distance * sinf( declination );
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This will put the star in place at the date of &lt;strong&gt;J2000&lt;/strong&gt; or January 1, 2000 at 12:00 Terrestrial Time in the Gregorian Calendar!&lt;!-- raw HTML omitted --&gt;
+We need to calculate the rotation from J2000 to our current time and location.&lt;/p&gt;
+&lt;h3 id=&#34;latitude-longitude-and-date-to-rotation&#34;&gt;Latitude, Longitude and Date to Rotation&lt;/h3&gt;
+&lt;p&gt;This is the missing link.&lt;!-- raw HTML omitted --&gt;
+As already noted above, the data coming from the Catalog is the position of the stars at &lt;strong&gt;J2000&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;There are some conversions to do from latitude and longitude, and these formulas are a mix coming from the papers I mentioned at the beginnig and simple conversion.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;float longitude_radians = glm_rad( longitude );
+float latitude_radians = glm_rad( latitude );
+
+// Calculate rotation matrix based on time, latitude and longitude
+// T is time in julian century, as used in the paper.
+double T = calculate_julian_century_date( year, month, day, hour, minute, second );
+double local_mean_sidereal_time = 4.894961f + 230121.675315f * T + longitude_radians;
+
+// Exploration of different rotations
+versors rotation_y = glms_quatv( latitude_radians - GLM_PI_2f, { 0, 1, 0 } );
+versors rotation_z = glms_quatv( -local_mean_sidereal_time, { 0, 0, 1 } );
+
+static bool rotation_order_invert = false;
+
+versors final_rotation = rotation_order_invert ? glms_quat_mul( rotation_y, rotation_z ) : glms_quat_mul( rotation_z, rotation_y );
+if ( apply_precession ) {
+    versors precession_rotation_z = glms_quatv( 0.01118f, { 0, 0, 1 } );
+    versors precession = glms_quat_mul( glms_quat_mul( precession_rotation_z, glms_quatv( -0.00972, {1, 0, 0} ) ), precession_rotation_z );
+
+    final_rotation = glms_quat_mul( final_rotation, precession );
+}
+
+mat4s star_rotation_matrix = glms_quat_mat4( final_rotation );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The ugliness in this code is that I had some reference system problems somewhere, so I put some variables to understand what was happening.&lt;!-- raw HTML omitted --&gt;
+This is true code, you see everything :)&lt;/p&gt;
+&lt;p&gt;Starting from &lt;strong&gt;latitude and longitude and date&lt;/strong&gt; we arrive at a rotation matrix to apply to the stars!&lt;/p&gt;
+&lt;p&gt;Applying precession is taking in consideration the precession and nutation phenomena, again something that the brillian paper &amp;lsquo;A Physically Based Night Sky&amp;rsquo; gives some formula.&lt;!-- raw HTML omitted --&gt;
+I admit not having still a deep understaning on how they arrived at that conclusion, but for sure I have a good starting point now (and hopefully you do as well!).&lt;/p&gt;
+&lt;p&gt;The final position of the star is &lt;strong&gt;star_rotation_matrix * vec4(position.xyz, 1)&lt;/strong&gt;, with the position calculated as the Equatorial Coordinate at J2000, and the Star Rotation as the additional rotation taking in consideration Latitude, Longitude and date.&lt;/p&gt;
+&lt;h2 id=&#34;star-rendering-hydra-for-the-win&#34;&gt;Star Rendering: Hydra for the win!&lt;/h2&gt;
+&lt;p&gt;We are using the new Hydra framework - this time having a 80% working Vulkan backend.&lt;!-- raw HTML omitted --&gt;
+I am working a bit on having HFX shader language extension as more and more something that I can rely to clearly prototype and explore ideas.&lt;!-- raw HTML omitted --&gt;
+The HFX file that renders everything defines also almost everything, from the shader to the vertex layout to the resource types used.&lt;/p&gt;
+&lt;p&gt;There is a bit of magic as well here - something I found reading the second paper, &amp;lsquo;Single Pass Rendering of Day and Night Sky Phenomena&amp;rsquo; - so the math is coming from there.
+I am missing the scintillation, scattering and the daylight removal when it is day, even though for this demo is not important.&lt;!-- raw HTML omitted --&gt;
+From this you can see the difference between a demo and a feature in a game: when developing this as a feature, you should consider the interaction with all the other rendering systems, the tonemapping, luts, any kind of clouds, sun and moon rendering, and such.&lt;!-- raw HTML omitted --&gt;
+This is crucial!&lt;/p&gt;
+&lt;p&gt;From a top down view of the rendering, we are basically drawing billboards that use the visual magnitude both for size and alpha.&lt;!-- raw HTML omitted --&gt;
+Overdraw fest!!!&lt;/p&gt;
+&lt;p&gt;Here is the shader used. As you can see you can specify &lt;em&gt;vertex layout and render states as well&lt;/em&gt; - something I &lt;strong&gt;LOVE&lt;/strong&gt; to see with shaders. They are an integral part of the rendering!&lt;/p&gt;
+&lt;p&gt;With an HFX file now you can define totally a Vulkan Pipeline, so it is a great tool.&lt;!-- raw HTML omitted --&gt;
+The code has reload of shaders, so you can experiment faster!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;shader stars {
+
+    layout {
+        list Local {
+            cbuffer ViewConstants ViewConstants;
+        }
+
+        vertex main3D {
+            binding 0 32 instance
+            attribute float4 Position 0 0 0
+            attribute float4 ColorData 0 1 16
+        }
+
+    }
+
+    render_states {
+        state alpha {
+            Cull None
+            ZTest Always
+            ZWrite Off
+            BlendMode Alpha
+        }
+
+    }
+    
+    glsl to_screen {
+
+        #pragma include &amp;quot;Platform.h&amp;quot;
+
+        layout (std140, binding=0) uniform ViewConstants {
+            mat4                    view_projection_matrix;
+            mat4                    star_rotation_matrix;
+
+            vec4                    camera_up;
+            vec4                    camera_right;
+
+            vec4                    data;       // x = min_radius, y = glare scale, z = radius scale, w = distance scale
+        };
+
+        #if defined VERTEX
+        layout (location = 0) in  vec4 position;
+        layout (location = 1) in  vec4 color_data;
+
+        layout (location = 0) out vec4 vTexCoord;
+        layout (location = 1) out vec3 vColor;
+
+        // Per vertex positions and uvs of a quad
+        vec3 positions[6]       = vec3[6]( vec3(-0.5,-0.5,0), vec3(0.5,-0.5,0), vec3(0.5, 0.5, 0), vec3(0.5, 0.5, 0), vec3(-0.5,0.5,0), vec3(-0.5,-0.5,0) );
+        vec2 uvs[6]             = vec2[6]( vec2(0.0, 1.0),    vec2(1.0, 1.0),   vec2(1.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 0.0), vec2(0.0, 1.0) );
+
+        const float _35OVER13PI = 0.85698815511020565414014334123662;
+
+        void main() {
+
+            // Calculate color based on magnitude
+            // Following paper &amp;quot;Single Pass Rendering of Day and Night Sky Phenomena&amp;quot;
+            float m = position.w;
+            float m_a = 7.0f;       // Average apparent magnitude
+
+            float delta_m = pow(2.512, m_a - m);
+
+        	// Magic from the papers. Investigate the WHY of this.
+            float i_t = delta_m * _35OVER13PI;
+            i_t *= 4e-7 / (data.x * data.x);  // resolution correlated 
+            i_t = min(1.167, i_t);  // volume of smoothstep (V_T)
+
+            // Day-Twilight-Night-Intensity Mapping (Butterworth-Filter)
+            //float b = 1.0 / sqrt(1 + pow(sun.z + 1.14, 32));
+            //i_t *= b;
+
+            if ( i_t &amp;lt; 0.01 )
+                return;
+
+            float i_g = pow(2.512, m_a - (m + 0.167)) - 1;
+            vec3 v_t = vec3(i_t);
+
+            // v_k
+            const float glare_scale = data.y;
+            const float v_k = max(data.x, sqrt(i_g) * 2e-2 * glare_scale);
+
+            // TODO: Scattering and Scintillation
+            //v_t -= E_ext;
+            vTexCoord.w = v_k / data.x;
+
+            //
+            vColor = mix( color_data.xyz, vec3( 0.66, 0.78, 1.00 ), 0.66 );
+            vColor *= v_t;
+            vColor = max(vec3(0.0), vColor);
+
+            const uint vertex_index = gl_VertexID % 6;
+
+            vTexCoord.xy = positions[vertex_index].xy * vec2(-1, 1);
+
+            float particle_size = v_k * data.z;
+            vec3 scaled_billboard = vTexCoord.x * particle_size * camera_right.xyz + vTexCoord.y * particle_size * camera_up.xyz;
+    
+            vec4 final_position = star_rotation_matrix * vec4(position.xyz, 1) + vec4(scaled_billboard.xyz, 1);
+
+            gl_Position = view_projection_matrix * vec4(final_position.xyz, 1.0f);
+
+        }
+        #endif // VERTEX
+
+        #if defined FRAGMENT
+
+        layout (location = 0) in vec4 vTexCoord;
+        layout (location = 1) in vec3 vColor;
+
+        layout (location = 0) out vec4 outColor;
+
+        void main() {
+            float x = vTexCoord.x;
+            float y = vTexCoord.y;
+
+            float zz = (1 - x * x - y * y);
+            if ( zz &amp;lt; 0.0 )
+                discard;
+
+            float k = vTexCoord.w;
+            float l = length(vec2(x, y));
+
+            const float radius_scale = data.w;
+            const float glare_scale = data.y;
+            float t = 1 - smoothstep(0.0, 1.0, l * k / radius_scale);
+            float g = 1 - pow(l, glare_scale / 64.0);
+
+            float intensity = max(t, g);
+            outColor = vec4(intensity * vColor, intensity);
+        }
+        #endif // FRAGMENT
+    }
+    pass stars_to_screen {
+        stage = final
+        resources = Local
+        vertex_layout = main3D
+        vertex = to_screen
+        fragment = to_screen
+        render_states = alpha
+    }
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A simplified version of the rendering code is here, but I like how this is becoming. Feedback is really appreciated :)&lt;/p&gt;
+&lt;p&gt;The instance buffer contains the Euclidean positions of each star with the visual magnitude as well.&lt;!-- raw HTML omitted --&gt;
+We are drawing straight into the swapchain, and I use the abstraction of &amp;lsquo;resource list&amp;rsquo; similar to the &amp;lsquo;descriptor sets&amp;rsquo; coming from Vulkan. They are just a &amp;hellip;list of resources.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;CommandBuffer* gpu_commands = update.gpu_commands;
+gpu_commands-&amp;gt;clear( sort_key, 0, 0, 0, 1 );
+gpu_commands-&amp;gt;clear_depth_stencil( sort_key++, 1.0f, 0 );
+
+// Draw the stars! ////////////////////////////
+gpu_commands-&amp;gt;bind_pass( sort_key++, update.gpu_device-&amp;gt;get_swapchain_pass() );
+gpu_commands-&amp;gt;set_scissor( sort_key++, nullptr );	// Default framebuffer/render target sizes
+gpu_commands-&amp;gt;set_viewport( sort_key++, nullptr );
+
+gpu_commands-&amp;gt;bind_vertex_buffer( sort_key++, star_instance_buffer, 0, 0 );
+gpu_commands-&amp;gt;bind_pipeline( sort_key++, star_rendering_pipeline );
+gpu_commands-&amp;gt;bind_resource_list( sort_key++, &amp;amp;star_resource_list, 1, nullptr, 0 );
+gpu_commands-&amp;gt;draw( sort_key++, TopologyType::Triangle, 0, 6, 0, star_count_to_render );
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And that&amp;rsquo;s it for the rendering!
+We basically draw the Celestial Sphere - we miss taking in consideration the night/day transition depending where we are, or the moon and sun.&lt;/p&gt;
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+&lt;p&gt;We had a dive into how to render stars using real-life astronomical data.&lt;!-- raw HTML omitted --&gt;
+The real deal is finding the proper data, and trying to understand how to use it.&lt;!-- raw HTML omitted --&gt;
+There are still some things that I don&amp;rsquo;t understand myself, but at least if you are curious about this topic this could be a good starting point.&lt;/p&gt;
+&lt;p&gt;I hope to have time to understand things deeper soon and correct any error.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Hydra library is also evolving to something more and more usable for demo, I am trying to keep the code relatively small and clear, I&amp;rsquo;ll continue with other demos about this.&lt;!-- raw HTML omitted --&gt;
+I like the idea of something very concise - so you can focus only on the details you need.&lt;/p&gt;
+&lt;p&gt;Next will be the Atmospheric Scattering demo from the amazing &lt;a href=&#34;https://twitter.com/SebHillaire&#34;&gt;Sebastien Hillaire&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Happy new year and may the stars shine upon your path!&lt;/em&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Data Driven Rendering: Pipelines</title>
+      <link>https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/</link>
+      <pubDate>Mon, 14 Oct 2019 10:43:49 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/</guid>
+      <description>&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;GLTFHelmet.png&#34; &gt;
+
+&lt;img src=&#34;GLTFHelmet.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Model used in the demo.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;Data Driven Rendering Series:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&#34;&gt;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;We finally arrived in the &lt;strong&gt;Rendering Pipeline&lt;/strong&gt; realm.&lt;!-- raw HTML omitted --&gt;
+Some can write that it is useless, some can hate it.&lt;!-- raw HTML omitted --&gt;
+Many have some sort of abstraction for it since ages, and others have to now that new APIs like &lt;strong&gt;Vulkan&lt;/strong&gt; and &lt;strong&gt;DX12&lt;/strong&gt; have it as an explicit part of their design (finally!).&lt;/p&gt;
+&lt;p&gt;After we built a basic Material System in the previous article (&lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&lt;/a&gt;) we can add another layer on top of it and built a complete &lt;em&gt;Rendering Frame&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;In this article I will talk about a simplified version of &lt;strong&gt;Render Graph&lt;/strong&gt; that I call &lt;strong&gt;Render Pipeline&lt;/strong&gt; and came into my mind in the canteen of Codemasters after thinking:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;What is the biggest dependency in Rendering ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The answer is simple:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Render Targets!&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Render Targets&lt;/strong&gt; or &lt;strong&gt;Frame Buffers&lt;/strong&gt; is just an intermediate buffer in which we can draw something and use it later.&lt;!-- raw HTML omitted --&gt;
+Basically a Read/Write texture!&lt;!-- raw HTML omitted --&gt;
+It is not easy to shuffle around a Render Target, and having knowledge of which one are you using can make a huge difference for your rendering tech.&lt;!-- raw HTML omitted --&gt;
+Textures and Render Targets are the biggest memory lord in any rendering application, thus knowing &lt;em&gt;where&lt;/em&gt; you are spending your memory can be really powerful.&lt;/p&gt;
+&lt;p&gt;From a pure &lt;em&gt;understanding&lt;/em&gt; of rendering techniques, having a clear visualization of this aspect makes a HUGE difference!&lt;/p&gt;
+&lt;p&gt;Once I started using to describe a frame of rendering with the &lt;strong&gt;Render Target Dependencies&lt;/strong&gt; I never looked back.&lt;!-- raw HTML omitted --&gt;
+As always, knowledge is power.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h1 id=&#34;render-pipeline-thinking&#34;&gt;Render Pipeline Thinking&lt;/h1&gt;
+&lt;p&gt;First of all, let&amp;rsquo;s start defining some general concepts to describe the problem we are trying to solve.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;The problem we are trying to solve is:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;How to describe the inter-frame dependencies of Render Targets in a frame ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The dependencies are who &lt;strong&gt;writes&lt;/strong&gt; and/or &lt;strong&gt;read&lt;/strong&gt; from/to a &lt;strong&gt;Render Target&lt;/strong&gt;.&lt;!-- raw HTML omitted --&gt;
+That is exactly what is described in a Render Pipeline.
+Enter the &lt;em&gt;Render Pipeline&lt;/em&gt;.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;A Render Pipeline is a list of Passes that read and writes Render Targets.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;That&amp;rsquo;s it.&lt;!-- raw HTML omitted --&gt;
+Done! See you next article!&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Of course I am kidding - but this is the gist of it.&lt;!-- raw HTML omitted --&gt;
+The implications, however, are profound.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Next logical question is:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;How can we read and write from/to a Render Target ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Let&amp;rsquo;s list how we can &lt;em&gt;write&lt;/em&gt; to a Render Target&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Graphics - binding some geometry, render states and Render Targets&lt;/li&gt;
+&lt;li&gt;Compute - write anything to the Render Target&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Even a so called &lt;em&gt;&amp;lsquo;post-process&amp;rsquo;&lt;/em&gt; is just a &lt;em&gt;fullscreen triangle with a shader&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;And to read&amp;hellip;well any &lt;strong&gt;shader&lt;/strong&gt; that takes reads a texture!&lt;/p&gt;
+&lt;p&gt;It is incredible to think that with this simple building blocks you can describe almost everything to render!&lt;/p&gt;
+&lt;p&gt;For example, let&amp;rsquo;s try to express some common rendering techniques using only those concepts.&lt;/p&gt;
+&lt;h2 id=&#34;deferred-rendering&#34;&gt;Deferred Rendering&lt;/h2&gt;
+&lt;p&gt;We can define the following simple steps:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Meshes uses their materials (shaders + textures + constants) as input and write into GBuffer Render Target + depth.&lt;/li&gt;
+&lt;li&gt;A Compute/Post-process shader will read the Gbuffer Render Target and depth (to reconstruct the pixel position), a light list of some sort and outputs a texture with the result.&lt;/li&gt;
+&lt;li&gt;Transparent objects are drawn into this new Render Target using their materials.&lt;/li&gt;
+&lt;li&gt;And so on&amp;hellip;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;!-- raw HTML omitted --&gt;
+&lt;h2 id=&#34;exponential-variance-shadow-mapping-in-a-forward-rendering-pipeline&#34;&gt;Exponential Variance Shadow Mapping in a Forward Rendering Pipeline&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Meshes writes into a depth-only render target using the light as &amp;lsquo;camera/point of view&amp;rsquo;.&lt;/li&gt;
+&lt;li&gt;Compute or Postprocess converts the depth-only render target into a EVSM one.&lt;/li&gt;
+&lt;li&gt;Meshes uses their materials and the &lt;em&gt;EVSM shadow map&lt;/em&gt; to render into a &lt;em&gt;&amp;lsquo;main&amp;rsquo;&lt;/em&gt; Render Target.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&amp;lt;diagram 2 goes here&amp;gt;&lt;/p&gt;
+&lt;h1 id=&#34;other-rendering-concepts&#34;&gt;Other Rendering Concepts&lt;/h1&gt;
+&lt;p&gt;To give a full description of the frame we need to add other concepts that will help us.&lt;!-- raw HTML omitted --&gt;
+These are the less strict ones - and just a personal way of seeing things.&lt;/p&gt;
+&lt;h2 id=&#34;render-view&#34;&gt;Render View&lt;/h2&gt;
+&lt;p&gt;The concept of &lt;em&gt;&amp;lsquo;Render View&amp;rsquo;&lt;/em&gt; is just a way or representing a &lt;em&gt;camera&lt;/em&gt; and a list of visible objects from it.&lt;!-- raw HTML omitted --&gt;
+We will see how we use it later, but a simple example of Render View would be the &amp;lsquo;Sun Shadow&amp;rsquo; render view - representing the sun (as a camera) and a list of visible objects from it.&lt;!-- raw HTML omitted --&gt;
+The &amp;lsquo;Main&amp;rsquo; render view of course represent the main camera and visible objects.&lt;!-- raw HTML omitted --&gt;
+This, combined with &lt;strong&gt;render managers&lt;/strong&gt; becomes a powerful combination to describe &lt;em&gt;what&lt;/em&gt; needs to be rendered.&lt;/p&gt;
+&lt;h2 id=&#34;render-manager&#34;&gt;Render Manager&lt;/h2&gt;
+&lt;p&gt;If you think from an ECS mentality, this would be a &amp;lsquo;system&amp;rsquo;.&lt;!-- raw HTML omitted --&gt;
+Each render manager is responsible to render one or more render &lt;em&gt;&amp;lsquo;aspects/entities&amp;rsquo;&lt;/em&gt; into a Render Pass.&lt;!-- raw HTML omitted --&gt;
+A render manager can subscribe to any &amp;lsquo;graphics&amp;rsquo; pass and render from there.&lt;/p&gt;
+&lt;p&gt;For example, a &amp;lsquo;static geometry&amp;rsquo; render manager could setup an instancing buffer for the gbuffer-generation pass and draw all objects.&lt;/p&gt;
+&lt;h1 id=&#34;render-pipeline-implementation&#34;&gt;Render Pipeline Implementation&lt;/h1&gt;
+&lt;p&gt;After we defined the basic concepts let&amp;rsquo;s see an actual implementation of the Render Pipeline.&lt;!-- raw HTML omitted --&gt;
+We will see the code of each component and arrive at the actual data definition (in json).&lt;/p&gt;
+&lt;p&gt;The code has changed a bit since last article, with the inclusion of CGLM as math library and other high-level rendering code, included in hydra_rendering.h/.cpp.&lt;/p&gt;
+&lt;h2 id=&#34;render-view-1&#34;&gt;Render View&lt;/h2&gt;
+&lt;p&gt;First element is the Render View:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Render view is a &#39;contextualized&#39; camera - a way of using the camera in the render pipeline.
+//
+struct RenderView {
+
+    Camera                          camera;
+
+    array( RenderScene )            visible_render_scenes;
+
+}; // struct RenderView
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Using STB&amp;rsquo;s array (the macro is just an aid to know it is not just a pointer) we have a list of visible render scenes from that camera.&lt;!-- raw HTML omitted --&gt;
+It should be pretty straighforward.&lt;/p&gt;
+&lt;h2 id=&#34;render-manager-1&#34;&gt;Render Manager&lt;/h2&gt;
+&lt;p&gt;Next is Render Manager:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+struct RenderManager {
+
+    struct RenderContext {
+        Device*                     device;
+
+        const RenderView*           render_view;
+        CommandBuffer*              commands;
+        
+        RenderScene*                render_scene_array;
+        uint16_t                    start;
+        uint16_t                    count;
+        
+        uint16_t                    stage_index;
+    }; // struct RenderContext
+
+    virtual void                    render( RenderContext&amp;amp; render_context ) = 0;
+
+}; // struct RenderManager
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The base class is really just a &amp;lsquo;render&amp;rsquo; method.&lt;!-- raw HTML omitted --&gt;
+Here the RenderContext is interesting, and it gives access to all you need to render:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Device - used to map/unmap resources.&lt;/li&gt;
+&lt;li&gt;RenderView - access to camera (and more, but that&amp;rsquo;s for the next article!).&lt;/li&gt;
+&lt;li&gt;CommandBuffer - the actual draw commands are written here.&lt;/li&gt;
+&lt;li&gt;RenderScene - the RenderScene from start to start + count.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;In this very simple demo, we have just 2 &lt;em&gt;render managers&lt;/em&gt;: &lt;em&gt;Line Renderer&lt;/em&gt; and &lt;em&gt;Scene Renderer&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+The most interesting one is the second: Line Renderer has commands to draw lines that will be mapped into a GPU buffer and uses instancing to draw them.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+void LineRenderer::render( RenderContext&amp;amp; render_context ) {
+
+    Device&amp;amp; device = *render_context.device;
+
+    // Update camera matrix
+    const Camera&amp;amp; camera = render_context.render_view-&amp;gt;camera;
+
+    MapBufferParameters cb_map = { lines_cb, 0, 0 };
+    
+    float L = 0, T = 0;
+    float R = device.swapchain_width, B = device.swapchain_height;
+    const float ortho_projection[4][4] =
+    {
+        { 2.0f / ( R - L ),   0.0f,         0.0f,   0.0f },
+        { 0.0f,         2.0f / ( T - B ),   0.0f,   0.0f },
+        { 0.0f,         0.0f,        -1.0f,   0.0f },
+        { ( R + L ) / ( L - R ),  ( T + B ) / ( B - T ),  0.0f,   1.0f },
+    };
+
+    LocalConstants* cb_data = (LocalConstants*)device.map_buffer( cb_map );
+    if ( cb_data ) {
+        cb_data-&amp;gt;view_projection = camera.view_projection;
+        
+        memcpy( &amp;amp;cb_data-&amp;gt;projection, &amp;amp;ortho_projection, 64 );
+        
+        cb_data-&amp;gt;resolution = { device.swapchain_width * 1.0f, device.swapchain_height * 1.0f, 1.0f / device.swapchain_width, 1.0f / device.swapchain_height };
+        device.unmap_buffer( cb_map );
+    }
+
+    if ( current_line_index ) {
+        const uint32_t mapping_size = sizeof( LinVertex ) * current_line_index;
+        MapBufferParameters map_parameters_vb = { lines_vb, 0, mapping_size };
+        LinVertex* vtx_dst = (LinVertex*)device.map_buffer( map_parameters_vb );
+        
+        if ( vtx_dst ) {
+            memcpy( vtx_dst, &amp;amp;s_line_buffer[0], mapping_size );
+            
+            device.unmap_buffer( map_parameters_vb );
+        }
+
+        CommandBuffer* commands = render_context.commands;
+        commands-&amp;gt;begin_submit( 2 );
+
+        ShaderInstance&amp;amp; shader_instance = line_material-&amp;gt;shader_instances[3];
+        commands-&amp;gt;bind_pipeline( shader_instance.pipeline );
+        commands-&amp;gt;bind_resource_list( shader_instance.resource_lists, shader_instance.num_resource_lists, nullptr, 0 );
+        commands-&amp;gt;bind_vertex_buffer( lines_vb, 0, 0 );
+        // Draw using instancing and 6 vertices.
+        const uint32_t num_vertices = 6;
+        commands-&amp;gt;draw( TopologyType::Triangle, 0, num_vertices, current_line_index / 2 );
+        commands-&amp;gt;end_submit();
+
+        current_line_index = 0;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Easy to notice how, with a Vulkan/DX12 interface, there are few less commands to write. Binding a pipeline sets everything considered &amp;lsquo;static&amp;rsquo; - render states, shaders - and with just &lt;em&gt;resource lists&lt;/em&gt; (that sets textures and constants) and &lt;em&gt;vertex/index buffers&lt;/em&gt; we have everything needed to render.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE&lt;/strong&gt;: HFX has gone some improvements and now supports &lt;em&gt;render states and vertex declarations/formats&lt;/em&gt;. I&amp;rsquo;ll write about it in the next post - but this has become crucial.&lt;/p&gt;
+&lt;h2 id=&#34;shader-resources-management&#34;&gt;Shader Resources Management&lt;/h2&gt;
+&lt;p&gt;This is another personal preference - but not necessary at all.&lt;!-- raw HTML omitted --&gt;
+Two concepts are really useful to me to be explicit and centralized: &lt;em&gt;resources and bindings&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Resources are all referenced in a &lt;em&gt;&amp;lsquo;Shader Resource Database&amp;rsquo;&lt;/em&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Struct used to retrieve textures, buffers and samplers.
+//
+struct ShaderResourcesDatabase {
+
+    struct BufferStringMap {
+        char*                       key;
+        BufferHandle                value;
+    }; // struct BufferStringMap
+
+    struct TextureStringMap {
+        char*                       key;
+        TextureHandle               value;
+    }; // struct TextureStringMap
+
+    struct SamplerStringMap {
+        char* key;
+        SamplerHandle               value;
+    }; // struct SamplerStringMap
+
+    BufferStringMap*                name_to_buffer = nullptr;
+    TextureStringMap*               name_to_texture = nullptr;
+    SamplerStringMap*               name_to_sampler = nullptr;
+
+    void                            init();
+    void                            terminate();
+
+    void                            register_buffer( char* name, BufferHandle buffer );
+    void                            register_texture( char* name, TextureHandle texture );
+    void                            register_sampler( char* name, SamplerHandle sampler );
+
+    BufferHandle                    find_buffer( char* name );
+    TextureHandle                   find_texture( char* name );
+    SamplerHandle                   find_sampler( char* name );
+
+}; // struct ShaderResourcesDatabase
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Simply put, any resource used by rendering is here.&lt;!-- raw HTML omitted --&gt;
+Both Materials, Pipelines and Render Managers register and use the database to create the &lt;em&gt;resource lists&lt;/em&gt; used in rendering.&lt;/p&gt;
+&lt;p&gt;Next and more convoluted is the &lt;em&gt;shader resources lookup&lt;/em&gt; class:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Struct to link between a Shader Binding Name and a Resource. Used both in Pipelines and Materials.
+//
+struct ShaderResourcesLookup {
+
+    enum Specialization {
+        Frame, Pass, View, Shader
+    }; // enum Specialization
+
+    struct NameMap {
+        char*                       key;
+        char*                       value;
+    }; // struct NameMap
+
+    struct SpecializationMap {
+        char*                       key;
+        Specialization              value;
+    }; // struct SpecializationMap
+
+    NameMap*                        binding_to_resource = nullptr;
+    SpecializationMap*              binding_to_specialization = nullptr;
+    NameMap*                        binding_to_sampler = nullptr;
+
+    void                            init();
+    void                            terminate();
+
+    void                            add_binding_to_resource( char* binding, char* resource );
+    void                            add_binding_to_specialization( char* binding, Specialization specialization );
+    void                            add_binding_to_sampler( char* binding, char* sampler );
+
+    char*                           find_resource( char* binding );
+    Specialization                  find_specialization( char* binding );
+    char*                           find_sampler( char* binding );
+
+    void                            specialize( char* pass, char* view, ShaderResourcesLookup&amp;amp; final_lookup );
+
+}; // struct ShaderResourcesLookup
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This class specify the binding between a &lt;em&gt;shader resource&lt;/em&gt; and an &lt;em&gt;actual resource&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+As a simple example to clarify, a shader could have an &lt;em&gt;&amp;lsquo;albedo&amp;rsquo;&lt;/em&gt; texture defined in the code, but the &lt;em&gt;actual&lt;/em&gt; texture is defined by the material.&lt;!-- raw HTML omitted --&gt;
+Or for a Render Stage, like a Post-Processing one, its input could be defined in the shader code as &lt;em&gt;&amp;lsquo;input 0, input 1&amp;hellip;&#39;&lt;/em&gt; and the render pipeline creates the binding.&lt;/p&gt;
+&lt;p&gt;With those in place, we can finalize any resource used by any shader/material/pipeline.&lt;/p&gt;
+&lt;p&gt;The actual usage is into the Shader Instance class. Let&amp;rsquo;s have a quick look.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+struct ShaderInstance {
+
+    void                            load_resources( const PipelineCreation&amp;amp; pipeline, PipelineHandle pipeline_handle, ShaderResourcesDatabase&amp;amp; database, ShaderResourcesLookup&amp;amp; lookup, Device&amp;amp; device );
+
+    PipelineHandle                  pipeline;
+    ResourceListHandle              resource_lists[k_max_resource_layouts];
+
+    uint32_t                        num_resource_lists;
+}; // struct ShaderInstance
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This class is what actually contains the resource lists and pipeline used to render anything.&lt;!-- raw HTML omitted --&gt;
+Not very happy with the name - any suggestion welcome.&lt;!-- raw HTML omitted --&gt;
+A material contains a list of those - one for each pass - and is used to draw.&lt;!-- raw HTML omitted --&gt;
+Again with the new Vulkan/DX12 mentality, Pipeline + Resource Lists + Geometry is all you need to render almost.&lt;/p&gt;
+&lt;p&gt;The magic happens when creating the resource lists:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void ShaderInstance::load_resources( const PipelineCreation&amp;amp; pipeline_creation, PipelineHandle pipeline_handle, ShaderResourcesDatabase&amp;amp; database, ShaderResourcesLookup&amp;amp; lookup, Device&amp;amp; device ) {
+    
+    using namespace hydra::graphics;
+    ResourceListCreation::Resource resources_handles[k_max_resources_per_list];
+
+    for ( uint32_t l = 0; l &amp;lt; pipeline_creation.num_active_layouts; ++l ) {
+        // Get resource layout description
+        ResourceListLayoutDescription layout;
+        device.query_resource_list_layout( pipeline_creation.resource_list_layout[l], layout );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We know that a pipeline can have 1 or more resource lists, thus we just iterate through them.&lt;!-- raw HTML omitted --&gt;
+Next we look into each resource of the current list:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+        // For each resource
+        for ( uint32_t r = 0; r &amp;lt; layout.num_active_bindings; r++ ) {
+            const ResourceBinding&amp;amp; binding = layout.bindings[r];
+
+            // Find resource name
+            // Copy string_buffer 
+            char* resource_name = lookup.find_resource( (char*)binding.name );
+
+            switch ( binding.type ) {
+                case hydra::graphics::ResourceType::Constants:
+                case hydra::graphics::ResourceType::Buffer:
+                {
+                    BufferHandle handle = resource_name ? database.find_buffer( resource_name ) : device.get_dummy_constant_buffer();
+                    resources_handles[r].handle = handle.handle;
+
+                    break;
+                }
+
+                ... same for textures
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For each binding coming from the shader (think &amp;lsquo;albedo&amp;rsquo; for a PBR shader) we search for the actual resource name (&amp;lsquo;WoodBeamAlbedo&amp;rsquo;) and query the database to find it.&lt;!-- raw HTML omitted --&gt;
+After we did that, we can create the list:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;            }
+        }
+
+        ResourceListCreation creation = { pipeline_creation.resource_list_layout[l], resources_handles, layout.num_active_bindings };
+        resource_lists[l] = device.create_resource_list( creation );
+    }
+
+    num_resource_lists = pipeline_creation.num_active_layouts;
+    pipeline = pipeline_handle;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With this mechanism we added another explicit connection between resources.&lt;/p&gt;
+&lt;p&gt;It is finally time to see the actual render pipeline!&lt;/p&gt;
+&lt;h2 id=&#34;render-stagepass&#34;&gt;Render Stage/Pass&lt;/h2&gt;
+&lt;p&gt;This is the &lt;em&gt;CORE&lt;/em&gt; of everything, and it must work with all both &lt;strong&gt;geometrical&lt;/strong&gt; stages and &lt;strong&gt;post-process&lt;/strong&gt; ones.&lt;!-- raw HTML omitted --&gt;
+You can either create a base virtual class or doing something like here.&lt;!-- raw HTML omitted --&gt;
+Important is understanding the concept!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Encapsulate the rendering of anything that writes to one or more Render Targets.
+//
+struct RenderStage {
+
+    enum Type {
+        Geometry, Post, PostCompute, Swapchain, Count
+    };
+
+	Type                            type                                = Count;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Simply we define the types:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Geometry - uses render manager with meshes to draw.&lt;/li&gt;
+&lt;li&gt;Post - fullscreen triangle + shader.&lt;/li&gt;
+&lt;li&gt;PostCompute - any compute shader execution basically!&lt;/li&gt;
+&lt;li&gt;Swapchain - special case of binding the window framebuffer and render the last time.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Next is the most important part: dependencies!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    array( TextureHandle )          input_textures                      = nullptr;
+    array( TextureHandle )          output_textures                     = nullptr;
+
+    TextureHandle                   depth_texture;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;When we create the pipeline, we save all inputs and outputs textures.&lt;!-- raw HTML omitted --&gt;
+Depth/Stencil is a put in its own part.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    float                           scale_x                             = 1.0f;
+    float                           scale_y                             = 1.0f;
+    uint16_t                        current_width                       = 1;
+    uint16_t                        current_height                      = 1;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Here we handle scaling. When using scale, we use the framebuffer&amp;rsquo;s window width/height to calculate the Render Target size of the output ones. When using the current width/height we instead define a specific size (like for a shadow map).&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    RenderPassHandle                render_pass;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;hydra::graphics low level rendering needs this handle to actually handle the drawing.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    Material*                       material                            = nullptr;
+    uint8_t                         pass_index                          = 0;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is for PostProcesses : material and pass index to retrieve the &amp;lsquo;shader instance&amp;rsquo; containing the &lt;em&gt;pipeline&lt;/em&gt; and the &lt;em&gt;resource lists&lt;/em&gt;.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    RenderView*                     render_view                         = nullptr;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;RenderView used by this stage.&lt;!-- raw HTML omitted --&gt;
+For example the &amp;lsquo;Sun Shadow Render Stage&amp;rsquo; will use the &amp;lsquo;Shadow Render View&amp;rsquo; to dispatch all its objects to each render manager.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    float                           clear_color[4];
+    float                           clear_depth_value;
+    uint8_t                         clear_stencil_value;
+
+    uint8_t                         clear_rt                            : 1;
+    uint8_t                         clear_depth                         : 1;
+    uint8_t                         clear_stencil                       : 1;
+    uint8_t                         resize_output                       : 1;
+    uint8_t                         pad                                 : 4;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If the stage needs to clear its output(s), these will tell what to do.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    uint64_t                        geometry_stage_mask;                // Used to send render objects to the proper stage. Not used by compute or postprocess stages.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This creates a link between render managers and stages.&lt;!-- raw HTML omitted --&gt;
+An object is rendered only if its &lt;em&gt;stage mask&lt;/em&gt; equals at least one stage.&lt;!-- raw HTML omitted --&gt;
+Why that ? &lt;!-- raw HTML omitted --&gt;
+Because when defining a &lt;em&gt;render view&lt;/em&gt;, we have a list of objects visible from that camera, and we need a way of dispatching those objects to their respective managers.&lt;/p&gt;
+&lt;p&gt;For example a &amp;lsquo;dynamic render object&amp;rsquo; could have appear both on the gbuffer pass and an &amp;lsquo;object special effect&amp;rsquo; pass - both visible from the main camera.&lt;/p&gt;
+&lt;p&gt;This ideas comes from the &lt;em&gt;AMAZING&lt;/em&gt; talk by Bungie:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;http://advances.realtimerendering.com/destiny/gdc_2015/Tatarchuk_GDC_2015__Destiny_Renderer_web.pdf&#34;&gt;http://advances.realtimerendering.com/destiny/gdc_2015/Tatarchuk_GDC_2015__Destiny_Renderer_web.pdf&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;A &lt;em&gt;render manager&lt;/em&gt; is what they call a &lt;em&gt;feature renderer&lt;/em&gt; - named differently because this version is much more basic!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    array( RenderManager* )         render_managers;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Render Managers can register to stages even if they don&amp;rsquo;t have objects, for example a &lt;em&gt;&amp;lsquo;Lighting Manager&amp;rsquo;&lt;/em&gt; would want to submit a list of visible light in a certain pass.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    // Interface
+    virtual void                    init();
+    virtual void                    terminate();
+
+    virtual void                    begin( Device&amp;amp; device, CommandBuffer* commands );
+    virtual void                    render( Device&amp;amp; device, CommandBuffer* commands );
+    virtual void                    end( Device&amp;amp; device, CommandBuffer* commands );
+
+    virtual void                    load_resources( ShaderResourcesDatabase&amp;amp; db, Device&amp;amp; device );
+    virtual void                    resize( uint16_t width, uint16_t height, Device&amp;amp; device );
+
+    void                            register_render_manager( RenderManager* manager );
+
+}; // struct RenderStage
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is the final interface.&lt;!-- raw HTML omitted --&gt;
+Load resources is used for PostProcesses - they have a material and need to load its resources.&lt;/p&gt;
+&lt;h2 id=&#34;render-pipeline&#34;&gt;Render Pipeline&lt;/h2&gt;
+&lt;p&gt;We arrived at the last piece of the puzzle!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// A full frame of rendering using RenderStages.
+//
+struct RenderPipeline {
+
+    struct StageMap {
+        char*                       key;
+        RenderStage*                value;
+    };
+
+    struct TextureMap {
+        char*                       key;
+        TextureHandle               value;
+    };
+
+    void                            init( ShaderResourcesDatabase* initial_db );
+    void                            terminate( Device&amp;amp; device );
+
+    void                            update();
+    void                            render( Device&amp;amp; device, CommandBuffer* commands );
+
+    void                            load_resources( Device&amp;amp; device );
+    void                            resize( uint16_t width, uint16_t height, Device&amp;amp; device );
+
+    StageMap*                       name_to_stage                       = nullptr;
+    TextureMap*                     name_to_texture                     = nullptr;
+
+    ShaderResourcesDatabase         resource_database;
+    ShaderResourcesLookup           resource_lookup;
+
+}; // struct RenderPipeline
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is literally IT!&lt;!-- raw HTML omitted --&gt;
+This class contains all the stages and resources needed to render.&lt;!-- raw HTML omitted --&gt;
+Most of the time it will just iterate over the stages and execute something per stage.&lt;/p&gt;
+&lt;p&gt;Resource database contains all the resources used actually - and the lookup instead is only for the PostProcess stages.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h2 id=&#34;render-pipeline-description&#34;&gt;Render Pipeline Description&lt;/h2&gt;
+&lt;p&gt;We really have all the part to render a frame!&lt;!-- raw HTML omitted --&gt;
+Let&amp;rsquo;s look at the data defining the pipeline.&lt;!-- raw HTML omitted --&gt;
+We will define a simple-silly-non-effective PBR deferred rendering.&lt;!-- raw HTML omitted --&gt;
+Probably the worst shaders you saw, but it will still work.&lt;/p&gt;
+&lt;p&gt;First we define the Render Targets:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{
+    &amp;quot;name&amp;quot;: &amp;quot;PBR_Deferred&amp;quot;,
+    &amp;quot;RenderTargets&amp;quot;: [
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferAlbedo&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R8G8B8A8_UNORM&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferNormals&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R16G16B16A16_SNORM&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferProperties0&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R8G8B8A8_UNORM&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;D24_UNORM_S8_UINT&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;BackBufferColor&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R16G16B16A16_FLOAT&amp;quot;
+        }
+    ],
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;by default they will have the same size as the window framebuffer, unless otherwise written (scale_x/y, width/height).&lt;/p&gt;
+&lt;p&gt;Next are the actual render stages.&lt;!-- raw HTML omitted --&gt;
+The first is the GBufferOpaque one:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    &amp;quot;RenderStages&amp;quot;: [
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferOpaque&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;Geometry&amp;quot;,
+            &amp;quot;render_view&amp;quot;: &amp;quot;main&amp;quot;,
+            &amp;quot;depth_stencil&amp;quot;: &amp;quot;Main&amp;quot;,
+            &amp;quot;inputs&amp;quot;: [
+
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;rts&amp;quot;: [ &amp;quot;GBufferAlbedo&amp;quot;, &amp;quot;GBufferNormals&amp;quot;, &amp;quot;GBufferProperties0&amp;quot; ],
+                &amp;quot;depth&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;,
+                &amp;quot;clear_color&amp;quot;: &amp;quot;000000ff&amp;quot;,
+                &amp;quot;clear_depth&amp;quot;: 1.0,
+                &amp;quot;clear_stencil&amp;quot;: 0
+            }
+        },
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;As you see it outputs to 3 Render Targets + Depth.&lt;!-- raw HTML omitted --&gt;
+It also specify clear color, depth and stencil.&lt;/p&gt;
+&lt;p&gt;Next is the silliest compute shader to calculate light:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;        {
+            &amp;quot;name&amp;quot;: &amp;quot;DeferredLights&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;PostCompute&amp;quot;,
+            &amp;quot;material_name&amp;quot;: &amp;quot;SimpleFullscreen&amp;quot;,
+            &amp;quot;material_pass_index&amp;quot;: 2,
+            &amp;quot;inputs&amp;quot;: [
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;GBufferAlbedo&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;gbuffer_albedo&amp;quot;
+                },
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;GBufferNormals&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;gbuffer_normals&amp;quot;
+                },
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;GBufferProperties0&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;gbuffer_properties0&amp;quot;
+                },
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;depth_texture&amp;quot;
+                }
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;images&amp;quot;: [
+                    {
+                        &amp;quot;name&amp;quot;: &amp;quot;BackBufferColor&amp;quot;,
+                        &amp;quot;binding&amp;quot;: &amp;quot;destination_texture&amp;quot;
+                    }
+                ],
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;
+            }
+        },
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;It will read all the previously generated textures and run a compute shader to calculate the final lighting.&lt;!-- raw HTML omitted --&gt;
+Worth noting &amp;lsquo;material&amp;rsquo; and &amp;lsquo;material pass index&amp;rsquo; - to retrieve the shader from the material. If you open SimpleFullscreen.hfx and go to the third defined pass, you will see the code.&lt;/p&gt;
+&lt;p&gt;Next is an example of reusing a Render Target to add informations (like transparent objects).&lt;!-- raw HTML omitted --&gt;
+It will add debug rendering on top of the other objects and write in the BackBufferColor render target.&lt;!-- raw HTML omitted --&gt;
+The absence of clear parameters dictates that we don&amp;rsquo;t want to clear.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;        {
+            &amp;quot;name&amp;quot;: &amp;quot;DebugRendering&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;Geometry&amp;quot;,
+            &amp;quot;render_view&amp;quot;: &amp;quot;main&amp;quot;,
+            &amp;quot;inputs&amp;quot;: [
+
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;rts&amp;quot;: [ &amp;quot;BackBufferColor&amp;quot; ],
+                &amp;quot;depth&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;
+            }
+        },
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Last step is the swapchain.&lt;!-- raw HTML omitted --&gt;
+It is simply using a simple shader to write to the window framebuffer as the last step of the frame.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;        {
+            &amp;quot;name&amp;quot;: &amp;quot;Swapchain&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;Swapchain&amp;quot;,
+            &amp;quot;mask&amp;quot;: &amp;quot;FRAMEBUFFER&amp;quot;,
+            &amp;quot;material_name&amp;quot;: &amp;quot;Swapchain&amp;quot;,
+            &amp;quot;render_view&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;depth_stencil&amp;quot;: &amp;quot;Post&amp;quot;,
+            &amp;quot;inputs&amp;quot;: [
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;BackBufferColor&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;input_texture&amp;quot;
+                }
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;rts&amp;quot;: [
+                ],
+                &amp;quot;depth&amp;quot;: &amp;quot;&amp;quot;,
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;,
+                &amp;quot;clear_color&amp;quot;: &amp;quot;000000ff&amp;quot;
+            }
+        }
+    ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;visualization&#34;&gt;Visualization&lt;/h2&gt;
+&lt;p&gt;With all this defined, we can arrive to have something incredibly useful as this (included in the demo!):&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;HydraFrame.png&#34; &gt;
+
+&lt;img src=&#34;HydraFrame.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Render Pipeline&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;To me this is the quintessence of rendering: visualization.&lt;!-- raw HTML omitted --&gt;
+Seeing things helps me understanding much better.&lt;!-- raw HTML omitted --&gt;
+Debugging broken features, studying features, understanding dependencies, shuffling things around becomes MUCH easier.&lt;/p&gt;
+&lt;h1 id=&#34;demo-and-code&#34;&gt;Demo and code&lt;/h1&gt;
+&lt;p&gt;The demo loads a model, apply a silly directional light and gives you some controls, and uses the render pipeline.&lt;!-- raw HTML omitted --&gt;
+It was setup during the night just to show something usable, but it is far from ideal!&lt;/p&gt;
+&lt;p&gt;In the code provided there is everything I am talking here.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;And now some links to libraries/resources used.&lt;/p&gt;
+&lt;p&gt;3 models are included from the free GLTF library:
+&lt;a href=&#34;https://github.com/KhronosGroup/glTF-Sample-Models&#34;&gt;https://github.com/KhronosGroup/glTF-Sample-Models&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;TinyGLTF by &lt;a href=&#34;https://twitter.com/syoyo&#34;&gt;Syoyo Fujita&lt;/a&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/syoyo/tinygltf&#34;&gt;https://github.com/syoyo/tinygltf&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The always present-always amazing ImGui by &lt;a href=&#34;https://twitter.com/ocornut&#34;&gt;Omar&lt;/a&gt;:
+&lt;a href=&#34;https://github.com/ocornut/imgui&#34;&gt;https://github.com/ocornut/imgui&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;With the NodeEditor by &lt;a href=&#34;https://github.com/thedmd&#34;&gt;Michał Cichoń&lt;/a&gt;:
+&lt;a href=&#34;https://github.com/thedmd/imgui-node-editor&#34;&gt;https://github.com/thedmd/imgui-node-editor&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;For the PBR rendering, kudos to the GREAT INFORMATIONS from &lt;a href=&#34;https://google.github.io/filament/Filament.md.html&#34;&gt;Google Filament&lt;/a&gt; and &lt;a href=&#34;https://twitter.com/romainguy&#34;&gt;Romain Guy&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Lastly, this is not anywhere near production ready, but I am still happy to share it as a knowledge building block for others.&lt;!-- raw HTML omitted --&gt;
+I am thinking of making some videos for this - if you are interested let me know (both in English and Italian).&lt;/p&gt;
+&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+&lt;p&gt;We arrived at defining the Render Pipeline - a way of describing how a frame is rendered.&lt;!-- raw HTML omitted --&gt;
+It is a very simplified version of the RenderGraph/FrameGraph - as seen in many talks - and this is something I&amp;rsquo;ve used in my home projects (and current indie game) with great success.&lt;!-- raw HTML omitted --&gt;
+No mention of adding resource barriers, sharing memory, async compute and more.&lt;!-- raw HTML omitted --&gt;
+The whole purpose of this article was instead to focus on the more high level architecture side.&lt;/p&gt;
+&lt;p&gt;What is next ?&lt;/p&gt;
+&lt;p&gt;I would write about the improvements on the HFX shader effect and would like to cleanup and make that library more robust.&lt;!-- raw HTML omitted --&gt;
+Then there is the Vulkan backend to be wrote and many examples to be done. Examples could be amazing to be tutorial and develop the technology more.&lt;!-- raw HTML omitted --&gt;
+Then there is talking deeper about dispatching rendering draws, render managers and such - another interesting and very unique subject in Rendering Engine architectures. In all the companies I&amp;rsquo;ve worked, I always found completely different solutions!&lt;/p&gt;
+&lt;p&gt;Please comment, share, send feedback!
+I am happy to answer any question and very happy to share this article.
+Thanks for reading!&lt;/p&gt;
+&lt;p&gt;Gabriel&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

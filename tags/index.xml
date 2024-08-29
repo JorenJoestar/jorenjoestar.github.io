@@ -1,14 +1,123 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Tags on Joren&#39;s</title>
+    <title>Tags on Gabriel&#39;s Virtual Tavern</title>
     <link>https://jorenjoestar.github.io/tags/</link>
-    <description>Recent content in Tags on Joren&#39;s</description>
+    <description>Recent content in Tags on Gabriel&#39;s Virtual Tavern</description>
     <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
+    <lastBuildDate>Tue, 07 Feb 2023 15:46:28 +0100</lastBuildDate>
     
 	    <atom:link href="https://jorenjoestar.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>book</title>
+      <link>https://jorenjoestar.github.io/tags/book/</link>
+      <pubDate>Tue, 07 Feb 2023 15:46:28 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/book/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>vulkan</title>
+      <link>https://jorenjoestar.github.io/tags/vulkan/</link>
+      <pubDate>Tue, 07 Feb 2023 15:46:28 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/vulkan/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>bindless</title>
+      <link>https://jorenjoestar.github.io/tags/bindless/</link>
+      <pubDate>Sun, 19 Dec 2021 21:36:41 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/bindless/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>gpu driven</title>
+      <link>https://jorenjoestar.github.io/tags/gpu-driven/</link>
+      <pubDate>Tue, 26 Oct 2021 19:34:19 +0200</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/gpu-driven/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>rendering</title>
+      <link>https://jorenjoestar.github.io/tags/rendering/</link>
+      <pubDate>Tue, 26 Oct 2021 19:34:19 +0200</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/rendering/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>serialization</title>
+      <link>https://jorenjoestar.github.io/tags/serialization/</link>
+      <pubDate>Mon, 09 Aug 2021 10:05:38 +0200</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/serialization/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pixel art</title>
+      <link>https://jorenjoestar.github.io/tags/pixel-art/</link>
+      <pubDate>Mon, 12 Apr 2021 19:56:56 +0200</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/pixel-art/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>stars</title>
+      <link>https://jorenjoestar.github.io/tags/stars/</link>
+      <pubDate>Sat, 26 Dec 2020 11:54:39 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/stars/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>utils</title>
+      <link>https://jorenjoestar.github.io/tags/utils/</link>
+      <pubDate>Mon, 13 Apr 2020 10:43:00 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/utils/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>shaders</title>
+      <link>https://jorenjoestar.github.io/tags/shaders/</link>
+      <pubDate>Mon, 16 Mar 2020 12:11:37 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/shaders/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>code generation</title>
+      <link>https://jorenjoestar.github.io/tags/code-generation/</link>
+      <pubDate>Mon, 14 Oct 2019 10:43:49 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/code-generation/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>emulator</title>
+      <link>https://jorenjoestar.github.io/tags/emulator/</link>
+      <pubDate>Sat, 27 Jul 2019 18:45:35 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/tags/emulator/</guid>
+      <description></description>
+    </item>
     
   </channel>
 </rss>

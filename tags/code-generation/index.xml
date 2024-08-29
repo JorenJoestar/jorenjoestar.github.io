@@ -1,0 +1,2067 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>code generation on Gabriel&#39;s Virtual Tavern</title>
+    <link>https://jorenjoestar.github.io/tags/code-generation/</link>
+    <description>Recent content in code generation on Gabriel&#39;s Virtual Tavern</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 14 Oct 2019 10:43:49 -0400</lastBuildDate>
+    
+	    <atom:link href="https://jorenjoestar.github.io/tags/code-generation/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Data Driven Rendering: Pipelines</title>
+      <link>https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/</link>
+      <pubDate>Mon, 14 Oct 2019 10:43:49 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/</guid>
+      <description>&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;GLTFHelmet.png&#34; &gt;
+
+&lt;img src=&#34;GLTFHelmet.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Model used in the demo.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;Data Driven Rendering Series:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_1/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_2/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&#34;&gt;https://jorenjoestar.github.io/post/data_driven_rendering_pipeline/&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;We finally arrived in the &lt;strong&gt;Rendering Pipeline&lt;/strong&gt; realm.&lt;!-- raw HTML omitted --&gt;
+Some can write that it is useless, some can hate it.&lt;!-- raw HTML omitted --&gt;
+Many have some sort of abstraction for it since ages, and others have to now that new APIs like &lt;strong&gt;Vulkan&lt;/strong&gt; and &lt;strong&gt;DX12&lt;/strong&gt; have it as an explicit part of their design (finally!).&lt;/p&gt;
+&lt;p&gt;After we built a basic Material System in the previous article (&lt;a href=&#34;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&#34;&gt;https://jorenjoestar.github.io/post/writing_shader_effect_language_3/&lt;/a&gt;) we can add another layer on top of it and built a complete &lt;em&gt;Rendering Frame&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;In this article I will talk about a simplified version of &lt;strong&gt;Render Graph&lt;/strong&gt; that I call &lt;strong&gt;Render Pipeline&lt;/strong&gt; and came into my mind in the canteen of Codemasters after thinking:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;What is the biggest dependency in Rendering ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The answer is simple:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Render Targets!&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Render Targets&lt;/strong&gt; or &lt;strong&gt;Frame Buffers&lt;/strong&gt; is just an intermediate buffer in which we can draw something and use it later.&lt;!-- raw HTML omitted --&gt;
+Basically a Read/Write texture!&lt;!-- raw HTML omitted --&gt;
+It is not easy to shuffle around a Render Target, and having knowledge of which one are you using can make a huge difference for your rendering tech.&lt;!-- raw HTML omitted --&gt;
+Textures and Render Targets are the biggest memory lord in any rendering application, thus knowing &lt;em&gt;where&lt;/em&gt; you are spending your memory can be really powerful.&lt;/p&gt;
+&lt;p&gt;From a pure &lt;em&gt;understanding&lt;/em&gt; of rendering techniques, having a clear visualization of this aspect makes a HUGE difference!&lt;/p&gt;
+&lt;p&gt;Once I started using to describe a frame of rendering with the &lt;strong&gt;Render Target Dependencies&lt;/strong&gt; I never looked back.&lt;!-- raw HTML omitted --&gt;
+As always, knowledge is power.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h1 id=&#34;render-pipeline-thinking&#34;&gt;Render Pipeline Thinking&lt;/h1&gt;
+&lt;p&gt;First of all, let&amp;rsquo;s start defining some general concepts to describe the problem we are trying to solve.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;The problem we are trying to solve is:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;How to describe the inter-frame dependencies of Render Targets in a frame ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;The dependencies are who &lt;strong&gt;writes&lt;/strong&gt; and/or &lt;strong&gt;read&lt;/strong&gt; from/to a &lt;strong&gt;Render Target&lt;/strong&gt;.&lt;!-- raw HTML omitted --&gt;
+That is exactly what is described in a Render Pipeline.
+Enter the &lt;em&gt;Render Pipeline&lt;/em&gt;.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;A Render Pipeline is a list of Passes that read and writes Render Targets.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;That&amp;rsquo;s it.&lt;!-- raw HTML omitted --&gt;
+Done! See you next article!&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Of course I am kidding - but this is the gist of it.&lt;!-- raw HTML omitted --&gt;
+The implications, however, are profound.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Next logical question is:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;How can we read and write from/to a Render Target ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Let&amp;rsquo;s list how we can &lt;em&gt;write&lt;/em&gt; to a Render Target&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Graphics - binding some geometry, render states and Render Targets&lt;/li&gt;
+&lt;li&gt;Compute - write anything to the Render Target&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Even a so called &lt;em&gt;&amp;lsquo;post-process&amp;rsquo;&lt;/em&gt; is just a &lt;em&gt;fullscreen triangle with a shader&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;And to read&amp;hellip;well any &lt;strong&gt;shader&lt;/strong&gt; that takes reads a texture!&lt;/p&gt;
+&lt;p&gt;It is incredible to think that with this simple building blocks you can describe almost everything to render!&lt;/p&gt;
+&lt;p&gt;For example, let&amp;rsquo;s try to express some common rendering techniques using only those concepts.&lt;/p&gt;
+&lt;h2 id=&#34;deferred-rendering&#34;&gt;Deferred Rendering&lt;/h2&gt;
+&lt;p&gt;We can define the following simple steps:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Meshes uses their materials (shaders + textures + constants) as input and write into GBuffer Render Target + depth.&lt;/li&gt;
+&lt;li&gt;A Compute/Post-process shader will read the Gbuffer Render Target and depth (to reconstruct the pixel position), a light list of some sort and outputs a texture with the result.&lt;/li&gt;
+&lt;li&gt;Transparent objects are drawn into this new Render Target using their materials.&lt;/li&gt;
+&lt;li&gt;And so on&amp;hellip;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;!-- raw HTML omitted --&gt;
+&lt;h2 id=&#34;exponential-variance-shadow-mapping-in-a-forward-rendering-pipeline&#34;&gt;Exponential Variance Shadow Mapping in a Forward Rendering Pipeline&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Meshes writes into a depth-only render target using the light as &amp;lsquo;camera/point of view&amp;rsquo;.&lt;/li&gt;
+&lt;li&gt;Compute or Postprocess converts the depth-only render target into a EVSM one.&lt;/li&gt;
+&lt;li&gt;Meshes uses their materials and the &lt;em&gt;EVSM shadow map&lt;/em&gt; to render into a &lt;em&gt;&amp;lsquo;main&amp;rsquo;&lt;/em&gt; Render Target.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&amp;lt;diagram 2 goes here&amp;gt;&lt;/p&gt;
+&lt;h1 id=&#34;other-rendering-concepts&#34;&gt;Other Rendering Concepts&lt;/h1&gt;
+&lt;p&gt;To give a full description of the frame we need to add other concepts that will help us.&lt;!-- raw HTML omitted --&gt;
+These are the less strict ones - and just a personal way of seeing things.&lt;/p&gt;
+&lt;h2 id=&#34;render-view&#34;&gt;Render View&lt;/h2&gt;
+&lt;p&gt;The concept of &lt;em&gt;&amp;lsquo;Render View&amp;rsquo;&lt;/em&gt; is just a way or representing a &lt;em&gt;camera&lt;/em&gt; and a list of visible objects from it.&lt;!-- raw HTML omitted --&gt;
+We will see how we use it later, but a simple example of Render View would be the &amp;lsquo;Sun Shadow&amp;rsquo; render view - representing the sun (as a camera) and a list of visible objects from it.&lt;!-- raw HTML omitted --&gt;
+The &amp;lsquo;Main&amp;rsquo; render view of course represent the main camera and visible objects.&lt;!-- raw HTML omitted --&gt;
+This, combined with &lt;strong&gt;render managers&lt;/strong&gt; becomes a powerful combination to describe &lt;em&gt;what&lt;/em&gt; needs to be rendered.&lt;/p&gt;
+&lt;h2 id=&#34;render-manager&#34;&gt;Render Manager&lt;/h2&gt;
+&lt;p&gt;If you think from an ECS mentality, this would be a &amp;lsquo;system&amp;rsquo;.&lt;!-- raw HTML omitted --&gt;
+Each render manager is responsible to render one or more render &lt;em&gt;&amp;lsquo;aspects/entities&amp;rsquo;&lt;/em&gt; into a Render Pass.&lt;!-- raw HTML omitted --&gt;
+A render manager can subscribe to any &amp;lsquo;graphics&amp;rsquo; pass and render from there.&lt;/p&gt;
+&lt;p&gt;For example, a &amp;lsquo;static geometry&amp;rsquo; render manager could setup an instancing buffer for the gbuffer-generation pass and draw all objects.&lt;/p&gt;
+&lt;h1 id=&#34;render-pipeline-implementation&#34;&gt;Render Pipeline Implementation&lt;/h1&gt;
+&lt;p&gt;After we defined the basic concepts let&amp;rsquo;s see an actual implementation of the Render Pipeline.&lt;!-- raw HTML omitted --&gt;
+We will see the code of each component and arrive at the actual data definition (in json).&lt;/p&gt;
+&lt;p&gt;The code has changed a bit since last article, with the inclusion of CGLM as math library and other high-level rendering code, included in hydra_rendering.h/.cpp.&lt;/p&gt;
+&lt;h2 id=&#34;render-view-1&#34;&gt;Render View&lt;/h2&gt;
+&lt;p&gt;First element is the Render View:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Render view is a &#39;contextualized&#39; camera - a way of using the camera in the render pipeline.
+//
+struct RenderView {
+
+    Camera                          camera;
+
+    array( RenderScene )            visible_render_scenes;
+
+}; // struct RenderView
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Using STB&amp;rsquo;s array (the macro is just an aid to know it is not just a pointer) we have a list of visible render scenes from that camera.&lt;!-- raw HTML omitted --&gt;
+It should be pretty straighforward.&lt;/p&gt;
+&lt;h2 id=&#34;render-manager-1&#34;&gt;Render Manager&lt;/h2&gt;
+&lt;p&gt;Next is Render Manager:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+struct RenderManager {
+
+    struct RenderContext {
+        Device*                     device;
+
+        const RenderView*           render_view;
+        CommandBuffer*              commands;
+        
+        RenderScene*                render_scene_array;
+        uint16_t                    start;
+        uint16_t                    count;
+        
+        uint16_t                    stage_index;
+    }; // struct RenderContext
+
+    virtual void                    render( RenderContext&amp;amp; render_context ) = 0;
+
+}; // struct RenderManager
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The base class is really just a &amp;lsquo;render&amp;rsquo; method.&lt;!-- raw HTML omitted --&gt;
+Here the RenderContext is interesting, and it gives access to all you need to render:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Device - used to map/unmap resources.&lt;/li&gt;
+&lt;li&gt;RenderView - access to camera (and more, but that&amp;rsquo;s for the next article!).&lt;/li&gt;
+&lt;li&gt;CommandBuffer - the actual draw commands are written here.&lt;/li&gt;
+&lt;li&gt;RenderScene - the RenderScene from start to start + count.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;In this very simple demo, we have just 2 &lt;em&gt;render managers&lt;/em&gt;: &lt;em&gt;Line Renderer&lt;/em&gt; and &lt;em&gt;Scene Renderer&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+The most interesting one is the second: Line Renderer has commands to draw lines that will be mapped into a GPU buffer and uses instancing to draw them.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+void LineRenderer::render( RenderContext&amp;amp; render_context ) {
+
+    Device&amp;amp; device = *render_context.device;
+
+    // Update camera matrix
+    const Camera&amp;amp; camera = render_context.render_view-&amp;gt;camera;
+
+    MapBufferParameters cb_map = { lines_cb, 0, 0 };
+    
+    float L = 0, T = 0;
+    float R = device.swapchain_width, B = device.swapchain_height;
+    const float ortho_projection[4][4] =
+    {
+        { 2.0f / ( R - L ),   0.0f,         0.0f,   0.0f },
+        { 0.0f,         2.0f / ( T - B ),   0.0f,   0.0f },
+        { 0.0f,         0.0f,        -1.0f,   0.0f },
+        { ( R + L ) / ( L - R ),  ( T + B ) / ( B - T ),  0.0f,   1.0f },
+    };
+
+    LocalConstants* cb_data = (LocalConstants*)device.map_buffer( cb_map );
+    if ( cb_data ) {
+        cb_data-&amp;gt;view_projection = camera.view_projection;
+        
+        memcpy( &amp;amp;cb_data-&amp;gt;projection, &amp;amp;ortho_projection, 64 );
+        
+        cb_data-&amp;gt;resolution = { device.swapchain_width * 1.0f, device.swapchain_height * 1.0f, 1.0f / device.swapchain_width, 1.0f / device.swapchain_height };
+        device.unmap_buffer( cb_map );
+    }
+
+    if ( current_line_index ) {
+        const uint32_t mapping_size = sizeof( LinVertex ) * current_line_index;
+        MapBufferParameters map_parameters_vb = { lines_vb, 0, mapping_size };
+        LinVertex* vtx_dst = (LinVertex*)device.map_buffer( map_parameters_vb );
+        
+        if ( vtx_dst ) {
+            memcpy( vtx_dst, &amp;amp;s_line_buffer[0], mapping_size );
+            
+            device.unmap_buffer( map_parameters_vb );
+        }
+
+        CommandBuffer* commands = render_context.commands;
+        commands-&amp;gt;begin_submit( 2 );
+
+        ShaderInstance&amp;amp; shader_instance = line_material-&amp;gt;shader_instances[3];
+        commands-&amp;gt;bind_pipeline( shader_instance.pipeline );
+        commands-&amp;gt;bind_resource_list( shader_instance.resource_lists, shader_instance.num_resource_lists, nullptr, 0 );
+        commands-&amp;gt;bind_vertex_buffer( lines_vb, 0, 0 );
+        // Draw using instancing and 6 vertices.
+        const uint32_t num_vertices = 6;
+        commands-&amp;gt;draw( TopologyType::Triangle, 0, num_vertices, current_line_index / 2 );
+        commands-&amp;gt;end_submit();
+
+        current_line_index = 0;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Easy to notice how, with a Vulkan/DX12 interface, there are few less commands to write. Binding a pipeline sets everything considered &amp;lsquo;static&amp;rsquo; - render states, shaders - and with just &lt;em&gt;resource lists&lt;/em&gt; (that sets textures and constants) and &lt;em&gt;vertex/index buffers&lt;/em&gt; we have everything needed to render.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE&lt;/strong&gt;: HFX has gone some improvements and now supports &lt;em&gt;render states and vertex declarations/formats&lt;/em&gt;. I&amp;rsquo;ll write about it in the next post - but this has become crucial.&lt;/p&gt;
+&lt;h2 id=&#34;shader-resources-management&#34;&gt;Shader Resources Management&lt;/h2&gt;
+&lt;p&gt;This is another personal preference - but not necessary at all.&lt;!-- raw HTML omitted --&gt;
+Two concepts are really useful to me to be explicit and centralized: &lt;em&gt;resources and bindings&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Resources are all referenced in a &lt;em&gt;&amp;lsquo;Shader Resource Database&amp;rsquo;&lt;/em&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Struct used to retrieve textures, buffers and samplers.
+//
+struct ShaderResourcesDatabase {
+
+    struct BufferStringMap {
+        char*                       key;
+        BufferHandle                value;
+    }; // struct BufferStringMap
+
+    struct TextureStringMap {
+        char*                       key;
+        TextureHandle               value;
+    }; // struct TextureStringMap
+
+    struct SamplerStringMap {
+        char* key;
+        SamplerHandle               value;
+    }; // struct SamplerStringMap
+
+    BufferStringMap*                name_to_buffer = nullptr;
+    TextureStringMap*               name_to_texture = nullptr;
+    SamplerStringMap*               name_to_sampler = nullptr;
+
+    void                            init();
+    void                            terminate();
+
+    void                            register_buffer( char* name, BufferHandle buffer );
+    void                            register_texture( char* name, TextureHandle texture );
+    void                            register_sampler( char* name, SamplerHandle sampler );
+
+    BufferHandle                    find_buffer( char* name );
+    TextureHandle                   find_texture( char* name );
+    SamplerHandle                   find_sampler( char* name );
+
+}; // struct ShaderResourcesDatabase
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Simply put, any resource used by rendering is here.&lt;!-- raw HTML omitted --&gt;
+Both Materials, Pipelines and Render Managers register and use the database to create the &lt;em&gt;resource lists&lt;/em&gt; used in rendering.&lt;/p&gt;
+&lt;p&gt;Next and more convoluted is the &lt;em&gt;shader resources lookup&lt;/em&gt; class:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Struct to link between a Shader Binding Name and a Resource. Used both in Pipelines and Materials.
+//
+struct ShaderResourcesLookup {
+
+    enum Specialization {
+        Frame, Pass, View, Shader
+    }; // enum Specialization
+
+    struct NameMap {
+        char*                       key;
+        char*                       value;
+    }; // struct NameMap
+
+    struct SpecializationMap {
+        char*                       key;
+        Specialization              value;
+    }; // struct SpecializationMap
+
+    NameMap*                        binding_to_resource = nullptr;
+    SpecializationMap*              binding_to_specialization = nullptr;
+    NameMap*                        binding_to_sampler = nullptr;
+
+    void                            init();
+    void                            terminate();
+
+    void                            add_binding_to_resource( char* binding, char* resource );
+    void                            add_binding_to_specialization( char* binding, Specialization specialization );
+    void                            add_binding_to_sampler( char* binding, char* sampler );
+
+    char*                           find_resource( char* binding );
+    Specialization                  find_specialization( char* binding );
+    char*                           find_sampler( char* binding );
+
+    void                            specialize( char* pass, char* view, ShaderResourcesLookup&amp;amp; final_lookup );
+
+}; // struct ShaderResourcesLookup
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This class specify the binding between a &lt;em&gt;shader resource&lt;/em&gt; and an &lt;em&gt;actual resource&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+As a simple example to clarify, a shader could have an &lt;em&gt;&amp;lsquo;albedo&amp;rsquo;&lt;/em&gt; texture defined in the code, but the &lt;em&gt;actual&lt;/em&gt; texture is defined by the material.&lt;!-- raw HTML omitted --&gt;
+Or for a Render Stage, like a Post-Processing one, its input could be defined in the shader code as &lt;em&gt;&amp;lsquo;input 0, input 1&amp;hellip;&#39;&lt;/em&gt; and the render pipeline creates the binding.&lt;/p&gt;
+&lt;p&gt;With those in place, we can finalize any resource used by any shader/material/pipeline.&lt;/p&gt;
+&lt;p&gt;The actual usage is into the Shader Instance class. Let&amp;rsquo;s have a quick look.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+struct ShaderInstance {
+
+    void                            load_resources( const PipelineCreation&amp;amp; pipeline, PipelineHandle pipeline_handle, ShaderResourcesDatabase&amp;amp; database, ShaderResourcesLookup&amp;amp; lookup, Device&amp;amp; device );
+
+    PipelineHandle                  pipeline;
+    ResourceListHandle              resource_lists[k_max_resource_layouts];
+
+    uint32_t                        num_resource_lists;
+}; // struct ShaderInstance
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This class is what actually contains the resource lists and pipeline used to render anything.&lt;!-- raw HTML omitted --&gt;
+Not very happy with the name - any suggestion welcome.&lt;!-- raw HTML omitted --&gt;
+A material contains a list of those - one for each pass - and is used to draw.&lt;!-- raw HTML omitted --&gt;
+Again with the new Vulkan/DX12 mentality, Pipeline + Resource Lists + Geometry is all you need to render almost.&lt;/p&gt;
+&lt;p&gt;The magic happens when creating the resource lists:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void ShaderInstance::load_resources( const PipelineCreation&amp;amp; pipeline_creation, PipelineHandle pipeline_handle, ShaderResourcesDatabase&amp;amp; database, ShaderResourcesLookup&amp;amp; lookup, Device&amp;amp; device ) {
+    
+    using namespace hydra::graphics;
+    ResourceListCreation::Resource resources_handles[k_max_resources_per_list];
+
+    for ( uint32_t l = 0; l &amp;lt; pipeline_creation.num_active_layouts; ++l ) {
+        // Get resource layout description
+        ResourceListLayoutDescription layout;
+        device.query_resource_list_layout( pipeline_creation.resource_list_layout[l], layout );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We know that a pipeline can have 1 or more resource lists, thus we just iterate through them.&lt;!-- raw HTML omitted --&gt;
+Next we look into each resource of the current list:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+        // For each resource
+        for ( uint32_t r = 0; r &amp;lt; layout.num_active_bindings; r++ ) {
+            const ResourceBinding&amp;amp; binding = layout.bindings[r];
+
+            // Find resource name
+            // Copy string_buffer 
+            char* resource_name = lookup.find_resource( (char*)binding.name );
+
+            switch ( binding.type ) {
+                case hydra::graphics::ResourceType::Constants:
+                case hydra::graphics::ResourceType::Buffer:
+                {
+                    BufferHandle handle = resource_name ? database.find_buffer( resource_name ) : device.get_dummy_constant_buffer();
+                    resources_handles[r].handle = handle.handle;
+
+                    break;
+                }
+
+                ... same for textures
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For each binding coming from the shader (think &amp;lsquo;albedo&amp;rsquo; for a PBR shader) we search for the actual resource name (&amp;lsquo;WoodBeamAlbedo&amp;rsquo;) and query the database to find it.&lt;!-- raw HTML omitted --&gt;
+After we did that, we can create the list:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;            }
+        }
+
+        ResourceListCreation creation = { pipeline_creation.resource_list_layout[l], resources_handles, layout.num_active_bindings };
+        resource_lists[l] = device.create_resource_list( creation );
+    }
+
+    num_resource_lists = pipeline_creation.num_active_layouts;
+    pipeline = pipeline_handle;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With this mechanism we added another explicit connection between resources.&lt;/p&gt;
+&lt;p&gt;It is finally time to see the actual render pipeline!&lt;/p&gt;
+&lt;h2 id=&#34;render-stagepass&#34;&gt;Render Stage/Pass&lt;/h2&gt;
+&lt;p&gt;This is the &lt;em&gt;CORE&lt;/em&gt; of everything, and it must work with all both &lt;strong&gt;geometrical&lt;/strong&gt; stages and &lt;strong&gt;post-process&lt;/strong&gt; ones.&lt;!-- raw HTML omitted --&gt;
+You can either create a base virtual class or doing something like here.&lt;!-- raw HTML omitted --&gt;
+Important is understanding the concept!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Encapsulate the rendering of anything that writes to one or more Render Targets.
+//
+struct RenderStage {
+
+    enum Type {
+        Geometry, Post, PostCompute, Swapchain, Count
+    };
+
+	Type                            type                                = Count;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Simply we define the types:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Geometry - uses render manager with meshes to draw.&lt;/li&gt;
+&lt;li&gt;Post - fullscreen triangle + shader.&lt;/li&gt;
+&lt;li&gt;PostCompute - any compute shader execution basically!&lt;/li&gt;
+&lt;li&gt;Swapchain - special case of binding the window framebuffer and render the last time.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Next is the most important part: dependencies!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    array( TextureHandle )          input_textures                      = nullptr;
+    array( TextureHandle )          output_textures                     = nullptr;
+
+    TextureHandle                   depth_texture;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;When we create the pipeline, we save all inputs and outputs textures.&lt;!-- raw HTML omitted --&gt;
+Depth/Stencil is a put in its own part.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    float                           scale_x                             = 1.0f;
+    float                           scale_y                             = 1.0f;
+    uint16_t                        current_width                       = 1;
+    uint16_t                        current_height                      = 1;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Here we handle scaling. When using scale, we use the framebuffer&amp;rsquo;s window width/height to calculate the Render Target size of the output ones. When using the current width/height we instead define a specific size (like for a shadow map).&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    RenderPassHandle                render_pass;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;hydra::graphics low level rendering needs this handle to actually handle the drawing.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    Material*                       material                            = nullptr;
+    uint8_t                         pass_index                          = 0;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is for PostProcesses : material and pass index to retrieve the &amp;lsquo;shader instance&amp;rsquo; containing the &lt;em&gt;pipeline&lt;/em&gt; and the &lt;em&gt;resource lists&lt;/em&gt;.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    RenderView*                     render_view                         = nullptr;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;RenderView used by this stage.&lt;!-- raw HTML omitted --&gt;
+For example the &amp;lsquo;Sun Shadow Render Stage&amp;rsquo; will use the &amp;lsquo;Shadow Render View&amp;rsquo; to dispatch all its objects to each render manager.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    float                           clear_color[4];
+    float                           clear_depth_value;
+    uint8_t                         clear_stencil_value;
+
+    uint8_t                         clear_rt                            : 1;
+    uint8_t                         clear_depth                         : 1;
+    uint8_t                         clear_stencil                       : 1;
+    uint8_t                         resize_output                       : 1;
+    uint8_t                         pad                                 : 4;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If the stage needs to clear its output(s), these will tell what to do.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    uint64_t                        geometry_stage_mask;                // Used to send render objects to the proper stage. Not used by compute or postprocess stages.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This creates a link between render managers and stages.&lt;!-- raw HTML omitted --&gt;
+An object is rendered only if its &lt;em&gt;stage mask&lt;/em&gt; equals at least one stage.&lt;!-- raw HTML omitted --&gt;
+Why that ? &lt;!-- raw HTML omitted --&gt;
+Because when defining a &lt;em&gt;render view&lt;/em&gt;, we have a list of objects visible from that camera, and we need a way of dispatching those objects to their respective managers.&lt;/p&gt;
+&lt;p&gt;For example a &amp;lsquo;dynamic render object&amp;rsquo; could have appear both on the gbuffer pass and an &amp;lsquo;object special effect&amp;rsquo; pass - both visible from the main camera.&lt;/p&gt;
+&lt;p&gt;This ideas comes from the &lt;em&gt;AMAZING&lt;/em&gt; talk by Bungie:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;http://advances.realtimerendering.com/destiny/gdc_2015/Tatarchuk_GDC_2015__Destiny_Renderer_web.pdf&#34;&gt;http://advances.realtimerendering.com/destiny/gdc_2015/Tatarchuk_GDC_2015__Destiny_Renderer_web.pdf&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;A &lt;em&gt;render manager&lt;/em&gt; is what they call a &lt;em&gt;feature renderer&lt;/em&gt; - named differently because this version is much more basic!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    array( RenderManager* )         render_managers;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Render Managers can register to stages even if they don&amp;rsquo;t have objects, for example a &lt;em&gt;&amp;lsquo;Lighting Manager&amp;rsquo;&lt;/em&gt; would want to submit a list of visible light in a certain pass.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    // Interface
+    virtual void                    init();
+    virtual void                    terminate();
+
+    virtual void                    begin( Device&amp;amp; device, CommandBuffer* commands );
+    virtual void                    render( Device&amp;amp; device, CommandBuffer* commands );
+    virtual void                    end( Device&amp;amp; device, CommandBuffer* commands );
+
+    virtual void                    load_resources( ShaderResourcesDatabase&amp;amp; db, Device&amp;amp; device );
+    virtual void                    resize( uint16_t width, uint16_t height, Device&amp;amp; device );
+
+    void                            register_render_manager( RenderManager* manager );
+
+}; // struct RenderStage
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is the final interface.&lt;!-- raw HTML omitted --&gt;
+Load resources is used for PostProcesses - they have a material and need to load its resources.&lt;/p&gt;
+&lt;h2 id=&#34;render-pipeline&#34;&gt;Render Pipeline&lt;/h2&gt;
+&lt;p&gt;We arrived at the last piece of the puzzle!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// A full frame of rendering using RenderStages.
+//
+struct RenderPipeline {
+
+    struct StageMap {
+        char*                       key;
+        RenderStage*                value;
+    };
+
+    struct TextureMap {
+        char*                       key;
+        TextureHandle               value;
+    };
+
+    void                            init( ShaderResourcesDatabase* initial_db );
+    void                            terminate( Device&amp;amp; device );
+
+    void                            update();
+    void                            render( Device&amp;amp; device, CommandBuffer* commands );
+
+    void                            load_resources( Device&amp;amp; device );
+    void                            resize( uint16_t width, uint16_t height, Device&amp;amp; device );
+
+    StageMap*                       name_to_stage                       = nullptr;
+    TextureMap*                     name_to_texture                     = nullptr;
+
+    ShaderResourcesDatabase         resource_database;
+    ShaderResourcesLookup           resource_lookup;
+
+}; // struct RenderPipeline
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is literally IT!&lt;!-- raw HTML omitted --&gt;
+This class contains all the stages and resources needed to render.&lt;!-- raw HTML omitted --&gt;
+Most of the time it will just iterate over the stages and execute something per stage.&lt;/p&gt;
+&lt;p&gt;Resource database contains all the resources used actually - and the lookup instead is only for the PostProcess stages.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h2 id=&#34;render-pipeline-description&#34;&gt;Render Pipeline Description&lt;/h2&gt;
+&lt;p&gt;We really have all the part to render a frame!&lt;!-- raw HTML omitted --&gt;
+Let&amp;rsquo;s look at the data defining the pipeline.&lt;!-- raw HTML omitted --&gt;
+We will define a simple-silly-non-effective PBR deferred rendering.&lt;!-- raw HTML omitted --&gt;
+Probably the worst shaders you saw, but it will still work.&lt;/p&gt;
+&lt;p&gt;First we define the Render Targets:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{
+    &amp;quot;name&amp;quot;: &amp;quot;PBR_Deferred&amp;quot;,
+    &amp;quot;RenderTargets&amp;quot;: [
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferAlbedo&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R8G8B8A8_UNORM&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferNormals&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R16G16B16A16_SNORM&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferProperties0&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R8G8B8A8_UNORM&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;D24_UNORM_S8_UINT&amp;quot;
+        },
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;BackBufferColor&amp;quot;,
+            &amp;quot;format&amp;quot;: &amp;quot;R16G16B16A16_FLOAT&amp;quot;
+        }
+    ],
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;by default they will have the same size as the window framebuffer, unless otherwise written (scale_x/y, width/height).&lt;/p&gt;
+&lt;p&gt;Next are the actual render stages.&lt;!-- raw HTML omitted --&gt;
+The first is the GBufferOpaque one:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    &amp;quot;RenderStages&amp;quot;: [
+        {
+            &amp;quot;name&amp;quot;: &amp;quot;GBufferOpaque&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;Geometry&amp;quot;,
+            &amp;quot;render_view&amp;quot;: &amp;quot;main&amp;quot;,
+            &amp;quot;depth_stencil&amp;quot;: &amp;quot;Main&amp;quot;,
+            &amp;quot;inputs&amp;quot;: [
+
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;rts&amp;quot;: [ &amp;quot;GBufferAlbedo&amp;quot;, &amp;quot;GBufferNormals&amp;quot;, &amp;quot;GBufferProperties0&amp;quot; ],
+                &amp;quot;depth&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;,
+                &amp;quot;clear_color&amp;quot;: &amp;quot;000000ff&amp;quot;,
+                &amp;quot;clear_depth&amp;quot;: 1.0,
+                &amp;quot;clear_stencil&amp;quot;: 0
+            }
+        },
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;As you see it outputs to 3 Render Targets + Depth.&lt;!-- raw HTML omitted --&gt;
+It also specify clear color, depth and stencil.&lt;/p&gt;
+&lt;p&gt;Next is the silliest compute shader to calculate light:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;        {
+            &amp;quot;name&amp;quot;: &amp;quot;DeferredLights&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;PostCompute&amp;quot;,
+            &amp;quot;material_name&amp;quot;: &amp;quot;SimpleFullscreen&amp;quot;,
+            &amp;quot;material_pass_index&amp;quot;: 2,
+            &amp;quot;inputs&amp;quot;: [
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;GBufferAlbedo&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;gbuffer_albedo&amp;quot;
+                },
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;GBufferNormals&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;gbuffer_normals&amp;quot;
+                },
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;GBufferProperties0&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;gbuffer_properties0&amp;quot;
+                },
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;depth_texture&amp;quot;
+                }
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;images&amp;quot;: [
+                    {
+                        &amp;quot;name&amp;quot;: &amp;quot;BackBufferColor&amp;quot;,
+                        &amp;quot;binding&amp;quot;: &amp;quot;destination_texture&amp;quot;
+                    }
+                ],
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;
+            }
+        },
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;It will read all the previously generated textures and run a compute shader to calculate the final lighting.&lt;!-- raw HTML omitted --&gt;
+Worth noting &amp;lsquo;material&amp;rsquo; and &amp;lsquo;material pass index&amp;rsquo; - to retrieve the shader from the material. If you open SimpleFullscreen.hfx and go to the third defined pass, you will see the code.&lt;/p&gt;
+&lt;p&gt;Next is an example of reusing a Render Target to add informations (like transparent objects).&lt;!-- raw HTML omitted --&gt;
+It will add debug rendering on top of the other objects and write in the BackBufferColor render target.&lt;!-- raw HTML omitted --&gt;
+The absence of clear parameters dictates that we don&amp;rsquo;t want to clear.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;        {
+            &amp;quot;name&amp;quot;: &amp;quot;DebugRendering&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;Geometry&amp;quot;,
+            &amp;quot;render_view&amp;quot;: &amp;quot;main&amp;quot;,
+            &amp;quot;inputs&amp;quot;: [
+
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;rts&amp;quot;: [ &amp;quot;BackBufferColor&amp;quot; ],
+                &amp;quot;depth&amp;quot;: &amp;quot;MainDepth&amp;quot;,
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;
+            }
+        },
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Last step is the swapchain.&lt;!-- raw HTML omitted --&gt;
+It is simply using a simple shader to write to the window framebuffer as the last step of the frame.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;        {
+            &amp;quot;name&amp;quot;: &amp;quot;Swapchain&amp;quot;,
+            &amp;quot;type&amp;quot;: &amp;quot;Swapchain&amp;quot;,
+            &amp;quot;mask&amp;quot;: &amp;quot;FRAMEBUFFER&amp;quot;,
+            &amp;quot;material_name&amp;quot;: &amp;quot;Swapchain&amp;quot;,
+            &amp;quot;render_view&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;depth_stencil&amp;quot;: &amp;quot;Post&amp;quot;,
+            &amp;quot;inputs&amp;quot;: [
+                {
+                    &amp;quot;name&amp;quot;: &amp;quot;BackBufferColor&amp;quot;,
+                    &amp;quot;sampler&amp;quot;: &amp;quot;Point&amp;quot;,
+                    &amp;quot;binding&amp;quot;: &amp;quot;input_texture&amp;quot;
+                }
+            ],
+            &amp;quot;outputs&amp;quot;: {
+                &amp;quot;rts&amp;quot;: [
+                ],
+                &amp;quot;depth&amp;quot;: &amp;quot;&amp;quot;,
+                &amp;quot;flags&amp;quot;: &amp;quot;Common&amp;quot;,
+                &amp;quot;clear_color&amp;quot;: &amp;quot;000000ff&amp;quot;
+            }
+        }
+    ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;visualization&#34;&gt;Visualization&lt;/h2&gt;
+&lt;p&gt;With all this defined, we can arrive to have something incredibly useful as this (included in the demo!):&lt;/p&gt;
+
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;HydraFrame.png&#34; &gt;
+
+&lt;img src=&#34;HydraFrame.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Render Pipeline&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;p&gt;To me this is the quintessence of rendering: visualization.&lt;!-- raw HTML omitted --&gt;
+Seeing things helps me understanding much better.&lt;!-- raw HTML omitted --&gt;
+Debugging broken features, studying features, understanding dependencies, shuffling things around becomes MUCH easier.&lt;/p&gt;
+&lt;h1 id=&#34;demo-and-code&#34;&gt;Demo and code&lt;/h1&gt;
+&lt;p&gt;The demo loads a model, apply a silly directional light and gives you some controls, and uses the render pipeline.&lt;!-- raw HTML omitted --&gt;
+It was setup during the night just to show something usable, but it is far from ideal!&lt;/p&gt;
+&lt;p&gt;In the code provided there is everything I am talking here.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;And now some links to libraries/resources used.&lt;/p&gt;
+&lt;p&gt;3 models are included from the free GLTF library:
+&lt;a href=&#34;https://github.com/KhronosGroup/glTF-Sample-Models&#34;&gt;https://github.com/KhronosGroup/glTF-Sample-Models&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;TinyGLTF by &lt;a href=&#34;https://twitter.com/syoyo&#34;&gt;Syoyo Fujita&lt;/a&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/syoyo/tinygltf&#34;&gt;https://github.com/syoyo/tinygltf&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The always present-always amazing ImGui by &lt;a href=&#34;https://twitter.com/ocornut&#34;&gt;Omar&lt;/a&gt;:
+&lt;a href=&#34;https://github.com/ocornut/imgui&#34;&gt;https://github.com/ocornut/imgui&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;With the NodeEditor by &lt;a href=&#34;https://github.com/thedmd&#34;&gt;Michał Cichoń&lt;/a&gt;:
+&lt;a href=&#34;https://github.com/thedmd/imgui-node-editor&#34;&gt;https://github.com/thedmd/imgui-node-editor&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;For the PBR rendering, kudos to the GREAT INFORMATIONS from &lt;a href=&#34;https://google.github.io/filament/Filament.md.html&#34;&gt;Google Filament&lt;/a&gt; and &lt;a href=&#34;https://twitter.com/romainguy&#34;&gt;Romain Guy&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Lastly, this is not anywhere near production ready, but I am still happy to share it as a knowledge building block for others.&lt;!-- raw HTML omitted --&gt;
+I am thinking of making some videos for this - if you are interested let me know (both in English and Italian).&lt;/p&gt;
+&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+&lt;p&gt;We arrived at defining the Render Pipeline - a way of describing how a frame is rendered.&lt;!-- raw HTML omitted --&gt;
+It is a very simplified version of the RenderGraph/FrameGraph - as seen in many talks - and this is something I&amp;rsquo;ve used in my home projects (and current indie game) with great success.&lt;!-- raw HTML omitted --&gt;
+No mention of adding resource barriers, sharing memory, async compute and more.&lt;!-- raw HTML omitted --&gt;
+The whole purpose of this article was instead to focus on the more high level architecture side.&lt;/p&gt;
+&lt;p&gt;What is next ?&lt;/p&gt;
+&lt;p&gt;I would write about the improvements on the HFX shader effect and would like to cleanup and make that library more robust.&lt;!-- raw HTML omitted --&gt;
+Then there is the Vulkan backend to be wrote and many examples to be done. Examples could be amazing to be tutorial and develop the technology more.&lt;!-- raw HTML omitted --&gt;
+Then there is talking deeper about dispatching rendering draws, render managers and such - another interesting and very unique subject in Rendering Engine architectures. In all the companies I&amp;rsquo;ve worked, I always found completely different solutions!&lt;/p&gt;
+&lt;p&gt;Please comment, share, send feedback!
+I am happy to answer any question and very happy to share this article.
+Thanks for reading!&lt;/p&gt;
+&lt;p&gt;Gabriel&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Writing a simple Code Generator</title>
+      <link>https://jorenjoestar.github.io/post/writing_a_simple_code_generator/</link>
+      <pubDate>Sat, 27 Jul 2019 18:46:03 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/writing_a_simple_code_generator/</guid>
+      <description>
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;front.png&#34; &gt;
+
+&lt;img src=&#34;front.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;UI using ImGUI, SDL and the code generated with this article.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+&lt;p&gt;Following my previous article about Flatbuffers and data reflection the quest for Data-Driven Rendering continues!&lt;!-- raw HTML omitted --&gt;
+In this article I want to show how to write a very simple code-generator to help you automate writing of code in any language.&lt;!-- raw HTML omitted --&gt;
+The code is here:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering&#34;&gt;https://github.com/JorenJoestar/DataDrivenRendering&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;There is a balance that constantly needs to be found between code and data, and having a code-generator in my opinion helps tremendously in focus on the code that is necessary to be written.&lt;!-- raw HTML omitted --&gt;
+From a data perspective, normally the ‘baking’ pipeline is a series of DCC formats as source transformed into very project specific and optimized data.&lt;!-- raw HTML omitted --&gt;
+Code-wise, depending on the engine/technology you are using, ‘baking’ of the code is more uncommon.&lt;!-- raw HTML omitted --&gt;
+In a time in which iteration time has become almost more important than the tech itself, playing with this balance can be the key for any successful software. It could sound exaggerated, but I really believe in that.&lt;!-- raw HTML omitted --&gt;
+As always, both ImGui and SDL will be our sword and shields for this adventure.&lt;!-- raw HTML omitted --&gt;
+This will be the second step into data-driven rendering: code generation.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h2 id=&#34;are-we-writing-a-compiler-&#34;&gt;Are we writing a compiler ?&lt;/h2&gt;
+&lt;p&gt;Short answer: yes!&lt;/p&gt;
+&lt;p&gt;Long answer: we will be writing the simplest possible compiler that reads a source file and transform in a destination file, like Flatbuffers.&lt;/p&gt;
+&lt;p&gt;There are few links on both theory and practice that can help shed some light on the subject:
+The “Dragon Book” (called because of the dragon in the cover) is still THE to-go in compiler writing as far as I know.&lt;!-- raw HTML omitted --&gt;
+It is an intense book and explores writing a full compiler with depth, starting from &lt;em&gt;Automata theory&lt;/em&gt; (just reminds me of how everything you study can be useful, I did 2 exams at University about that, wondering when I would use it! Hello prof &lt;a href=&#34;http://www.dia.uniroma3.it/~compunet/www/view/person.php?id=gdb&#34;&gt;Di Battista!&lt;/a&gt;) to full code examples:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.amazon.com/Compilers-Principles-Techniques-Tools-2nd/dp/0321486811&#34;&gt;https://www.amazon.com/Compilers-Principles-Techniques-Tools-2nd/dp/0321486811&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;This is for me the best website on the subject, very precise and readable and follows closely what is inside the Dragon Book:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://craftinginterpreters.com/&#34;&gt;https://craftinginterpreters.com/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;And github page:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/munificent/craftinginterpreters&#34;&gt;https://github.com/munificent/craftinginterpreters&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;My interest was rekindled in 2015, when I was following the amazing Casey Muratori and his &lt;a href=&#34;https://handmadehero.org/&#34;&gt;Handmade Hero&lt;/a&gt;.&lt;!-- raw HTML omitted --&gt;
+He generates code for introspection purposes, and really show a simple and effective way of generating code that works for you.&lt;/p&gt;
+&lt;p&gt;Wikipedia itself also contains a lot of good articles on the subject. The more you know about the it, the more you want to know.
+It is fascinating and very, very deep!&lt;/p&gt;
+&lt;h1 id=&#34;compiler-101&#34;&gt;Compiler 101&lt;/h1&gt;
+&lt;p&gt;A real compiler is a very complex and fascinating subject/software so I will try to get the simplest possible approach giving my (flawed and incomplete) perspective.&lt;/p&gt;
+&lt;p&gt;A compiler is a series of transformations applied to data (you can apply this definition to every software actually…).&lt;/p&gt;
+&lt;p&gt;The input data is a text, and normally the output is still text, but with very different meaning.&lt;/p&gt;
+&lt;p&gt;The raw depth of the subject is astonishing, consider that we are defining a grammar and thus a language, and how to express concepts into it.&lt;/p&gt;
+&lt;p&gt;The main steps are the following:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Lexer/scanner/tokenizer&lt;/li&gt;
+&lt;li&gt;Parser&lt;/li&gt;
+&lt;li&gt;Code generation&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;We will define the code generator from a custom language called HDF (&lt;strong&gt;Hydra Definition Format&lt;/strong&gt;) to C++.
+HDF will be a subset of &lt;strong&gt;Flatbuffers&lt;/strong&gt; in this exercise, but once the concepts are clear it can be expanded to more stuff.&lt;/p&gt;
+&lt;h1 id=&#34;lexerscannertokenizer&#34;&gt;Lexer/Scanner/Tokenizer&lt;/h1&gt;
+&lt;p&gt;A &lt;strong&gt;lexer&lt;/strong&gt; or &lt;strong&gt;scanner&lt;/strong&gt; (or &lt;strong&gt;tokenizer&lt;/strong&gt;) is a software that translates an input string into a list of Tokens based on Lexemes.
+A &lt;strong&gt;Lexeme&lt;/strong&gt; is one or more characters that create a Token. Think of a keyword (like ‘if’, ‘class’, ‘static’ …).&lt;/p&gt;
+&lt;p&gt;A Token is identified by a unique Lexeme and abstracts the Lexeme itself.
+It normally contains a type and some attributes, for example it can save where that lexeme is into the input text, the line. The final structure of the token can vary a bit.&lt;/p&gt;
+&lt;p&gt;In trying to find a simple definition for this step:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The act of Tokenizing is the act of abstracting the input text.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;For example, given the following input text:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;static void amazing_method() {};
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;It will generate the list of tokens ‘&lt;strong&gt;keyword, identifier, identifier, open parenthesis, close parenthesis, open brace, close brace, semicolon&lt;/strong&gt;’.&lt;/p&gt;
+&lt;p&gt;This IS abstracting the text!&lt;/p&gt;
+&lt;p&gt;Normally a lexer/scanner is used by the parser to go through the code and retrieve a token and use it in some way. Let’s start seeing what a lexer could be!&lt;/p&gt;
+&lt;h2 id=&#34;code&#34;&gt;Code&lt;/h2&gt;
+&lt;p&gt;Let&amp;rsquo;s see the code used by the lexer.&lt;/p&gt;
+&lt;p&gt;First thing will be to define the Token:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// Lexer/Tokenizer code. It is abstract enough so is not grammar specific.
+//
+struct Token {
+
+    enum Type {
+        Token_Unknown,
+
+        Token_OpenParen,
+        Token_CloseParen,
+        Token_Colon,
+        Token_Semicolon,
+        Token_Asterisk,
+        Token_OpenBracket,
+        Token_CloseBracket,
+        Token_OpenBrace,
+        Token_CloseBrace,
+        Token_OpenAngleBracket,
+        Token_CloseAngleBracket,
+
+        Token_String,
+        Token_Identifier,
+        Token_Number,
+
+        Token_EndOfStream,
+    }; // enum Type
+
+    Type                            type;
+    StringRef                       text;
+
+}; // struct Token
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;It is basically a enum with a StringRef.&lt;!-- raw HTML omitted --&gt;
+A StringRef is basically a substring - used to avoid allocations when parsing by simply saving where the Token is in the parsed text and how long it is.&lt;/p&gt;
+&lt;p&gt;Next is the Lexer itself:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// The role of the Lexer is to divide the input string into a list of Tokens.
+struct Lexer {
+    
+    char*                           position            = nullptr;    
+    uint32_t                        line                = 0;
+    uint32_t                        column              = 0;
+
+    bool                            error               = false;
+    uint32_t                        error_line          = 0;
+
+}; // struct Lexer
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The most important variable is &lt;strong&gt;position&lt;/strong&gt; - it saves where the Lexer is in the current text for parsing.&lt;/p&gt;
+&lt;p&gt;From now on there will be only methods.&lt;/p&gt;
+&lt;p&gt;First some character classification that will help the Lexer:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// All those methods are to classify a character.
+//
+inline bool IsEndOfLine( char c ) {
+    bool Result = ((c == &#39;\n&#39;) || (c == &#39;\r&#39;));
+    return(Result);
+}
+
+inline bool IsWhitespace( char c ) {
+    bool Result = ((c == &#39; &#39;) || (c == &#39;\t&#39;) || (c == &#39;\v&#39;) || (c == &#39;\f&#39;) || IsEndOfLine( c ));
+    return(Result);
+}
+
+inline bool IsAlpha( char c ) {
+    bool Result = (((c &amp;gt;= &#39;a&#39;) &amp;amp;&amp;amp; (c &amp;lt;= &#39;z&#39;)) || ((c &amp;gt;= &#39;A&#39;) &amp;amp;&amp;amp; (c &amp;lt;= &#39;Z&#39;)));
+    return(Result);
+}
+
+inline bool IsNumber( char c ) {
+    bool Result = ((c &amp;gt;= &#39;0&#39;) &amp;amp;&amp;amp; (c &amp;lt;= &#39;9&#39;));
+    return(Result);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;These should be quite straightforward.&lt;/p&gt;
+&lt;p&gt;Then we have &lt;strong&gt;the most important method for the lexer: nextToken&lt;/strong&gt;.&lt;!-- raw HTML omitted --&gt;
+This method will contain all the logic to go to the next token, and we will see it step by step.&lt;/p&gt;
+&lt;p&gt;First is skipping all the whitespaces (empty characters, tabs, returns, etc) to arrive at the correct character in the text.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// This is the main method. Skip whitespaces and get next token. Save also the current position in the input string.
+//
+void nextToken( Lexer* lexer, Token&amp;amp; token ) {
+
+    // Skip all whitespace first so that the token is without them.
+    skipWhitespace( lexer );
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The code for skipping the whitespace is pretty straight-forward.
+First it checks if it is a pure whitespace:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void skipWhitespace( Lexer* lexer ) {
+    // Scan text until whitespace is finished.
+    for ( ;; ) {
+        // Check if it is a pure whitespace first.
+        if ( IsWhitespace( lexer-&amp;gt;position[0] ) ) {
+            // Handle change of line
+            if ( IsEndOfLine( lexer-&amp;gt;position[0] ) )
+                ++lexer-&amp;gt;line;
+
+            // Advance to next character
+            ++lexer-&amp;gt;position;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then it checks if it is a single line comment:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;        } // Check for single line comments (&amp;quot;//&amp;quot;)
+        else if ( (lexer-&amp;gt;position[0] == &#39;/&#39;) &amp;amp;&amp;amp; (lexer-&amp;gt;position[1] == &#39;/&#39;) ) {
+            lexer-&amp;gt;position += 2;
+            while ( lexer-&amp;gt;position[0] &amp;amp;&amp;amp; !IsEndOfLine( lexer-&amp;gt;position[0] ) ) {
+                ++lexer-&amp;gt;position;
+            }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And last it checks for c-style multiline comments:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;        } // Check for c-style multi-lines comments
+        else if ( (lexer-&amp;gt;position[0] == &#39;/&#39;) &amp;amp;&amp;amp; (lexer-&amp;gt;position[1] == &#39;*&#39;) ) {
+            lexer-&amp;gt;position += 2;
+
+            // Advance until the string is closed. Remember to check if line is changed.
+            while ( !((lexer-&amp;gt;position[0] == &#39;*&#39;) &amp;amp;&amp;amp; (lexer-&amp;gt;position[1] == &#39;/&#39;)) ) {
+                // Handle change of line
+                if ( IsEndOfLine( lexer-&amp;gt;position[0] ) )
+                    ++lexer-&amp;gt;line;
+
+                // Advance to next character
+                ++lexer-&amp;gt;position;
+            }
+
+            if ( lexer-&amp;gt;position[0] == &#39;*&#39; ) {
+                lexer-&amp;gt;position += 2;
+            }
+        }
+        else {
+            break;
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;After skipped all the whitespaces, we initialize the new token:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    // Initialize token
+    token.type = Token::Token_Unknown;
+    token.text.text = lexer-&amp;gt;position;
+    token.text.length = 1;
+    token.line = lexer-&amp;gt;line;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We get the current character and advance the position, so we can analize it.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    char c = lexer-&amp;gt;position[0];
+    ++lexer-&amp;gt;position;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Here comes the character analisys using a simple &lt;strong&gt;switch&lt;/strong&gt;.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+    switch ( c ) {
+        case &#39;\0&#39;:
+        {
+            token.type = Token::Token_EndOfStream;
+        } break;
+        case &#39;(&#39;:
+        {
+            token.type = Token::Token_OpenParen;
+        } break;
+        case &#39;)&#39;:
+        {
+            token.type = Token::Token_CloseParen;
+        } break;
+        case &#39;:&#39;:
+        {
+            token.type = Token::Token_Colon;
+        } break;
+        case &#39;;&#39;:
+        {
+            token.type = Token::Token_Semicolon;
+        } break;
+        case &#39;*&#39;:
+        {
+            token.type = Token::Token_Asterisk;
+        } break;
+        case &#39;[&#39;:
+        {
+            token.type = Token::Token_OpenBracket;
+        } break;
+        case &#39;]&#39;:
+        {
+            token.type = Token::Token_CloseBracket;
+        } break;
+        case &#39;{&#39;:
+        {
+            token.type = Token::Token_OpenBrace;
+        } break;
+        case &#39;}&#39;:
+        {
+            token.type = Token::Token_CloseBrace;
+        } break;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;There are some special cases left.&lt;!-- raw HTML omitted --&gt;
+First parsing a string starting from a &amp;lsquo;&amp;quot;&amp;rsquo; character.&lt;!-- raw HTML omitted --&gt;
+It requires to scan the text until it finds another &amp;lsquo;&amp;quot;&amp;rsquo; to indicate the end of the string.&lt;!-- raw HTML omitted --&gt;
+It also supports multiple-line strings with the characters &amp;ldquo;\&amp;rdquo; (double back-slash)&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+        case &#39;&amp;quot;&#39;:
+        {
+            token.type = Token::Token_String;
+
+            token.text.text = lexer-&amp;gt;position;
+
+            while ( lexer-&amp;gt;position[0] &amp;amp;&amp;amp;
+                    lexer-&amp;gt;position[0] != &#39;&amp;quot;&#39; )
+            {
+                if ( (lexer-&amp;gt;position[0] == &#39;\\&#39;) &amp;amp;&amp;amp;
+                     lexer-&amp;gt;position[1] )
+                {
+                    ++lexer-&amp;gt;position;
+                }
+                ++lexer-&amp;gt;position;
+            }
+
+            // Saves total string length
+            token.text.length = lexer-&amp;gt;position - token.text.text;
+
+            if ( lexer-&amp;gt;position[0] == &#39;&amp;quot;&#39; ) {
+                ++lexer-&amp;gt;position;
+            }
+        } break;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then the final classification step: first is checking if the token is an identifier (a string literal that starts with a character and is followed by characters, underscores or numbers).&lt;!-- raw HTML omitted --&gt;
+If not a identifier, check to see if it is a number. This should be expanded to correctly parse numbers, but for now is not used.&lt;!-- raw HTML omitted --&gt;.
+If everything else fails, than we don&amp;rsquo;t recognize the token.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;        default:
+        {
+            // Identifier/keywords
+            if ( IsAlpha( c ) ) {
+                token.type = Token::Token_Identifier;
+
+                while ( IsAlpha( lexer-&amp;gt;position[0] ) || IsNumber( lexer-&amp;gt;position[0] ) || (lexer-&amp;gt;position[0] == &#39;_&#39;) ) {
+                    ++lexer-&amp;gt;position;
+                }
+
+                token.text.length = lexer-&amp;gt;position - token.text.text;
+            } // Numbers
+            else if ( IsNumber( c ) ) {
+                token.type = Token::Token_Number;
+            }
+            else {
+                token.type = Token::Token_Unknown;
+            }
+        } break;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With this code we already have a working Lexer!&lt;!-- raw HTML omitted --&gt;
+I like to use the lexer in an abstract way - not knowing anything about the underlying language - so that it can be reused for different custom languages (Dr.Wily eyebrows movement goes here).&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;If you want to dive deeper into this, the amazing Crafting Interpreters contains a great page on scanning:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.craftinginterpreters.com/scanning.html&#34;&gt;https://www.craftinginterpreters.com/scanning.html&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Also, some c-style parsing can be found here from the amazing &lt;a href=&#34;https://twitter.com/niklasfrykholm&#34;&gt;Niklas Frykohlm&lt;/a&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/niklasfrykholm/nflibs/blob/master/nf_json_parser.c&#34;&gt;https://github.com/niklasfrykholm/nflibs/blob/master/nf_json_parser.c&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;And another amazing parser from STB:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/nothings/stb/blob/master/stb_c_lexer.h&#34;&gt;https://github.com/nothings/stb/blob/master/stb_c_lexer.h&lt;/a&gt;&lt;/p&gt;
+&lt;h1 id=&#34;parser&#34;&gt;Parser&lt;/h1&gt;
+&lt;p&gt;So far we have abstracted the input text into a list of &lt;strong&gt;Tokens&lt;/strong&gt;, and now we need to generate some more information before arriving at generating new code.&lt;/p&gt;
+&lt;p&gt;As far as &lt;em&gt;I understood it&lt;/em&gt;, a parser reads the tokens and generates an &lt;strong&gt;Abstract Syntax Tree&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Sometimes, and in simpler parsers, the act of parsing itself can generates a new code if the language we are targeting is simple.
+Again, I prefer to separate Lexer and Parser to reuse the Lexer for different languages and separate the responsabilities!&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Given a list of tokens and a grammar, a parser generates an Abstract Syntax Tree.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;It gives meaning to the input text, and is responsible to check the syntax correctness.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;A simple definition for a grammar is the following:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;A grammar is a set of production rules that transforms a series of non-terminals into terminals.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Putting everything in the perspective of data and transformations we can define:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Terminals&lt;/strong&gt; are finalized data&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Non-terminals&lt;/strong&gt; are data that must be transformed&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Production rules&lt;/strong&gt; are transformations of &lt;strong&gt;non-terminals&lt;/strong&gt; to &lt;strong&gt;terminals&lt;/strong&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Another definition of a parser than it could be :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;A parser is a software that transforms non-terminals in terminals following production rules.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;grammar&#34;&gt;Grammar&lt;/h2&gt;
+&lt;p&gt;It is time to write the formal grammar (a context-free grammar) and see how it maps to code.&lt;!-- raw HTML omitted --&gt;
+It will be very simple — much simpler than many examples you find around — but it is a starting point.&lt;!-- raw HTML omitted --&gt;
+We will not deal with any expression, statements and such, not in the context of this code generator. I will point out some examples for more complex stuff, but I want to study more the subject for that to be more precise about the subject.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Each line will be a &lt;strong&gt;production rule&lt;/strong&gt; (a transformation), with the left-side being always a non-terminal.&lt;!-- raw HTML omitted --&gt;
+We are using regular expressions syntax here:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;alphabet → [a-zA-z]&lt;/li&gt;
+&lt;li&gt;number →[0–9]&lt;/li&gt;
+&lt;li&gt;identifier → alphabet (alphabet | number | “_”)*&lt;/li&gt;
+&lt;li&gt;variable_declaration → identifier identifier “;”&lt;/li&gt;
+&lt;li&gt;struct_declaration → “struct” identifier “{“ (variable_declaration)+ “}” “;”&lt;/li&gt;
+&lt;li&gt;enum_declaration → “enum” identifier “{“ (identifier)+ “}”&lt;/li&gt;
+&lt;li&gt;module → (struct_declaration | enum_declaration)+*&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;First we define what an identifier is — a sequence of alpha-numerical characters that can contains also the underscore character.&lt;!-- raw HTML omitted --&gt;Notice that with the identifier production rule, the identifier cannot start with an underscore.&lt;!-- raw HTML omitted --&gt;
+A variable then is declared simply by two identifiers: the first for the type and the second for the name, following a semicolon.&lt;!-- raw HTML omitted --&gt;
+A struct is simply a list of variable declarations. Notice the “+” in the rule — this means that at least one element must be present.&lt;!-- raw HTML omitted --&gt;
+Enums are literally a name for the enum and a list of identifiers in curly braces.&lt;!-- raw HTML omitted --&gt;
+Finally the module is the root of our grammar. It will contain all the declarations we describe. See it as the data file we are writing to generate the code — one file is one module.&lt;!-- raw HTML omitted --&gt;
+Now that we defined a simple grammar, we can move to the theory behind the parser.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h2 id=&#34;predictive-recursive-descent-parser&#34;&gt;Predictive Recursive Descent Parser&lt;/h2&gt;
+&lt;p&gt;The grammar we defined is a context-free-grammar.&lt;!-- raw HTML omitted --&gt;
+Depending on the type of grammar we can write different parsers.&lt;!-- raw HTML omitted --&gt;
+One of the most common type of parser (and easier to start with) is the &lt;a href=&#34;https://en.wikipedia.org/wiki/Recursive_descent_parser&#34;&gt;Predictive Recursive Descent Parser&lt;/a&gt;, and that is what we will write given our grammar. You can dive into all the details of writing a context-free grammar, writing a &lt;a href=&#34;https://en.wikipedia.org/wiki/LL_parser&#34;&gt;Left-to-right Leftmost-derivation grammar (LL(k))&lt;/a&gt; and such and be amazed by all the concepts behind.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Again, I am personally starting on this subject, so my knowledge is not deep.&lt;/p&gt;
+&lt;p&gt;Back to the parser, the main characteristics of this parser are:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Descent = top-down. Start from root and generate the Abstract Syntax Tree.&lt;/li&gt;
+&lt;li&gt;Recursive = the parser has mutually recursive methods, one for each non-terminal.&lt;/li&gt;
+&lt;li&gt;Predictive = no backtracking needed. For our simple grammar we do not need any backtracking.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;So the parser will start from the root (module non-terminal) and by sequentially reading all the tokens will generate a tree that represent our syntax.&lt;/p&gt;
+&lt;p&gt;Let’s see some code!&lt;/p&gt;
+&lt;h2 id=&#34;code-1&#34;&gt;Code&lt;/h2&gt;
+&lt;p&gt;The central piece of code is the Parser.&lt;!-- raw HTML omitted --&gt;
+It uses the Lexer and saves the Types by parsing the input text.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// The Parser parses Tokens using the Lexer and generate an Abstract Syntax Tree.
+struct Parser {
+
+    Lexer*                          lexer               = nullptr;
+
+    ast::Type*                      types               = nullptr;
+    uint32_t                        types_count         = 0;
+    uint32_t                        types_max           = 0;
+
+}; // struct Parser
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Let&amp;rsquo;s have a look at the class &lt;strong&gt;Type&lt;/strong&gt;.&lt;!-- raw HTML omitted --&gt;
+This class will let us identify correctly primitive types, enums, struct and &lt;em&gt;commands&lt;/em&gt; - a special keyword I create to show a concept that can be used away from the canonical C/C++ languages.&lt;!-- raw HTML omitted --&gt;
+By saving a list of names and types we can successfully parse all the types listed above.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;//
+// Define the language specific structures.
+namespace ast {
+
+    struct Type {
+
+        enum Types {
+            Types_Primitive, Types_Enum, Types_Struct, Types_Command, Types_None
+        };
+
+        enum PrimitiveTypes {
+            Primitive_Int32, Primitive_Uint32, Primitive_Int16, Primitive_Uint16, Primitive_Int8, Primitive_Uint8, Primitive_Int64, Primitive_Uint64, Primitive_Float, Primitive_Double, Primitive_Bool, Primitive_None
+        };
+
+        Types                       type;
+        PrimitiveTypes              primitive_type;
+        StringRef                   name;
+
+        std::vector&amp;lt;StringRef&amp;gt;      names;
+        std::vector&amp;lt;const Type*&amp;gt;    types;
+        bool                        exportable = true;
+
+    }; // struct Type
+
+} // namespace ast
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And now the actual code making the magic happens!&lt;!-- raw HTML omitted --&gt;
+Entry point for the parsing is generateAST.&lt;!-- raw HTML omitted --&gt;
+It simply goes through ALL the tokens until it reaches the end of the file.&lt;!-- raw HTML omitted --&gt;
+At this level of parsing, we parse only identifiers (keywords like &amp;lsquo;struct&amp;rsquo;, &amp;lsquo;enum&amp;rsquo;, &amp;hellip;).&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void generateAST( Parser* parser ) {
+
+    // Read source text until the end.
+    // The main body can be a list of declarations.
+    bool parsing = true;
+
+    while ( parsing ) {
+
+        Token token;
+        nextToken( parser-&amp;gt;lexer, token );
+
+        switch ( token.type ) {
+
+            case Token::Token_Identifier:
+            {
+                identifier( parser, token );
+                break;
+            }
+
+            case Token::Type::Token_EndOfStream:
+            {
+                parsing = false;
+                break;
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The method &amp;lsquo;identifier&amp;rsquo; searches for the language keywords and acts accordingly.&lt;!-- raw HTML omitted --&gt;
+The method &amp;lsquo;expectKeyword&amp;rsquo; simply checks that the keywords are the same.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;inline void identifier( Parser* parser, const Token&amp;amp; token ) {
+
+    // Scan the name to know which 
+    for ( uint32_t i = 0; i &amp;lt; token.text.length; ++i ) {
+        char c = *(token.text.text + i);
+
+        switch ( c ) {
+            case &#39;s&#39;:
+            {
+                if ( expectKeyword( token.text, 6, &amp;quot;struct&amp;quot; ) ) {
+                    declarationStruct( parser );
+                    return;
+                }
+                    
+                break;
+            }
+
+            case &#39;e&#39;:
+            {
+                if ( expectKeyword( token.text, 4, &amp;quot;enum&amp;quot; ) ) {
+                    declarationEnum( parser );
+                    return;
+                }
+                break;
+            }
+
+            case &#39;c&#39;:
+            {
+                if ( expectKeyword( token.text, 7, &amp;quot;command&amp;quot; ) ) {
+                    declarationCommand( parser );
+                    return;
+                }
+                break;
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The next methods are the real core of parsing a language.
+When declaring a struct, the token we have are:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Identifier &amp;lsquo;struct&amp;rsquo; (parsed already by generateAST method)&lt;/li&gt;
+&lt;li&gt;Name of the struct&lt;/li&gt;
+&lt;li&gt;Open braces&lt;/li&gt;
+&lt;li&gt;Zero or more variables&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The method expectToken checks the presence of the expected token and saves the line if an error occurs.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;inline void declarationStruct( Parser* parser ) {
+    // name
+    Token token;
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+    
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_OpenBrace ) ) {
+        return;
+    }
+
+    // Add new type
+    ast::Type&amp;amp; type = parser-&amp;gt;types[parser-&amp;gt;types_count++];
+    type.name = name;
+    type.type = ast::Type::Types_Struct;
+    type.exportable = true;
+
+    // Parse struct internals
+    while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        if ( token.type == Token::Token_Identifier ) {
+            declarationVariable( parser, token.text, type );
+        }
+    }
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The parsing of a variable is even simpler, just a type followed by the name.
+When reading the type, it searches through the list of all types saved until then.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;inline void declarationVariable( Parser* parser, const StringRef&amp;amp; type_name, ast::Type&amp;amp; type ) {
+    const ast::Type* variable_type = findType( parser, type_name );
+    Token token;
+    // Name
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Semicolon ) ) {
+        return;
+    }
+
+    type.types.emplace_back( variable_type );
+    type.names.emplace_back( name );
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The parsing of the enum is:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&amp;lsquo;enum&amp;rsquo; keyword&lt;/li&gt;
+&lt;li&gt;Enum name&lt;/li&gt;
+&lt;li&gt;(optional) Semicolon and type, taken from Flatbuffers syntax&lt;/li&gt;
+&lt;li&gt;Open brace&lt;/li&gt;
+&lt;li&gt;List of identifiers that corresponds to the enum values&lt;/li&gt;
+&lt;/ol&gt;
+&lt;!-- raw HTML omitted --&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+inline void declarationEnum( Parser* parser ) {
+    Token token;
+    // Name
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    // Optional &#39;: type&#39; for the enum
+    nextToken( parser-&amp;gt;lexer, token );
+    if ( token.type == Token::Token_Colon ) {
+        // Skip to open brace
+        nextToken( parser-&amp;gt;lexer, token );
+        // Token now contains type_name
+        nextToken( parser-&amp;gt;lexer, token );
+        // Token now contains open brace.
+    }
+    
+    if ( token.type != Token::Token_OpenBrace ) {
+        return;
+    }
+
+    // Add new type
+    ast::Type&amp;amp; type = parser-&amp;gt;types[parser-&amp;gt;types_count++];
+    type.name = name;
+    type.type = ast::Type::Types_Enum;
+    type.exportable = true;
+
+    // Parse struct internals
+    while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        if ( token.type == Token::Token_Identifier ) {
+            type.names.emplace_back( token.text );
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A command is a special construct that I use in my code, normally with a CommandBuffer, and with the current syntax from HDF:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;command WindowEvents {
+    Click {
+      int16 x;
+      int16 y;
+      int16 button;
+    }
+    Move {
+      int16 x;
+      int16 y;
+    }
+    Wheel {
+       int16 z;
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And this is the parsing of the command.&lt;!-- raw HTML omitted --&gt;
+I think this can be the best example of mapping between the language and the parsing.&lt;!-- raw HTML omitted --&gt;
+Parsing is:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Name&lt;/li&gt;
+&lt;li&gt;Open brace&lt;/li&gt;
+&lt;li&gt;Scan of identifiers until close brace&lt;/li&gt;
+&lt;li&gt;For each identifier, add a type and scan for internal variables.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;!-- raw HTML omitted --&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;inline void declarationCommand( Parser* parser ) {
+    // name
+    Token token;
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_Identifier ) ) {
+        return;
+    }
+
+    // Cache name string
+    StringRef name = token.text;
+
+    if ( !expectToken( parser-&amp;gt;lexer, token, Token::Token_OpenBrace ) ) {
+        return;
+    }
+
+    // Add new type
+    ast::Type&amp;amp; command_type = parser-&amp;gt;types[parser-&amp;gt;types_count++];
+    command_type.name = name;
+    command_type.type = ast::Type::Types_Command;
+    command_type.exportable = true;
+
+    // Parse struct internals
+    while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+
+        if ( token.type == Token::Token_Identifier ) {
+            // Create a new type for each command
+            // Add new type
+            ast::Type&amp;amp; type = parser-&amp;gt;types[parser-&amp;gt;types_count++];
+            type.name = token.text;
+            type.type = ast::Type::Types_Struct;
+            type.exportable = false;
+
+            while ( !equalToken( parser-&amp;gt;lexer, token, Token::Token_CloseBrace ) ) {
+                if ( token.type == Token::Token_Identifier ) {
+                    declarationVariable( parser, token.text, type );
+                }
+            }
+
+            command_type.names.emplace_back( type.name );
+            command_type.types.emplace_back( &amp;amp;type );
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;abstract-syntax-tree&#34;&gt;Abstract Syntax Tree&lt;/h2&gt;
+&lt;p&gt;We choose to simply have data definitions, and I’ve decided that the nodes of the tree will be types.&lt;!-- raw HTML omitted --&gt;
+A type can be a primitive type, a container of variables (like a Struct in C, but without methods) enums and commands.&lt;!-- raw HTML omitted --&gt;
+Commands are just a way of showing the creation of a construct that I use and requires some boilerplate code, but I don’t want to write that code.&lt;!-- raw HTML omitted --&gt;
+If we remember the definition of the class Type from the code before, it all boils down to a name,a list of names and optionally types.&lt;!-- raw HTML omitted --&gt;
+With this simple definition I can express primitive types, structs and enums all in one!&lt;!-- raw HTML omitted --&gt;
+For enums, I save the anme of the enum and in the name list all the different values. That is enough to later generate the code.&lt;!-- raw HTML omitted --&gt;
+For structs, again the name is saved, and then the variables. A variable is a tuple of identifiers ‘type, name’. When parsing them, the type is searched in the registered ones.&lt;!-- raw HTML omitted --&gt;
+A trick here is to initialize the parser with primitive types, and then add each type (both struct and enums) when parsing them.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h1 id=&#34;code-generation&#34;&gt;Code Generation&lt;/h1&gt;
+&lt;p&gt;The last stage will generate the files in the language that we want, using the informations from the &lt;strong&gt;AST&lt;/strong&gt;.&lt;!-- raw HTML omitted --&gt;
+This part will literally write the code for us, the all purpose of this code.&lt;!-- raw HTML omitted --&gt;
+The most fundamental question is: &lt;em&gt;“what code do I want to generate?”&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+A simple but deep question.&lt;!-- raw HTML omitted --&gt;
+We are trying to remove the writing of boilerplate code from or lives, so anything that you consider boilerplate and easy to automate goes here.
+Even if until here we wrote in C++, the final output can be any language.&lt;!-- raw HTML omitted --&gt;
+This means that you can define data and translate it to multiple languages!&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;For our example, we will output C++ code and add UI using ImGui, similar to the Flatbuffers example I wrote before.&lt;!-- raw HTML omitted --&gt;
+Let’s see the three different construct we can output with our language.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;h2 id=&#34;enum&#34;&gt;Enum&lt;/h2&gt;
+&lt;p&gt;We defined an enum as a name and a list of named values.
+For the simplicity of this example, we are not assigning manual values to the enum, but it is something easily changeable, and I will do it in the future.
+Given the enum in HDF:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;enum BlendOperation : byte { Add, Subtract, RevSubtract, Min, Max }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Which code do we want to generate ?&lt;/p&gt;
+&lt;p&gt;When I write enums, I almost always need the stringed version of the values. Also I want to add a last value, Count, so that I can use it if I need to allocate anything based on the enum.&lt;!-- raw HTML omitted --&gt;
+As a bonus, I can create a second enum with the bit shifts — called mask — for some use cases.&lt;!-- raw HTML omitted --&gt;
+All of this will be automatically done by the code generator, starting with a simple enum!&lt;!-- raw HTML omitted --&gt;
+In this piece of code, I will use three different streams for the different parts of the enum (enum itself, value names and mask) and combine them into the final generated file.&lt;!-- raw HTML omitted --&gt;
+Also to note that the strings here are ‘String Ref’ — basically a string that points to the input source code and stores the length of the string, so that there is no need to allocate it newly.&lt;!-- raw HTML omitted --&gt;
+I will use a temporary buffer to null terminate it and write into the output file.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;This will be the generated code:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;namespace BlendOperation {
+	enum Enum {
+		Add, Subtract, RevSubtract, Min, Max, Count
+	};
+
+	enum Mask {
+		Add_mask = 1 &amp;lt;&amp;lt; 0, Subtract_mask = 1 &amp;lt;&amp;lt; 1, RevSubtract_mask = 1 &amp;lt;&amp;lt; 2, Min_mask = 1 &amp;lt;&amp;lt; 3, Max_mask = 1 &amp;lt;&amp;lt; 4, Count_mask = 1 &amp;lt;&amp;lt; 5
+	};
+
+	static const char* s_value_names[] = {
+		&amp;quot;Add&amp;quot;, &amp;quot;Subtract&amp;quot;, &amp;quot;RevSubtract&amp;quot;, &amp;quot;Min&amp;quot;, &amp;quot;Max&amp;quot;, &amp;quot;Count&amp;quot;
+	};
+
+	static const char* ToString( Enum e ) {
+		return s_value_names[(int)e];
+	}
+} // namespace BlendOperation
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The enum itself (inside a namespace), a mask and the string version for debugging purposes.&lt;!-- raw HTML omitted --&gt;
+All generated from that one line!&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s go into a step by step review of the code.&lt;!-- raw HTML omitted --&gt;
+First there is the initialization of some auxiliary buffers to handle dynamic strings without allocating memory.&lt;!-- raw HTML omitted --&gt;
+These are the usages:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Values will contain all the enum comma separated values&lt;/li&gt;
+&lt;li&gt;Value_names will contain the string version of the values&lt;/li&gt;
+&lt;li&gt;Value_masks will contain an optional bitmask for the values.
+&lt;!-- raw HTML omitted --&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void outputCPPEnum( CodeGenerator* code_generator, FILE* output, const ast::Type&amp;amp; type ) {
+
+    // Empty enum: skip output.
+    if ( type.names.size() == 0 )
+        return;
+
+    code_generator-&amp;gt;string_buffer_0.clear();
+    code_generator-&amp;gt;string_buffer_1.clear();
+    code_generator-&amp;gt;string_buffer_2.clear();
+
+    StringBuffer&amp;amp; values = code_generator-&amp;gt;string_buffer_0;
+    StringBuffer&amp;amp; value_names = code_generator-&amp;gt;string_buffer_1;
+    StringBuffer&amp;amp; value_masks = code_generator-&amp;gt;string_buffer_2;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We start by adding the character &amp;lsquo;&amp;quot;&amp;rsquo; in the names - they will be C strings!&lt;!-- raw HTML omitted --&gt;
+Then we have a couple of options, just as demonstration: add mask (for the bitmask) and add max, that adds a last element to the generated enum.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    value_names.append( &amp;quot;\&amp;quot;&amp;quot; );
+
+    bool add_max = true;
+    bool add_mask = true;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Next step is the core: go through all the names saved in the enum &lt;strong&gt;ast::Type&lt;/strong&gt; during the &lt;strong&gt;parsing&lt;/strong&gt; phase, and add the literal as is in the enum, the literal in string version and optional mask.&lt;!-- raw HTML omitted --&gt;
+We also need to take care of the enum with 1 values, they behave in a different way.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    char name_buffer[256];
+
+    // Enums with more than 1 values
+    if ( type.names.size() &amp;gt; 1 ) {
+        const uint32_t max_values = type.names.size() - 1;
+        for ( uint32_t v = 0; v &amp;lt; max_values; ++v ) {
+
+            if ( add_mask ) {
+                value_masks.append( type.names[v] );
+                value_masks.append( &amp;quot;_mask = 1 &amp;lt;&amp;lt; &amp;quot; );
+                value_masks.append( _itoa( v, name_buffer, 10 ) );
+                value_masks.append( &amp;quot;, &amp;quot; );
+            }
+
+            values.append( type.names[v] );
+            values.append( &amp;quot;, &amp;quot; );
+
+            value_names.append( type.names[v] );
+            value_names.append( &amp;quot;\&amp;quot;, \&amp;quot;&amp;quot; );
+        }
+
+        if ( add_mask ) {
+            value_masks.append( type.names[max_values] );
+            value_masks.append( &amp;quot;_mask = 1 &amp;lt;&amp;lt; &amp;quot; );
+            value_masks.append( _itoa( max_values, name_buffer, 10 ) );
+        }
+
+        values.append( type.names[max_values] );
+
+        value_names.append( type.names[max_values] );
+        value_names.append( &amp;quot;\&amp;quot;&amp;quot; );
+    }
+    else {
+        
+        if ( add_mask ) {
+            value_masks.append( type.names[0] );
+            value_masks.append( &amp;quot;_mask = 1 &amp;lt;&amp;lt; &amp;quot; );
+            value_masks.append( _itoa( 0, name_buffer, 10 ) );
+        }
+
+        values.append( type.names[0] );
+
+        value_names.append( type.names[0] );
+        value_names.append( &amp;quot;\&amp;quot;&amp;quot; );
+    }
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;After writing all the values we can add the optional max value in the output:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    if ( add_max ) {
+        values.append( &amp;quot;, Count&amp;quot; );
+
+        value_names.append( &amp;quot;, \&amp;quot;Count\&amp;quot;&amp;quot; );
+
+        if ( add_mask ) {
+            value_masks.append( &amp;quot;, Count_mask = 1 &amp;lt;&amp;lt; &amp;quot; );
+            value_masks.append( _itoa( type.names.size(), name_buffer, 10 ) );
+        }
+    }
+    
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Until now we just saved all those values in the StringBuffers, but still not in the file.&lt;!-- raw HTML omitted --&gt;
+The final piece of code output to file the enum with all the additional data:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    copy( type.name, name_buffer, 256 );
+
+    fprintf( output, &amp;quot;namespace %s {\n&amp;quot;, name_buffer );
+
+    fprintf( output, &amp;quot;\tenum Enum {\n&amp;quot; );
+    fprintf( output, &amp;quot;\t\t%s\n&amp;quot;, values.data );
+    fprintf( output, &amp;quot;\t};\n&amp;quot; );
+
+    // Write the mask
+    if ( add_mask ) {
+        fprintf( output, &amp;quot;\n\tenum Mask {\n&amp;quot; );
+        fprintf( output, &amp;quot;\t\t%s\n&amp;quot;, value_masks.data );
+        fprintf( output, &amp;quot;\t};\n&amp;quot; );
+    }
+
+    // Write the string values
+    fprintf( output, &amp;quot;\n\tstatic const char* s_value_names[] = {\n&amp;quot; );
+    fprintf( output, &amp;quot;\t\t%s\n&amp;quot;, value_names.data );
+    fprintf( output, &amp;quot;\t};\n&amp;quot; );
+
+    fprintf( output, &amp;quot;\n\tstatic const char* ToString( Enum e ) {\n&amp;quot; );
+    fprintf( output, &amp;quot;\t\treturn s_value_names[(int)e];\n&amp;quot; );
+    fprintf( output, &amp;quot;\t}\n&amp;quot; );
+
+    fprintf( output, &amp;quot;} // namespace %s\n\n&amp;quot;, name_buffer );
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;struct&#34;&gt;Struct&lt;/h2&gt;
+&lt;p&gt;Structs are the bread-and-butter of data definition.
+In this simple example we do not handle pointers or references, so it is pretty straight-forward, but as a start in coding generation this could already be powerful for many cases.
+Let’s start with a definition for our dream Data-Driven-Rendering:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// file.hdf
+struct RenderTarget {
+    uint16 			width;
+    uint16 			height;
+    float 			scale_x;
+    float 			scale_y;
+    TextureFormat 	format;
+};
+
+struct RenderPass {
+    RenderTarget 	rt0;
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We want to generate both the ready to use header in C++ and UI using ImGui.&lt;!-- raw HTML omitted --&gt;
+The output for this struct will be obtained by simply iterating through all its members and, based on the type of the member, write some code.&lt;!-- raw HTML omitted --&gt;
+For primitive types there is a translation that must be done to the C++ language — thus we saved a list of c++ primitive types keyword into the code.&lt;!-- raw HTML omitted --&gt;
+For the UI area we will define two methods: reflectMembers, that simply adds the ImGui commands needed, and reflectUI, that embeds the members into a Window. This is done so that when starting from a root type I can create a window that let me edit its value, and recursively it can add other member’s UI if they are coming from another struct.&lt;!-- raw HTML omitted --&gt;
+This is shown with the RenderPass struct.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;This will be the generated code, that includes ImGui too:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// CodeGenerated.h
+
+struct RenderTarget {
+
+	uint16_t width;
+	uint16_t height;
+	float scale_x;
+	float scale_y;
+	TextureFormat::Enum format;
+
+	void reflectMembers() {
+		ImGui::InputScalar( &amp;quot;width&amp;quot;, ImGuiDataType_U16, &amp;amp;width );
+		ImGui::InputScalar( &amp;quot;height&amp;quot;, ImGuiDataType_U16, &amp;amp;height );
+		ImGui::InputScalar( &amp;quot;scale_x&amp;quot;, ImGuiDataType_Float, &amp;amp;scale_x );
+		ImGui::InputScalar( &amp;quot;scale_y&amp;quot;, ImGuiDataType_Float, &amp;amp;scale_y );
+		ImGui::Combo( &amp;quot;format&amp;quot;, (int32_t*)&amp;amp;format, TextureFormat::s_value_names, TextureFormat::Count );
+	}
+
+	void reflectUI() {
+		ImGui::Begin(&amp;quot;RenderTarget&amp;quot;);
+		reflectMembers();
+		ImGui::End();
+	}
+
+
+}; // struct RenderTarget
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Now let&amp;rsquo;s have a look at the code that will generate that.&lt;!-- raw HTML omitted --&gt;
+First some init steps: clear and alias the StringBuffer, allocate some char buffers on the stack, copy the StringRef into the name buffer:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+void outputCPPStruct( CodeGenerator* code_generator, FILE* output, const ast::Type&amp;amp; type ) {
+    const char* tabs = &amp;quot;&amp;quot;;
+
+    code_generator-&amp;gt;string_buffer_0.clear();
+
+    StringBuffer&amp;amp; ui_code = code_generator-&amp;gt;string_buffer_0;
+
+    char name_buffer[256], member_name_buffer[256], member_type_buffer[256];
+    copy( type.name, name_buffer, 256 );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Next is already a powerful piece of code.&lt;!-- raw HTML omitted --&gt;
+Outputting the UI code and iterating through each member.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    if ( code_generator-&amp;gt;generate_imgui ) {
+        ui_code.append( &amp;quot;\n\tvoid reflectMembers() {\n&amp;quot; );
+    }
+
+    fprintf( output, &amp;quot;%sstruct %s {\n\n&amp;quot;, tabs, name_buffer );
+
+    for ( int i = 0; i &amp;lt; type.types.size(); ++i ) {
+        const ast::Type&amp;amp; member_type = *type.types[i];
+        const StringRef&amp;amp; member_name = type.names[i];
+
+        copy( member_name, member_name_buffer, 256 );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We are in the middle of the loop, and we want to check if the current member type is a primitive one, then it needs some work to do.&lt;!-- raw HTML omitted --&gt;
+First, output the language specific primitive type keyword (using the s_primitive_type_cpp array).&lt;!-- raw HTML omitted --&gt;
+Second, add some ImGui code to edit the field directly.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
+        // Translate type name based on output language.
+        switch ( member_type.type ) {
+            case ast::Type::Types_Primitive:
+            {
+                strcpy_s( member_type_buffer, 256, s_primitive_type_cpp[member_type.primitive_type] );
+                fprintf( output, &amp;quot;%s\t%s %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+                
+                if ( code_generator-&amp;gt;generate_imgui ) {
+                    switch ( member_type.primitive_type ) {
+                        case ast::Type::Primitive_Int8:
+                        case ast::Type::Primitive_Uint8:
+                        case ast::Type::Primitive_Int16:
+                        case ast::Type::Primitive_Uint16:
+                        case ast::Type::Primitive_Int32:
+                        case ast::Type::Primitive_Uint32:
+                        case ast::Type::Primitive_Int64:
+                        case ast::Type::Primitive_Uint64:
+                        case ast::Type::Primitive_Float:
+                        case ast::Type::Primitive_Double:
+                        {
+                            ui_code.append( &amp;quot;\t\tImGui::InputScalar( \&amp;quot;%s\&amp;quot;, %s, &amp;amp;%s );\n&amp;quot;, member_name_buffer, s_primitive_type_imgui[member_type.primitive_type], member_name_buffer );
+                            
+                            break;
+                        }
+                        
+                        case ast::Type::Primitive_Bool:
+                        {
+                            ui_code.append( &amp;quot;\t\tImGui::Checkbox( \&amp;quot;%s\&amp;quot;, &amp;amp;%s );\n&amp;quot;, member_name_buffer, member_name_buffer );
+                            break;
+                        }
+                    }
+                }
+
+                break;
+            }
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;In case of a struct as a member, use the typename as is and call the &amp;lsquo;reflectMembers&amp;rsquo; method for the UI generation:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;            case ast::Type::Types_Struct:
+            {
+                copy( member_type.name, member_type_buffer, 256 );
+                fprintf( output, &amp;quot;%s\t%s %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                if ( code_generator-&amp;gt;generate_imgui ) {
+                    ui_code.append( &amp;quot;\t\tImGui::Text(\&amp;quot;%s\&amp;quot;);\n&amp;quot;, member_name_buffer );
+                    ui_code.append( &amp;quot;\t\t%s.reflectMembers();\n&amp;quot;, member_name_buffer );
+                }
+
+                break;
+            }
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For enums use the format namespace::Enum that comes with the generated code (and can be anything else) and add a Combo for ImGui. The combo is using the string array generated previously! This is powerful!&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;            case ast::Type::Types_Enum:
+            {
+                copy( member_type.name, member_type_buffer, 256 );
+                fprintf( output, &amp;quot;%s\t%s::Enum %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                if ( code_generator-&amp;gt;generate_imgui ) {
+                    ui_code.append( &amp;quot;\t\tImGui::Combo( \&amp;quot;%s\&amp;quot;, (int32_t*)&amp;amp;%s, %s::s_value_names, %s::Count );\n&amp;quot;, member_name_buffer, member_name_buffer, member_type_buffer, member_type_buffer );
+                }
+
+                break;
+            }
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To finish up simlpy add the reflectUI method, that embed the members reflection in a window and finish.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;            default:
+            {
+                break;
+            }
+        }
+    }
+
+    ui_code.append( &amp;quot;\t}&amp;quot; );
+    ui_code.append( &amp;quot;\n\n\tvoid reflectUI() {\n\t\tImGui::Begin(\&amp;quot;%s\&amp;quot;);\n\t\treflectMembers();\n\t\tImGui::End();\n\t}\n&amp;quot;, name_buffer );
+
+    fprintf( output, &amp;quot;%s\n&amp;quot;, ui_code.data );
+
+    fprintf( output, &amp;quot;\n%s}; // struct %s\n\n&amp;quot;, tabs, name_buffer );
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;command&#34;&gt;Command&lt;/h2&gt;
+&lt;p&gt;I wanted to include an example of something that does not exist in any language, but it shows the power of removing boilerplate code.&lt;/p&gt;
+&lt;p&gt;I define commands as little structs with a type used anytime I need to do some command parsing, normally from a ring buffer.&lt;/p&gt;
+&lt;p&gt;The command should have an enum with all the types already, and each struct should have its type assigned.
+The type is normally used to cycle through the commands and do something accordingly.&lt;/p&gt;
+&lt;p&gt;It will output structs because of the need to allocate them in the ring buffer, thus must be simple.&lt;/p&gt;
+&lt;p&gt;First let&amp;rsquo;s see the HDF file. The example are window events commands:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;command WindowEvents {
+
+	Click {
+		int16 x;
+        int16 y;
+        int16 button;
+	}
+
+	Move {
+		int16 x;
+		int16 y;
+	}
+
+    Wheel {
+        int16 z;
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The generated code will be:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;namespace WindowEvents {
+	enum Type {
+		Type_Click, Type_Move, Type_Wheel
+	};
+
+	struct Click {
+
+		int16_t x;
+		int16_t y;
+		int16_t button;
+
+		static Type GetType() { return Type_Click; }
+
+	}; // struct Wheel
+
+	struct Move {
+
+		int16_t x;
+		int16_t y;
+
+		static Type GetType() { return Type_Move; }
+
+	}; // struct Wheel
+
+	struct Wheel {
+
+		int16_t z;
+
+		static Type GetType() { return Type_Wheel; }
+
+	}; // struct Wheel
+
+}; // namespace WindowEvents
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And finally the C++ code that generates the output.&lt;!-- raw HTML omitted --&gt;
+The output starts with an enum with all the types, that I normally use to switch commands:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;void outputCPPCommand( CodeGenerator* code_generator, FILE* output, const ast::Type&amp;amp; type ) {
+
+    char name_buffer[256], member_name_buffer[256], member_type_buffer[256];
+    copy( type.name, name_buffer, 256 );
+
+    fprintf( output, &amp;quot;namespace %s {\n&amp;quot;, name_buffer );
+
+    // Add enum with all types
+    fprintf( output, &amp;quot;\tenum Type {\n&amp;quot; );
+    fprintf( output, &amp;quot;\t\t&amp;quot; );
+    for ( int i = 0; i &amp;lt; type.types.size() - 1; ++i ) {
+        const ast::Type&amp;amp; command_type = *type.types[i];
+        copy( command_type.name, name_buffer, 256 );
+        fprintf( output, &amp;quot;Type_%s, &amp;quot;, name_buffer );
+    }
+
+    const ast::Type* last_type = type.types[type.types.size() - 1];
+    copy( last_type-&amp;gt;name, name_buffer, 256 );
+    fprintf( output, &amp;quot;Type_%s&amp;quot;, name_buffer );
+    fprintf( output, &amp;quot;\n\t};\n\n&amp;quot; );
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then we output all the command structs (like Click, Move, &amp;hellip;).&lt;!-- raw HTML omitted --&gt;
+For each command type we output a struct with all its members. This is similar to the output of the structs:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;    const char* tabs = &amp;quot;\t&amp;quot;;
+
+    for ( int i = 0; i &amp;lt; type.types.size(); ++i ) {
+        const ast::Type&amp;amp; command_type = *type.types[i];
+
+        copy( command_type.name, member_type_buffer, 256 );
+        fprintf( output, &amp;quot;%sstruct %s {\n\n&amp;quot;, tabs, member_type_buffer );
+        
+        for ( int i = 0; i &amp;lt; command_type.types.size(); ++i ) {
+            const ast::Type&amp;amp; member_type = *command_type.types[i];
+            const StringRef&amp;amp; member_name = command_type.names[i];
+
+            copy( member_name, member_name_buffer, 256 );
+
+            // Translate type name based on output language.
+            switch ( member_type.type ) {
+                case ast::Type::Types_Primitive:
+                {
+                    strcpy_s( member_type_buffer, 256, s_primitive_type_cpp[member_type.primitive_type] );
+                    fprintf( output, &amp;quot;%s\t%s %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                    break;
+                }
+
+                case ast::Type::Types_Struct:
+                {
+                    copy( member_type.name, member_type_buffer, 256 );
+                    fprintf( output, &amp;quot;%s\t%s %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                    break;
+                }
+
+                case ast::Type::Types_Enum:
+                {
+                    copy( member_type.name, member_type_buffer, 256 );
+                    fprintf( output, &amp;quot;%s\t%s::Enum %s;\n&amp;quot;, tabs, member_type_buffer, member_name_buffer );
+
+                    break;
+                }
+
+                default:
+                {
+                    break;
+                }
+            }
+        }
+
+        copy( command_type.name, member_type_buffer, 256 );
+
+        fprintf( output, &amp;quot;\n%s\tstatic Type GetType() { return Type_%s; }\n&amp;quot;, tabs, member_type_buffer );
+        fprintf( output, &amp;quot;\n%s}; // struct %s\n\n&amp;quot;, tabs, name_buffer );
+    }
+
+    copy( type.name, name_buffer, 256 );
+    fprintf( output, &amp;quot;}; // namespace %s\n\n&amp;quot;, name_buffer );
+
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+&lt;p&gt;We learnt how to write a complete Code Generator, an incredible tool that can speed up the development if used correctly and remove most boilerplate code possible.&lt;/p&gt;
+&lt;p&gt;The usage of the &lt;em&gt;command&lt;/em&gt; keyword was an example of something I use and I don’t want to write code, something that is custom enough and hopefully will give you more ideas on how you can break free from languages constriction when you write…your own language!&lt;/p&gt;
+&lt;p&gt;In the quest for data-driven rendering, the next step will be to use the knowledge from code generation to create a &lt;em&gt;shader effect language&lt;/em&gt;, that can generate both CPU and GPU code for you.&lt;/p&gt;
+&lt;p&gt;This article is the longest and more code-heavy I have ever written. There are many concepts that I am beginning to be familiar with, but still not so used to.&lt;/p&gt;
+&lt;p&gt;So please comment, give feedback, share!
+Thank you for reading!&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Flatbuffers, Reflection and Data-Driven Rendering</title>
+      <link>https://jorenjoestar.github.io/post/flatbuffers_reflection_data_driven_rendering/</link>
+      <pubDate>Fri, 26 Jul 2019 07:37:26 -0400</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/flatbuffers_reflection_data_driven_rendering/</guid>
+      <description>
+
+
+
+
+
+&lt;figure&gt;
+
+  &lt;a data-fancybox=&#34;&#34; href=&#34;front.png&#34; &gt;
+
+&lt;img src=&#34;front.png&#34; &gt;
+&lt;/a&gt;
+
+
+&lt;figcaption data-pre=&#34;Figure &#34; data-post=&#34;:&#34; &gt;
+  &lt;h4&gt;Auto generated UI from Flatbuffers files.&lt;/h4&gt;
+  
+&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+
+&lt;h1 id=&#34;motivation&#34;&gt;Motivation&lt;/h1&gt;
+&lt;p&gt;Finding a good balance between code and data in Rendering.&lt;!-- raw HTML omitted --&gt;
+What is the necessary code that should be written ?&lt;!-- raw HTML omitted --&gt;
+Why ?&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;In rendering many areas can be described in a fast and robust way using data.&lt;!-- raw HTML omitted --&gt;
+A &lt;em&gt;pipeline (in D3D12/Vulkan lingo)&lt;/em&gt; for example is a collection of different states: &lt;em&gt;depth stencil, alpha blend, rasterizer, shaders&lt;/em&gt;, etc.&lt;!-- raw HTML omitted --&gt;
+All those state can be &lt;em&gt;hard-coded&lt;/em&gt; or defined in &lt;em&gt;data&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+Moving them to data can help with the visibility of them, that instead of being buried somewhere into the code can be retrieved before even running the application.&lt;/p&gt;
+&lt;p&gt;As a bigger-scope example, a &lt;em&gt;frame-graph&lt;/em&gt; can be implicitly defined inside the code, if different areas, or in data.&lt;!-- raw HTML omitted --&gt;
+Recent posts about it started raising attention to the problem, especially after the introduction of lower-level APIs like D3D12 and Vulkan and their resource barriers.&lt;!-- raw HTML omitted --&gt;
+I’ve personally used something like &lt;em&gt;json&lt;/em&gt; (xml back in the day) since 2009, after asking myself the very silly question:&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;what is the biggest dependency in rendering?&lt;!-- raw HTML omitted --&gt;Render Targets!&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Since then I saw only in the Codemasters postprocess system (since Dirt 2) a similar approach, and have never being able to advocate towards it.&lt;!-- raw HTML omitted --&gt;
+The only full use case I have is my personal indie game (a full deferred rendering pipeline with many different rendering needs) all defined in a json file (render_pipeline.json).&lt;!-- raw HTML omitted --&gt;
+Anyway, a couple of examples of this data-driven mentality can be found here:&lt;/p&gt;
+&lt;!-- raw HTML omitted --&gt;
+&lt;p&gt;&lt;a href=&#34;http://bitsquid.blogspot.com/2017/03/stingray-renderer-walkthrough-7-data.html&#34;&gt;http://bitsquid.blogspot.com/2017/03/stingray-renderer-walkthrough-7-data.html&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;I chose to see what is a good way of &lt;em&gt;describing low-level rendering resources, the bricks towards data-driven rendering&lt;/em&gt;.&lt;!-- raw HTML omitted --&gt;
+I’ve already tried defining them in a json file, but wanted something more direct — something I can copy easily with minimal parsing.&lt;/p&gt;
+&lt;p&gt;I found 4 possible approaches:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Custom data language&lt;/li&gt;
+&lt;li&gt;Already existing data language&lt;/li&gt;
+&lt;li&gt;Json (already used)&lt;/li&gt;
+&lt;li&gt;Hard-coding everything&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;In this experiment I’ve chosen &lt;strong&gt;Flatbuffers&lt;/strong&gt; for the easy of use, the good performances and the feature set that seems complete.&lt;!-- raw HTML omitted --&gt;
+As an exercise, I wanted to create some UI based on the data coming from Flatbuffers without having to write too much code.&lt;/p&gt;
+&lt;h1 id=&#34;flatbuffers&#34;&gt;Flatbuffers&lt;/h1&gt;
+&lt;p&gt;Flatbuffers is a serialization library developer by Google used by many companies.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://google.github.io/flatbuffers/&#34;&gt;https://google.github.io/flatbuffers/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Compared to &lt;strong&gt;Protocol Buffers&lt;/strong&gt; (still developed by Google) it tries to go towards a very simple parsing/unpacking (actually ABSENT in Flatbuffers, so much faster to read/write) and serialization speed.&lt;/p&gt;
+&lt;p&gt;Flatbuffers is mainly a compiler that accepts .fbs (FlatBuffers Schema) files and can generate code for serialization purposes.&lt;/p&gt;
+&lt;p&gt;The advantage is that it automatically generates the parsing files in the language you prefer (C++, Java, C#, Go, C, Lua, Javascript, Rust) without you needing to write the always tedious serialize/deserialize methods.&lt;/p&gt;
+&lt;p&gt;It is largely based on either simple c-structs or tables with offsets for more complex object.&lt;/p&gt;
+&lt;p&gt;The objective here will be to create a schema file, define a couple of resources (like textures) and use those to automatically generate UI.&lt;!-- raw HTML omitted --&gt;
+I will be using the SDL + ImGUI sample from the amazing ImGUI as a base.&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+&lt;p&gt;The flow will be the following:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Write schema files&lt;/li&gt;
+&lt;li&gt;Generate reflection informations&lt;/li&gt;
+&lt;li&gt;Parse schemas&lt;/li&gt;
+&lt;li&gt;Generate UI&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;schema-files&#34;&gt;Schema Files&lt;/h1&gt;
+&lt;p&gt;Let’s write our first schema file.
+A bigger version (that I am using for my low-level renderer) is included in the &lt;a href=&#34;https://github.com/JorenJoestar/FlatbuffersReflection&#34;&gt;github&lt;/a&gt; repository.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;namespace rendering;
+
+enum TextureFormat : ushort { UNKNOWN, R32G32B32A32_TYPELESS, R32G32B32A32_FLOAT, R32G32B32A32_UINT, R32G32B32A32_SINT, R32G32B32_TYPELESS, R32G32B32_FLOAT, R32G32B32_UINT, R32G32B32_SINT, R16G16B16A16_TYPELESS, R16G16B16A16_FLOAT, R16G16B16A16_UNORM, R16G16B16A16_UINT, R16G16B16A16_SNORM, R16G16B16A16_SINT, R32G32_TYPELESS, R32G32_FLOAT, R32G32_UINT, R32G32_SINT, R10G10B10A2_TYPELESS, R10G10B10A2_UNORM, R10G10B10A2_UINT, R11G11B10_FLOAT, R8G8B8A8_TYPELESS, R8G8B8A8_UNORM, R8G8B8A8_UNORM_SRGB, R8G8B8A8_UINT, R8G8B8A8_SNORM, R8G8B8A8_SINT, R16G16_TYPELESS, R16G16_FLOAT, R16G16_UNORM, R16G16_UINT, R16G16_SNORM, R16G16_SINT, R32_TYPELESS, R32_FLOAT, R32_UINT, R32_SINT, R8G8_TYPELESS, R8G8_UNORM, R8G8_UINT, R8G8_SNORM, R8G8_SINT, R16_TYPELESS, R16_FLOAT, R16_UNORM, R16_UINT, R16_SNORM, R16_SINT, R8_TYPELESS, R8_UNORM, R8_UINT, R8_SNORM, R8_SINT, R9G9B9E5_SHAREDEXP, D32_FLOAT_S8X24_UINT, D32_FLOAT, D24_UNORM_S8_UINT, D24_UNORM_X8_UINT, D16_UNORM, S8_UINT, BC1_TYPELESS, BC1_UNORM, BC1_UNORM_SRGB, BC2_TYPELESS, BC2_UNORM, BC2_UNORM_SRGB, BC3_TYPELESS, BC3_UNORM, BC3_UNORM_SRGB, BC4_TYPELESS, BC4_UNORM, BC4_SNORM, BC5_TYPELESS, BC5_UNORM, BC5_SNORM, B5G6R5_UNORM, B5G5R5A1_UNORM, B8G8R8A8_UNORM, B8G8R8X8_UNORM, R10G10B10_XR_BIAS_A2_UNORM, B8G8R8A8_TYPELESS, B8G8R8A8_UNORM_SRGB, B8G8R8X8_TYPELESS, B8G8R8X8_UNORM_SRGB, BC6H_TYPELESS, BC6H_UF16, BC6H_SF16, BC7_TYPELESS, BC7_UNORM, BC7_UNORM_SRGB, FORCE_UINT }
+
+attribute &amp;quot;ui&amp;quot;;
+
+struct RenderTarget {
+    width                   : ushort (ui: &amp;quot;min:1, max:16384&amp;quot;);
+    height                  : ushort;
+    scale_x                 : float;
+    scale_y                 : float;
+    format                  : TextureFormat;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;There are few things here to discuss.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Enums. Flatbuffers can generate enums with string version of each values and conversions between enum and string.&lt;/li&gt;
+&lt;li&gt;Struct. It is exactly like C/C++: a simple struct that can be memcopied. Different than a Table (that can point to other structs and Tables).&lt;/li&gt;
+&lt;li&gt;Attributes. This can be used to define custom parsable attributes linked to a member of a struct/table. They can be used, for example, to drive the UI generation.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1 id=&#34;generating-reflection-informations&#34;&gt;Generating Reflection Informations&lt;/h1&gt;
+&lt;p&gt;After we generated the schema file, we can serialize it and load/save it from disk.
+But we need reflection data to be able to automatically generate the UI we need!
+There are two main reflection mechanisms in Flatbuffers: mini-reflection and full-reflection.
+We will use both to generate a UI using ImGUI and see the differences.&lt;/p&gt;
+&lt;h2 id=&#34;mini-reflection&#34;&gt;Mini-Reflection&lt;/h2&gt;
+&lt;p&gt;This is the simplest of the two and works by generating an additional header file for each .fbs file we use.
+The command line is the following:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;flatc --cpp RenderDefinitions.fbs --reflect-names
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This will generate the &lt;em&gt;RenderDefinitions_Generated.h&lt;/em&gt; file that must be included in your application and has the downside of needing you to recompile every time you change the data.&lt;/p&gt;
+&lt;p&gt;Also, and this is the biggest downside, I could not find any way to parse custom per-member attributes.&lt;/p&gt;
+&lt;p&gt;I hope I am wrong, but could not find any documentation on the topic: everything seems to point towards the full reflection mechanism.&lt;/p&gt;
+&lt;p&gt;So why bothering with the &lt;strong&gt;mini-reflection&lt;/strong&gt; ?&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Mini-reflection&lt;/strong&gt; generates code, and this became useful for one of the most tedious C/C++ code to write: &lt;strong&gt;enums&lt;/strong&gt;!&lt;/p&gt;
+&lt;p&gt;I can’t count how many times I wrote an enum, I wanted the string with the same value for it (for example to read from a json file and get the proper enum value) and every time an enum is changed is painful.&lt;/p&gt;
+&lt;p&gt;So a lesson from the mini-reflection is to have a code-generator for enums for C/C++, and I will show an example soon in another article.&lt;/p&gt;
+&lt;p&gt;Back to the enums, Flatbuffers generates:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Enum&lt;/li&gt;
+&lt;li&gt;Name array&lt;/li&gt;
+&lt;li&gt;Value array&lt;/li&gt;
+&lt;li&gt;Enum to name method&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;A nice property of the generated code for the enum is that it is easy to copy-paste in any c++ file — no Flatbuffers involved!&lt;/p&gt;
+&lt;p&gt;This is my first choice now when I want to write an enum in any c++ application.&lt;/p&gt;
+&lt;h2 id=&#34;full-reflection&#34;&gt;Full-reflection&lt;/h2&gt;
+&lt;p&gt;This is the most used (or at least documented) form of reflection in Flatbuffers.&lt;/p&gt;
+&lt;p&gt;It use a very elegant solution, totally data-driven: &lt;em&gt;it reads a reflection schema file that can parse…ANY other schema&lt;/em&gt;!&lt;/p&gt;
+&lt;p&gt;This very Inception-esque mechanism gives the full access to all the types, including Attributes.&lt;/p&gt;
+&lt;p&gt;By executing this command:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;flatc.exe -b --schema reflection.fbs RenderDefinitions.fbs
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;the RenderDefinitions.bfbs (binary fbs) file is generated.&lt;/p&gt;
+&lt;p&gt;This is the file that needs to be read to fully reflect the types inside the .fbs file.
+The order of operations is the following:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Generate a binary fbs with flatc (with the command line shown)&lt;/li&gt;
+&lt;li&gt;Load the bfbs file generated&lt;/li&gt;
+&lt;li&gt;Load the schema from the bfbs&lt;/li&gt;
+&lt;li&gt;Reflect&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The fbfs file contains all the informations from the schema: types, enums, attributes.&lt;/p&gt;
+&lt;h1 id=&#34;parsing-schemas-and-generating-ui&#34;&gt;Parsing schemas and Generating UI&lt;/h1&gt;
+&lt;p&gt;For both reflection mechanisms the objective is the same: given a type (RenderTarget) generate an editor that can edit properties and potentially load/save them.&lt;/p&gt;
+&lt;h2 id=&#34;mini-reflection-1&#34;&gt;Mini-Reflection&lt;/h2&gt;
+&lt;p&gt;The UI generation is pretty straightforward with mini-reflection.&lt;/p&gt;
+&lt;p&gt;Each type defined in the .fbs file contains a type_name-TypeTable() method that gives accent to a TypeTable.&lt;/p&gt;
+&lt;p&gt;This contains a list of per-member type, name and default values.&lt;/p&gt;
+&lt;p&gt;What is really missing here is the attributes, that could be used to generate custom UI in a more specific way (eg. adding a min/max/step to a slider).&lt;/p&gt;
+&lt;p&gt;The code doing this is in the github sample.&lt;/p&gt;
+&lt;p&gt;There are few interesting points here.&lt;/p&gt;
+&lt;h3 id=&#34;imgui-usability&#34;&gt;ImGui usability&lt;/h3&gt;
+&lt;p&gt;In order to use ImGui to modify a struct, I had to create the class FlatBuffersReflectionTable to instantiate a struct with a similar layout than the Flatbuffers struct.&lt;/p&gt;
+&lt;p&gt;This is annoying but I could not find a way around different than this.&lt;/p&gt;
+&lt;p&gt;With this in-place, a ImGUI slider can point to a memory area that can be used to save/load the data.
+Let’s begin by retrieving the TypeTable:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;const TypeTable* rt_table = rendering::RenderTargetTypeTable();
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The TypeTable is what is included in the generated header and contains the reflection informations.
+Listing the members and their type is pretty straight-forward:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;for ( uint32_t i = 0; i &amp;lt; type_table.num_elems; ++i ) {
+    const flatbuffers::TypeCode&amp;amp; type_code = type_table.type_codes[i];
+    ImGui::Text( &amp;quot;%s: %s&amp;quot;, type_table.names[i], flatbuffers::ElementaryTypeNames()[type_code.base_type] );
+    sprintf_s( s_string_buffer, 128, &amp;quot;%s&amp;quot;, type_table.names[i] );
+    
+    if ( type_code.sequence_ref == 0 ) {
+        if ( type_table.type_refs[type_code.sequence_ref] ) {
+            const flatbuffers::TypeTable* enum_type = type_table.type_refs[type_code.sequence_ref]();
+             ImGui::Combo( s_string_buffer, (int32_t*)reflection_table.GetData( i ), enum_type-&amp;gt;names, enum_type-&amp;gt;num_elems );
+        }
+    }
+    else {
+        switch ( type_code.base_type ) {
+             case flatbuffers::ET_BOOL:
+            {
+                ImGui::Checkbox( s_string_buffer, (bool*)reflection_table.GetData( i ) );
+                break;
+            }
+         }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The interesting parts:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;flatbuffers::TypeCode&lt;/strong&gt;* contains the reflection information for a type.&lt;/p&gt;
+&lt;p&gt;Given a &lt;strong&gt;type_code&lt;/strong&gt;, &lt;strong&gt;sequence_ref&lt;/strong&gt; can be used to check if it is an enum, pointer, or primitive type. In this case is used for enum, showing a combo with all the selectable values.&lt;/p&gt;
+&lt;p&gt;Base_type contains instead the primitive type. In this example a bool can be mapped to a checkbox. This uses the custom reflection_table class to have a memory area for ImGUI.&lt;/p&gt;
+&lt;p&gt;For mini-reflection this is basically it.&lt;/p&gt;
+&lt;h2 id=&#34;full-reflection-1&#34;&gt;Full-reflection&lt;/h2&gt;
+&lt;p&gt;Code here is longer but it follows the 4 steps highlighted before.&lt;/p&gt;
+&lt;p&gt;All the code is inside the ReflectUIFull method.&lt;/p&gt;
+&lt;p&gt;Here the binary fbs file and its corresponding schema are loaded.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 1. Obtain the schema from the binary fbs generated
+std::string bfbsfile;    
+flatbuffers::LoadFile(&amp;quot;..\\data\\RenderDefinitions.bfbs&amp;quot;, true, &amp;amp;bfbsfile );     
+const reflection::Schema&amp;amp; schema = *reflection::GetSchema( bfbsfile.c_str() );
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The schema can be used to list the types:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;// 2. List all the types present in the fbs.    
+auto types = schema.objects();    
+for ( size_t i = 0; i &amp;lt; types-&amp;gt;Length(); i++ ) {        
+   const reflection::Object* type = types-&amp;gt;Get( i );
+   ImGui::Text( &amp;quot;    %s&amp;quot;, type-&amp;gt;name()-&amp;gt;c_str() );    
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;(Using the auto here because I am lazy. The type is some multiple templates of offsets…)
+We can also list all the enums:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;auto enums = schema.enums();    
+for ( size_t i = 0; i &amp;lt; enums-&amp;gt;Length(); i++ ) {        
+    const reflection::Enum* enum_ = enums-&amp;gt;Get( i );
+    ImGui::Text( &amp;quot;    %s&amp;quot;, enum_-&amp;gt;name()-&amp;gt;c_str() );    
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A problem I found (with a workaround in the code) is that enums do not have an easily to access array of string values.&lt;/p&gt;
+&lt;p&gt;So I generated one for the sake of example, but I am far from happy with the solution!&lt;/p&gt;
+&lt;p&gt;Going forward, we can get the type we want to reflect (notice the full namespace.type):&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;auto render_target_type = types-&amp;gt;LookupByKey( &amp;quot;rendering.RenderTarget&amp;quot; );
+and begin the work on each field:
+auto fields = render_target_type-&amp;gt;fields();    
+if ( fields ) {
+    // 5.1. List all the fields        
+    for ( size_t i = 0; i &amp;lt; fields-&amp;gt;Length(); i++ ) {
+            auto field = fields-&amp;gt;Get( i );
+            ...
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;and the UI can be generated.&lt;/p&gt;
+&lt;p&gt;For each field, the primitive type can be accessed with the following:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;reflection::BaseType field_base_type = field-&amp;gt;type()-&amp;gt;base_type();
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;and again, I found a workaround to know if a type is primitive or an enum.&lt;/p&gt;
+&lt;p&gt;Last piece of the puzzle: attributes!&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;auto field_attributes = field-&amp;gt;attributes();
+if ( field_attributes ) {
+    auto ui = field_attributes-&amp;gt;LookupByKey( &amp;quot;ui&amp;quot; );
+    if ( ui ) {
+      ImGui::Text(&amp;quot;UI attribute: %s&amp;quot;, ui-&amp;gt;value()-&amp;gt;c_str());
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;These can be parsed as strings and can be used to drive UI code (like a slider with min, max and steps).&lt;/p&gt;
+&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+&lt;p&gt;In the end, I’ve managed to generate UI based on a type without too much code.&lt;/p&gt;
+&lt;p&gt;There was some reverse-engineering to do because I could not find proper documentation (I possibly miss some links to a in-depth example of reflection!) but nothing major.&lt;/p&gt;
+&lt;p&gt;The full source code:&lt;/p&gt;
+&lt;p&gt;(&lt;a href=&#34;https://github.com/JorenJoestar/FlatbuffersReflection&#34;&gt;https://github.com/JorenJoestar/FlatbuffersReflection&lt;/a&gt;)&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

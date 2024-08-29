@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>vulkan on Gabriel&#39;s Virtual Tavern</title>
+    <link>https://jorenjoestar.github.io/tags/vulkan/</link>
+    <description>Recent content in vulkan on Gabriel&#39;s Virtual Tavern</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 07 Feb 2023 15:46:28 +0100</lastBuildDate>
+    
+	    <atom:link href="https://jorenjoestar.github.io/tags/vulkan/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>The Year of the Vulkan Book</title>
+      <link>https://jorenjoestar.github.io/post/year_of_the_vulkan_book/</link>
+      <pubDate>Tue, 07 Feb 2023 15:46:28 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/year_of_the_vulkan_book/</guid>
+      <description>&lt;p&gt;Hello everyone! How have you been ?&lt;br&gt;
+A little more than a year has passed since my last post, but for a good reason!&lt;br&gt;
+Last year was all dedicated to writing this book, &lt;strong&gt;Mastering Graphics Programming with Vulkan&lt;/strong&gt;, available in different countries on Amazon &lt;a href=&#34;https://www.amazon.com/Mastering-Graphics-Programming-Vulkan-state/dp/1803244798&#34;&gt;US&lt;/a&gt;,&lt;a href=&#34;https://www.amazon.co.uk/Mastering-Graphics-Programming-Vulkan-state/dp/1803244798&#34;&gt;UK&lt;/a&gt;,&lt;a href=&#34;https://www.amazon.in/Mastering-Graphics-Programming-Vulkan-state/dp/1803244798&#34;&gt;India&lt;/a&gt;,&lt;a href=&#34;https://www.amazon.it/Mastering-Graphics-Programming-Vulkan-state/dp/1803244798&#34;&gt;Italy&lt;/a&gt; and many more, with &lt;a href=&#34;https://twitter.com/marco_castorina&#34;&gt;Marco Castorina&lt;/a&gt;.&lt;br&gt;
+All my coding free time went into the writing of this book with him, and this post is a little recap of what happened behind the scenes and my experience of writing a book for the first time!&lt;/p&gt;
+&lt;h1 id=&#34;how-it-started&#34;&gt;How it started&lt;/h1&gt;
+&lt;p&gt;It all started thanks to this blog!&lt;br&gt;
+At the end of 2021 Marco wrote to me if I was interested to collaborate, in any form we would agree, on writing a book about Vulkan.&lt;br&gt;
+Thanks to the articles I wrote here and the code on Github he wanted to know if I could help.&lt;br&gt;
+We jumped on a Skype call and talked: since the beginning there was a good feeling talking to him. My gut instict was right!&lt;br&gt;
+He asked me in which way I wanted to help him, including being a co-author&amp;hellip;and me being me, I thought &amp;ldquo;I&amp;rsquo;ve never wrote a book, this could be an amazing experience!&amp;rdquo;.&lt;br&gt;
+So we agreed that we will write the book together, and from there he introduced me to the team at Packt and we started discussing about the topics.&lt;br&gt;
+One thing we really wanted to do is to dedicate time learning topics that we did not have time to study, and that was a huge risk but also a great reward.&lt;/p&gt;
+&lt;p&gt;After some talking with Packt, we agreed on a 9 months writing time: a tight schedule, but we felt we could make it working together with Marco.&lt;br&gt;
+We succedeed, albeit not to the level we wanted, but it was a huge learning experience for both of us (I am pretty sure is the same for Marco).&lt;br&gt;
+In this case I measure success as a combination of effort, learning new things, delivering and enjoyment of the process.&lt;br&gt;
+As you will see later on in this post, this book is far from perfect and make me question a better way of delivering the rendering knowledge we wanted to share.&lt;/p&gt;
+&lt;h2 id=&#34;the-purpose-of-the-book&#34;&gt;The purpose of the book&lt;/h2&gt;
+&lt;p&gt;Since the beginning we had clear in mind that we needed to show how to use Vulkan in a real, modern and AAA rendering context.&lt;br&gt;
+Both Marco and me work in the industry, and we decided to try to create a package that included the latest rendering tech that you would find in a AAA renderer.
+We knew we could not possibly deliver a bulletproof technology written in few months writing code after work, but at least we could give some pointers to what is used right now.&lt;br&gt;
+We also wanted to demistify Vulkan and show it in a practical full-blown demo. In this sense, after reading some reviews, I think we did not hit the mark - many complains are that we used a reincarnation of the Hydra engine, stripped down to accomodate a Vulkan only mindset.&lt;br&gt;
+We will talk about that later.&lt;/p&gt;
+&lt;p&gt;At the end, if I can simplify everything in one phrase, it would be:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Demistification of Vulkan as an API and its application to modern rendering techniques&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;choosing-the-topics&#34;&gt;Choosing the topics&lt;/h2&gt;
+&lt;p&gt;This was actually a very fun part!&lt;br&gt;
+Both me and Marco wanted to explore and write some techniques from scratch.&lt;br&gt;
+We started with asking ourselves which techniques a modern rendering engine supports, based on our work knowledge, and started jotting down those.&lt;br&gt;
+There also some techniques that we singularly never did, and we tried to do what we would have most fun doing.&lt;/p&gt;
+&lt;p&gt;This is a simple list:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Pure bindless mode&lt;/li&gt;
+&lt;li&gt;Frame graph based&lt;/li&gt;
+&lt;li&gt;Clustered Deferred Rendering&lt;/li&gt;
+&lt;li&gt;Point lights with cubemap shadows&lt;/li&gt;
+&lt;li&gt;Mesh shaders&lt;/li&gt;
+&lt;li&gt;GPU driven rendering&lt;/li&gt;
+&lt;li&gt;Temporal Anti-Aliasing&lt;/li&gt;
+&lt;li&gt;Volumetric Fog&lt;/li&gt;
+&lt;li&gt;Raytracing: shadows&lt;/li&gt;
+&lt;li&gt;Global Illumination&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;With this list we started writing collecting links to the various topics before the next big decision&amp;hellip;where do we start from a code pespective ?&lt;/p&gt;
+&lt;h2 id=&#34;choosing-an-engine&#34;&gt;Choosing an engine&lt;/h2&gt;
+&lt;p&gt;We always knew we wanted to use the thinnest layer on top of Vulkan.&lt;br&gt;
+We explored various libraries, but something was clear: we need to learn how to use those libraries as well, and that would mean some time.&lt;br&gt;
+After some thoughts&amp;hellip;we chose to take Hydra, my own creature ehm engine, and cleanup some code, make the API Vulkan only and use that.&lt;br&gt;
+Hydra is the foundation for the code of all the articles on this blog, and already the only backend working was Vulkan.&lt;br&gt;
+Some could argue that this is not the best choice, but actually we have two advantages: first, having written it from scratch I knew every nook and crannies of the code; second it has a lot of boilerplate code for Vulkan and for other simple but useful subsystems (cameras, input, &amp;hellip;).&lt;br&gt;
+Another choice we made was to go fully Vulkan based: GLSL was the default choice for writing shaders, using JSON files to create a smaller Techniques/FX framework, and even better&amp;hellip;parsing SpirV to take informations about the pipeline!&lt;br&gt;
+Marco came out with this idea, and I really liked it.&lt;br&gt;
+Between all the different skills he has, he is great in reading the Vulkan specifications and use them.&lt;br&gt;
+And with these choices&amp;hellip;all was set to begin!&lt;/p&gt;
+&lt;h2 id=&#34;how-to-structure-the-code&#34;&gt;How to structure the code?&lt;/h2&gt;
+&lt;p&gt;This was another big decision to make.&lt;br&gt;
+We thought a lot about it: we wanted a way to freeze the code in time for each chapter, but we didn&amp;rsquo;t want to rely on github history to do that.&lt;br&gt;
+The natural evolution of this thought is to create the code for each chapter in a separate folder.&lt;br&gt;
+So we separated the code in the common code area, where code between different chapters is shared, and the rendering code went into each chapter.&lt;br&gt;
+This included both shaders and the core rendering code. 
+The current structure of code is something like:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;source&lt;/strong&gt;&lt;br&gt;
+__&lt;strong&gt;chapter1&lt;/strong&gt;&lt;br&gt;
+____&lt;strong&gt;graphics&lt;/strong&gt;&lt;br&gt;
+__&lt;strong&gt;raptor&lt;/strong&gt;&lt;br&gt;
+____&lt;strong&gt;application&lt;/strong&gt;&lt;br&gt;
+____&lt;strong&gt;foundation&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The main raptor folder contains foundation and application subfolders: &lt;strong&gt;application&lt;/strong&gt; is contains a high level wrapper for window, input and application so that it is easier to fire a working application, while &lt;strong&gt;foundation&lt;/strong&gt; the main data structures (array and hash map) and some utility functions/subsystems (like file management, string buffers, time queries, memory management, logging, gltf parsing, camera&amp;hellip;).&lt;br&gt;
+All the code in these folders is shared between chapters, so we duplicate and evolve only the rendering part, as it is the main focus of the book.&lt;/p&gt;
+&lt;p&gt;Was it perfect ?&lt;br&gt;
+Absolutely not.&lt;br&gt;
+Was it painful ?&lt;br&gt;
+Yes, a little.
+Could we do better ?
+Absolutely yes!&lt;/p&gt;
+&lt;p&gt;There are many problems with these choices, but at the end it worked for us: for every chapter you have a snapshot of the rendering code, while everthing else that is not rendering related is unchanged, and should actually not be the focus.&lt;br&gt;
+There are some big downsides: for example every time we would add something to a chapter, we would need to port the code to the following chapters. Fixing a bug in chapter 4 meant porting it up to the 15th chapter!&lt;/p&gt;
+&lt;p&gt;Same is happening now that the code is in the wild: when we receive a bugfix, we need to port it to all subsequent chapters.&lt;br&gt;
+Again not the best choice, but the best with our knowledge at the time we started.&lt;/p&gt;
+&lt;h2 id=&#34;the-awesomeness-of-having-a-publisher&#34;&gt;The awesomeness of having a publisher&lt;/h2&gt;
+&lt;p&gt;I&amp;rsquo;ve never worked with a publisher, but working with Packt was a great experience.&lt;br&gt;
+They gave us the power to concentrate only on writing the book and the code, without worrying about anything else.&lt;br&gt;
+Printing, delivering, organizing, they really took care of us.&lt;/p&gt;
+&lt;p&gt;When we thought we were late, or we needed more time, they listened as well.&lt;br&gt;
+They also knew that the time to write a book was crucial, as this book covers a missing piece of information.&lt;/p&gt;
+&lt;p&gt;Every feedback on both sides was thoughtful and well received, so it was a great experience.&lt;/p&gt;
+&lt;p&gt;Thank you to all the team behind Packt, we managed to have a deep focus on working on our side of things and only on that.&lt;br&gt;
+That was great to experience!&lt;/p&gt;
+&lt;h1 id=&#34;lessons&#34;&gt;Lessons&lt;/h1&gt;
+&lt;p&gt;This whole journey has been powerful and helped me navigating some personal difficult times as well.&lt;/p&gt;
+&lt;h2 id=&#34;the-power-of-deadlines&#34;&gt;The power of deadlines&lt;/h2&gt;
+&lt;p&gt;Personally I love to have projects in my free time, because I can explore what I want, even if just redoing the same thing just in a completely different way.&lt;br&gt;
+Problem is that not having a fixed objective can make me feel lost sometimes, same for not having any timeline.&lt;br&gt;
+Articles in this blog helped that, but the book is the ultimate example!&lt;/p&gt;
+&lt;p&gt;Deadlines gives you that huge lesson:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Do the best that you can, with the resources you can.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Resources include both knowledge and time.&lt;br&gt;
+In the realm of knowledge I include not only technical knowledge, but also personal knowledge.&lt;/p&gt;
+&lt;h2 id=&#34;the-problems-of-deadlines&#34;&gt;The problems of deadlines&lt;/h2&gt;
+&lt;p&gt;Deadlines have also an uncomfortable side with it.&lt;br&gt;
+We did not manage to put everything we wanted into the code, for example shader reloading, code generation, local tonemapping, and many many more.&lt;br&gt;
+Deadlines really push you to think about what you can and cannot achieve given the time.&lt;br&gt;
+And many times you over or underestimate the time, and have to change priorities.&lt;br&gt;
+This is one of the biggest problems with game development, as there are many unknowns unknowns.&lt;/p&gt;
+&lt;p&gt;Still, you need to deliver, thus you can&amp;rsquo;t loose too much time thinking and writing code in the best way possible.&lt;br&gt;
+You deliver, and this is important.&lt;/p&gt;
+&lt;p&gt;Also, the time we put on this book was our free time, after a day of work, or in the weekend, so possibly at times you had to figure out things with very low energies.&lt;/p&gt;
+&lt;p&gt;For every piece of code we were writing, this was the question:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Is this that I am doing really necessary given the time I have ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;know-thyself&#34;&gt;Know thyself&lt;/h2&gt;
+&lt;p&gt;Another great lesson is that before writing a book, there is one &amp;lsquo;persona&amp;rsquo; - Gabriel - that is writing the book.&lt;br&gt;
+Do you listen to yourself ? To your needs ? Are you ready to know Gabriel with a new perspective, as the writer of a book ?&lt;/p&gt;
+&lt;p&gt;These can seem like crazy questions, but our identity changes a bit depending on the context.&lt;br&gt;
+Who do you think you are when writing a book ?&lt;br&gt;
+Are you overconfident ? Underconfident (not sure this word exists) ?&lt;br&gt;
+Are you ready to change your mindset on a technical topic ?&lt;br&gt;
+Are you ready to do something wrong and being called out for that ?&lt;/p&gt;
+&lt;p&gt;I think one of our superpowers is the possibility to change perspective based on experience.&lt;br&gt;
+Even if it is painful: seeing that you don&amp;rsquo;t know enough about a topic that you should know, after all this year of rendering, can be painful.&lt;br&gt;
+As candid as I can be, there are still many topics that I don&amp;rsquo;t know deeply, nor I understand fully.&lt;br&gt;
+That is what I love about rendering: is such a huge topic, that really puts your ego in check.&lt;br&gt;
+I will always know less than a year before, where multiple people are researching and advancing the knowledge.&lt;br&gt;
+But still, I can help crafting amazing games and rendering tech!&lt;/p&gt;
+&lt;p&gt;Again, the relationship with our reality is what matters.&lt;/p&gt;
+&lt;p&gt;This is one of the biggest lessons about writing this book: the combination of effort, changing perspective and mindset is the real win.&lt;br&gt;
+And on that topic, I have no regrets: we acted at our best given the constraints.&lt;br&gt;
+But we can do better!&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Are you ready to change perspective in front of new inputs ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;technical-knowledge&#34;&gt;Technical knowledge&lt;/h2&gt;
+&lt;p&gt;After a digression about the human side of things (I would talk about that for hours&amp;hellip;) let&amp;rsquo;s get back to the technical knowledge.&lt;br&gt;
+What I&amp;rsquo;ve learnt is that&amp;hellip;I did not know many new topics, only read about it, and by actually doing them I have a better understanding.&lt;br&gt;
+Ultimate understanding ?&lt;br&gt;
+Not even close!&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;For me, re-writing or re-implementing a technique makes me understand it.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;I found over and over that reading a paper or some code does not work much for me.&lt;br&gt;
+I can have an idea about something, but re-doing is what makes me create my mental model of it.&lt;br&gt;
+Some have the power to learn by just reading or hearing, not me.&lt;br&gt;
+That is why I am also active in my free time: real knowledge comes from models arising from experience.&lt;/p&gt;
+&lt;h2 id=&#34;the-thinnest-vulkan-layer-possible&#34;&gt;The thinnest Vulkan layer possible&lt;/h2&gt;
+&lt;p&gt;This is a post-launch thought, and one of the most common critiques I&amp;rsquo;ve read around about the book.&lt;br&gt;
+Many did not like the usage of Hydra/Raptor, and complained that this was too much of a &amp;lsquo;Raptor manual&amp;rsquo; instead of a pure Vulkan book.&lt;/p&gt;
+&lt;p&gt;Could have we written a thinner layer ?&lt;br&gt;
+I think we could have done it, and it would be an interesting challenge for the future.&lt;br&gt;
+I still stand with our choice, as I think the abstraction we provided is so thin that does not change the API understanding, but actually elevates it to a more common &amp;lsquo;next generation APIs&amp;rsquo; mindset and knowledge that will help on using Vulkan, DirectX12, consoles API and such.&lt;br&gt;
+Still I get it: this is a Vulkan book, so you should focus on Vulkan only!&lt;br&gt;
+Maybe is the fact that, even though I&amp;rsquo;ve used (and written from scratch) Vulkan renderers in the past, I can&amp;rsquo;t help but seeing a pattern in the all APIs.&lt;/p&gt;
+&lt;p&gt;At the end rendering is a combination of big concepts, that are present in both Vulkan and DirectX12, like Images, Buffers, Pipelines, Swapchains, Command Buffers and such.&lt;br&gt;
+Once you master these concepts, you can use those on any API.&lt;br&gt;
+Yet with Raptor the usage is a slightly higher level compared to simple Vulkan, but I really feel still now that helps visualizing what is happening even better.&lt;/p&gt;
+&lt;p&gt;I get that some areas, like descriptor sets and pipeline management can be too Raptory, but still it would have been a problem to fix anyway, even with simple Vulkan: this bookeeping is that you don&amp;rsquo;t find many times in tutorials around, but what gives you the power to develop complex techniques without writing a ton of work.&lt;/p&gt;
+&lt;p&gt;I am (slowly) in the active process of trying to strip even more layering to have a simpler Vulkan, so I am happy about this critique.&lt;br&gt;
+I will learn something new, and maybe next edition, if will ever exists, will be an even more barebone Vulkan code.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Is there a way to write organized Vulkan code that is evern more straight-forward ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;the-joy-of-exploration&#34;&gt;The joy of exploration&lt;/h2&gt;
+&lt;p&gt;When writing the book, for each chapter we first wrote the code to be working to a good level, then we would write the corresponding chapter and fix/improve the code after.&lt;br&gt;
+This was an interesting way of working, really focused on having something measurable and usable before writing any sentence about a chapter.&lt;br&gt;
+With Marco we decided to put a lot of current topics, like Raytracing, Temporal Anti-Aliasing, Bindless, Mesh shaders and such, so that we could have a go at implementing them all together.&lt;br&gt;
+There are better implementations out there, but I think we delivered a solid demo in the final chapter, that showcases all those together in harmony.&lt;br&gt;
+During the development, I would ask myself multiple times:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Are you enjoying the exploration ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Often times when navigating uncharted territories, we are stressed out about it. And I was many times, but this question really helped me not reaching the breaking point.&lt;br&gt;
+I still need to enjoy the process, otherwise what is the point of it ?&lt;br&gt;
+It was not always possible, and sometimes you have to grind through it, but still it was great.&lt;br&gt;
+Having Marco as an ally, and a friend, helped a lot.&lt;br&gt;
+When any of the two was stuck, or tired, the other would come in and help.&lt;br&gt;
+We went with the flow, we worked together on some chapters, and singularly on others.&lt;br&gt;
+We talked and I shared also my personal difficulties, as 2022 was a though year: useful, but though.&lt;br&gt;
+And when we were stressed, or tired, we would talk about that.&lt;br&gt;
+Never forget about the human behind the role!&lt;br&gt;
+I really enjoyed working with him!&lt;/p&gt;
+&lt;h2 id=&#34;rendering-is-about-synergies&#34;&gt;Rendering is about synergies&lt;/h2&gt;
+&lt;p&gt;The more chapters we wrote, the more I thought how rendering is a beautiful synergy, and that is why re-creating a renderer visuals is hard.&lt;br&gt;
+Every pass in a frame needs to find its space in other passes as well (well not every one of them).&lt;br&gt;
+It is an orchestra of GPU programs, textures, buffers and pipelines that create beautiful pixels.&lt;br&gt;
+Building each chapter with something more really shaped this.&lt;br&gt;
+Again, it could have been done in a better way, yes!&lt;br&gt;
+But the effort and the knowledge at the time, plus the time constraints, are all that matters.&lt;/p&gt;
+&lt;p&gt;That is why I am happy with the result: we forged something that, albeit not being perfect, really touched a little of everything you find in a modern renderer. Something you will not find in a tech demo, that shows just a portion of this.&lt;br&gt;
+Once we&amp;rsquo;ve added Clustered Deferred rendering, we added pointlights shadows (with the vertex/mesh shader only output) then we built on top Volumetric Fog, and TAA, and then started exploring indirect lighting with ray tracing&amp;hellip;everything worked together.&lt;br&gt;
+Re-using the clustered light structure to read lights into the Volumetric Fog for example.&lt;/p&gt;
+&lt;p&gt;We did it step by step, trying to show the way.&lt;br&gt;
+For each step, the question was always:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;What is this technique adding to the scene ?&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;We always had an eye for performances as well, even though having a 2070 did not help :p&lt;br&gt;
+But still, as you see opening the demo, there is a GPU profiler that gives you a frame timing breakdown and helps keeping track of where the time budget is going.&lt;br&gt;
+This is a game developer mindset: always think about performances.&lt;br&gt;
+To create realtime-usable tech, you need it to be fast, or at least keep the total frame time to an acceptable level!&lt;/p&gt;
+&lt;h1 id=&#34;final-thoughts&#34;&gt;Final thoughts&lt;/h1&gt;
+&lt;p&gt;I&amp;rsquo;ve touched a lot of topics in this post, and I will gladly talk more about this stuff.&lt;br&gt;
+One thing is clear: I learnt a lot, both technically and personally, and I will continue to learn more.&lt;br&gt;
+There are other things on the horizon sparked by this book, like a talk about Vulkan at Eurographics 2023, or the idea of doing a &amp;lsquo;write your modern renderer&amp;rsquo; in italian, my native language, and more.&lt;br&gt;
+For sure a lot of feedback and things to evolve and experiment, and I am thankful for that.&lt;/p&gt;
+&lt;p&gt;I also wish that we could help streamlining the usage of Vulkan, maybe developing some lightweight library to help developers (like the Vulkan Memory Allocator), but let&amp;rsquo;s see the future.&lt;/p&gt;
+&lt;p&gt;For now I enjoy the experience that the book gave me, the many lessons, the knowledge and the thought that I can still improve and learn, while remembering to enjoy the process.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Vulkan Pills 1: Bindless Textures</title>
+      <link>https://jorenjoestar.github.io/post/vulkan_bindless_texture/</link>
+      <pubDate>Mon, 01 Nov 2021 18:44:17 +0100</pubDate>
+      
+      <guid>https://jorenjoestar.github.io/post/vulkan_bindless_texture/</guid>
+      <description>&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+&lt;p&gt;Here is a very short article on how to use Vulkan bindless features.&lt;/p&gt;
+&lt;p&gt;All the relevant &lt;em&gt;c++&lt;/em&gt; code is into &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/blob/master/source/hydra_next/source/graphics/gpu_device_vulkan.cpp&#34;&gt;gpu_device_vulkan.cpp&lt;/a&gt; and &lt;a href=&#34;https://github.com/JorenJoestar/DataDrivenRendering/blob/master/source/hydra_next/source/graphics/command_buffer.cpp&#34;&gt;command_buffer.cpp&lt;/a&gt;, and you can follow along &lt;strong&gt;HYDRA_BINDLESS&lt;/strong&gt; defines to see what changes.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;THIS IS THE FASTEST ROUTE TO START USING BINDLESS TEXTURES THAT I KNOW OF&lt;/strong&gt;.&lt;br&gt;
+This means also that is architecturally not optimal but it will serve its purposes!&lt;/p&gt;
+&lt;p&gt;There is a great article about the different features used here at &lt;a href=&#34;https://community.arm.com/arm-community-blogs/b/graphics-gaming-and-vr-blog/posts/vulkan-descriptor-indexing&#34;&gt;arm&lt;/a&gt;, check it out first!&lt;/p&gt;
+&lt;h1 id=&#34;1-querying-for-gpu-support&#34;&gt;1. Querying for GPU support&lt;/h1&gt;
+&lt;p&gt;In a pure Vulkan way, we want to query for the support of a couple of features, like this:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT, &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt; };
+VkPhysicalDeviceFeatures2 device_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;indexing_features };
+
+vkGetPhysicalDeviceFeatures2( vulkan_physical_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;device_features );
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; bindless_supported &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; indexing_features.descriptorBindingPartiallyBound &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; indexing_features.runtimeDescriptorArray;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;2-enabling-gpu-features&#34;&gt;2. Enabling GPU features&lt;/h1&gt;
+&lt;p&gt;I will put a little more context here.&lt;br&gt;
+With this code we enable all possible supported features, thus when we create the device we already have pNext used.&lt;br&gt;
+Being a linked list, to add more features to a device we need to add another link to our indexing features created above:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;// Enable all features: just pass the physical features 2 struct.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    VkPhysicalDeviceFeatures2 physical_features2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+    vkGetPhysicalDeviceFeatures2( vulkan_physical_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;physical_features2 );
+
+    VkDeviceCreateInfo device_create_info &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; {};
+    device_create_info.sType &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.queueCreateInfoCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;sizeof&lt;/span&gt;( queue_info ) &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;sizeof&lt;/span&gt;( queue_info[ &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; ] );
+    device_create_info.pQueueCreateInfos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; queue_info;
+    device_create_info.enabledExtensionCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; device_extension_count;
+    device_create_info.ppEnabledExtensionNames &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; device_extensions;
+    device_create_info.pNext &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;physical_features2;
+
+&lt;span style=&#34;color:#75715e&#34;&gt;#if defined(HYDRA_BINDLESS)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( bindless_supported ) {
+        &lt;span style=&#34;color:#75715e&#34;&gt;// This should be already set to VK_TRUE, as we queried before.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        indexing_features.descriptorBindingPartiallyBound &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_TRUE;
+        indexing_features.runtimeDescriptorArray &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_TRUE;
+
+        physical_features2.pNext &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;indexing_features;
+    }
+&lt;span style=&#34;color:#75715e&#34;&gt;#endif &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// HYDRA_BINDLESS
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+    result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vkCreateDevice( vulkan_physical_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;device_create_info, vulkan_allocation_callbacks, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_device );
+    check( result );
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;3-descriptor-pool-creation&#34;&gt;3. Descriptor Pool Creation&lt;/h1&gt;
+&lt;p&gt;When creating the Descriptor Pool, we need to add the &lt;em&gt;flag VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT&lt;/em&gt;.&lt;br&gt;
+This is needed so we can update textures in the bindless array without any problem or validation error.&lt;br&gt;
+Still we need to be sure to not change a used resource in command buffers that are running!&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;  &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; u32 k_max_bindless_resources &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;16536&lt;/span&gt;;
+  &lt;span style=&#34;color:#75715e&#34;&gt;// Create bindless descriptor pool
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;  VkDescriptorPoolSize pool_sizes_bindless[] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;
+  {
+      { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, k_max_bindless_resources }
+  };
+  
+  &lt;span style=&#34;color:#75715e&#34;&gt;// Update after bind is needed here, for each binding and in the descriptor set layout creation.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;  pool_info.flags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+  pool_info.maxSets &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_max_bindless_resources &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; ArraySize( pool_sizes_bindless );
+  pool_info.poolSizeCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ( u32 )ArraySize( pool_sizes_bindless );
+  pool_info.pPoolSizes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; pool_sizes_bindless;
+  result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vkCreateDescriptorPool( vulkan_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;pool_info, vulkan_allocation_callbacks, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_descriptor_pool_bindless );
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;4-global-descriptorsetdescriptor-layout-creation&#34;&gt;4. Global DescriptorSet/Descriptor Layout Creation&lt;/h1&gt;
+&lt;p&gt;At this point we create a &lt;em&gt;global&lt;/em&gt; descriptor layout and a &lt;em&gt;global&lt;/em&gt; descriptor set.&lt;br&gt;
+This is just because we want the fastest route to use bindless, but architecturally speaking is not the best.&lt;/p&gt;
+&lt;p&gt;First we create the Descriptor Set Layout with at least the flags &lt;em&gt;VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT&lt;/em&gt; and &lt;em&gt;VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT&lt;/em&gt; .&lt;br&gt;
+These are needed because we will not fill all the array elements of the bindless array (partially bound flag) and we will update when a new texture is added to the device (update after bind).&lt;br&gt;
+Also adding the Variable Descriptor Count in case we want more than one descriptor layout /set with a bindless array:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// Create bindless global descriptor layout.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    {
+        VkDescriptorBindingFlags bindless_flags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+
+        VkDescriptorSetLayoutBinding vk_binding;
+        vk_binding.descriptorType &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        vk_binding.descriptorCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_max_bindless_resources;
+        vk_binding.binding &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_bindless_texture_binding;
+        
+        vk_binding.stageFlags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_SHADER_STAGE_ALL;
+        vk_binding.pImmutableSamplers &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt;;
+
+        VkDescriptorSetLayoutCreateInfo layout_info &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+        layout_info.bindingCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        layout_info.pBindings &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vk_binding;
+        layout_info.flags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+
+        VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extended_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT, &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt; };
+        extended_info.bindingCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        extended_info.pBindingFlags &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;bindless_flags;
+
+        layout_info.pNext &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;extended_info;
+
+        vkCreateDescriptorSetLayout( vulkan_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;layout_info, vulkan_allocation_callbacks, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_bindless_descriptor_layout );
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;At this point we create the actual descriptor set from the bindless pool:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;        VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        alloc_info.descriptorPool &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vulkan_descriptor_pool_bindless;
+        alloc_info.descriptorSetCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        alloc_info.pSetLayouts &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_bindless_descriptor_layout;
+
+        VkDescriptorSetVariableDescriptorCountAllocateInfoEXT count_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT };
+        u32 max_binding &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_max_bindless_resources &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        count_info.descriptorSetCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        &lt;span style=&#34;color:#75715e&#34;&gt;// This number is the max allocatable count
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        count_info.pDescriptorCounts &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;max_binding;
+        alloc_info.pNext &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;count_info;
+
+        check_result( vkAllocateDescriptorSets( vulkan_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;alloc_info, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;vulkan_bindless_descriptor_set ) );
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;5-texture-upload&#34;&gt;5. Texture Upload&lt;/h1&gt;
+&lt;p&gt;At this point whenever we create a new texture we can update the global bindless descriptor set.&lt;br&gt;
+I prefer to batch this and do it at the end of the frame, here it is:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( num_texture_updates ) {
+    &lt;span style=&#34;color:#75715e&#34;&gt;// Handle deferred writes to bindless textures.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#75715e&#34;&gt;// TODO: use dynamic array instead.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;constexpr&lt;/span&gt; u32 k_num_writes_per_frame &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;;
+    VkWriteDescriptorSet bindless_descriptor_writes[ k_num_writes_per_frame ];
+    VkDescriptorImageInfo bindless_image_info[ k_num_writes_per_frame ];
+
+    u32 current_write_index &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; ( i32 it &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; num_texture_updates &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;; it &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;; it&lt;span style=&#34;color:#f92672&#34;&gt;--&lt;/span&gt; ) {
+        ResourceUpdate&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt; texture_to_update &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture_to_update_bindless[ it ];
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( current_write_index &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; k_num_writes_per_frame )
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;break&lt;/span&gt;;
+
+        TextureVulkan&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; texture &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; access_texture( { texture_to_update.handle } );
+        VkWriteDescriptorSet&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt; descriptor_write &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; bindless_descriptor_writes[ current_write_index ];
+        descriptor_write &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        descriptor_write.descriptorCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+        descriptor_write.dstArrayElement &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;handle.index;
+        descriptor_write.descriptorType &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_write.dstSet &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vulkan_bindless_descriptor_set;
+        descriptor_write.dstBinding &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; k_bindless_texture_binding;
+
+        SamplerVulkan&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; vk_default_sampler &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; access_sampler( default_sampler );
+        VkDescriptorImageInfo&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt; descriptor_image_info &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; bindless_image_info[ current_write_index ];
+        descriptor_image_info.sampler &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vk_default_sampler&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_sampler;
+        descriptor_image_info.imageView &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_image_view;
+        descriptor_image_info.imageLayout &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        descriptor_write.pImageInfo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;descriptor_image_info;
+
+        texture_to_update.current_frame &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; u32_max;
+
+        texture_to_update_bindless[ it ] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture_to_update_bindless[ &lt;span style=&#34;color:#f92672&#34;&gt;--&lt;/span&gt;num_texture_updates ];
+
+        &lt;span style=&#34;color:#f92672&#34;&gt;++&lt;/span&gt;current_write_index;
+    }
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( current_write_index ) {
+        vkUpdateDescriptorSets( vulkan_device, current_write_index, bindless_descriptor_writes, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt; );
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;6-adding-the-bindless-descriptor-layout-to-layouts&#34;&gt;6. Adding the Bindless Descriptor Layout to layouts&lt;/h1&gt;
+&lt;p&gt;Again a quick and dirty example of adding the bindless layout to every layout:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;
+u32 bindless_active &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+&lt;span style=&#34;color:#75715e&#34;&gt;#if defined(HYDRA_BINDLESS)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    vk_layouts[ creation.num_active_layouts ] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vulkan_bindless_descriptor_layout;
+    bindless_active &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+&lt;span style=&#34;color:#75715e&#34;&gt;#endif
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+    VkPipelineLayoutCreateInfo pipeline_layout_info &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+    pipeline_layout_info.pSetLayouts &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vk_layouts;
+    pipeline_layout_info.setLayoutCount &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; creation.num_active_layouts &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; bindless_active;
+
+    VkPipelineLayout pipeline_layout;
+    check( vkCreatePipelineLayout( vulkan_device, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;pipeline_layout_info, vulkan_allocation_callbacks, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;pipeline_layout ) );
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;7-descriptor-set-binding-at-draw&#34;&gt;7. Descriptor Set Binding at Draw&lt;/h1&gt;
+&lt;p&gt;The final (c++ wise) step is to bind the bindless set, here in command buffer code:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; CommandBuffer&lt;span style=&#34;color:#f92672&#34;&gt;::&lt;/span&gt;bind_resource_list( &lt;span style=&#34;color:#66d9ef&#34;&gt;uint64_t&lt;/span&gt; sort_key, ResourceListHandle&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; handles, &lt;span style=&#34;color:#66d9ef&#34;&gt;uint32_t&lt;/span&gt; num_lists, &lt;span style=&#34;color:#66d9ef&#34;&gt;uint32_t&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; offsets, &lt;span style=&#34;color:#66d9ef&#34;&gt;uint32_t&lt;/span&gt; num_offsets ) {
+&lt;span style=&#34;color:#75715e&#34;&gt;// ...
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; u32 k_first_set &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;;
+vkCmdBindDescriptorSets( vk_command_buffer, current_pipeline&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_bind_point, current_pipeline&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_pipeline_layout, k_first_set,
+                         num_lists, vk_descriptor_sets, num_offsets, offsets_cache );
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; ( device&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;bindless_supported ) {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; u32 k_bindless_set &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+    vkCmdBindDescriptorSets( vk_command_buffer, current_pipeline&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_bind_point, current_pipeline&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vk_pipeline_layout, k_bindless_set,
+                             &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;device&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;vulkan_bindless_descriptor_set, &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;nullptr&lt;/span&gt; );
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;8-glsl-shader&#34;&gt;8. GLSL shader!&lt;/h1&gt;
+&lt;p&gt;And here the modified code for the shader.&lt;br&gt;
+Albedo index can come from anywhere, for fullscreen triangle I use the trick of using the instance id for example!&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;#extension GL_EXT_nonuniform_qualifier : enable
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+layout (set &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, binding &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;) uniform sampler2D textures[];
+
+
+vec4 color &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; texture( textures[albedo_id], final_uv.xy );
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;conclusions&#34;&gt;Conclusions&lt;/h1&gt;
+&lt;p&gt;We saw the minimal code needed to have a fully working bindless texture implementation in Vulkan.&lt;br&gt;
+API-Wise this is not the best, with hardcoded values, Vulkan only global descriptor and such, but it is a jumpstart to experiment with the feature.&lt;br&gt;
+I will cleanup this code and update the library in the future, but this should already be a way to start bindlessly coding.&lt;/p&gt;
+&lt;p&gt;Happy Bindless!&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
